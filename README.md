@@ -49,6 +49,20 @@ src/app/
 
 Cada carpeta tiene su propio `README.md` con la regla que la separa de las demás.
 
+## Autenticación
+
+1. `AuthService.login()` pega a `POST /api/auth/login` y guarda la sesión (token, email,
+   nombre y rol) en `localStorage`, para que sobreviva a un F5.
+2. `authInterceptor` añade `Authorization: Bearer <token>` **sólo** a las peticiones
+   dirigidas a `environment.apiUrl`, y salta el login y el registro. El filtro por URL
+   evita que el token viaje a un host ajeno si algún día se pide un recurso externo.
+3. Al arrancar, la sesión guardada se valida antes de darse por buena: si el token está
+   caducado o el JSON no tiene la forma esperada, se borra y el usuario vuelve al login.
+   Sin eso la app enseñaría un menú de ADMIN mientras cada petición responde 401.
+
+La firma del JWT **no** se verifica en el navegador — el secreto vive en la API. Los
+claims sólo se leen para conocer la expiración y el rol.
+
 ## Decisiones
 
 - **Standalone y zoneless.** El scaffold no usa NgModules ni `zone.js`; la detección de
