@@ -1,59 +1,69 @@
-# SchoolManagementWeb
+# School Management — Web
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.0.1.
+Frontend administrativo de [school-management-api](https://github.com/Rivangel/school-management-api),
+construido con **Angular 22** y **Angular Material**.
 
-## Development server
+## Requisitos
 
-To start a local development server, run:
+- Node.js 20+ (probado con 24) y npm 10+
+- La API corriendo en `http://localhost:8080` — sin ella el login no responde
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Puesta en marcha
 
 ```bash
-ng generate component component-name
+npm install
+npm start          # ng serve → http://localhost:4200
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+La API ya autoriza `http://localhost:4200` en `app.cors.allowed-origins`, así que no
+hace falta proxy en desarrollo.
 
-```bash
-ng generate --help
+## Scripts
+
+| Comando | Qué hace |
+|---|---|
+| `npm start` | Servidor de desarrollo con recarga en caliente |
+| `npm run build` | Build de producción en `dist/` |
+| `npm test` | Tests unitarios (Vitest) |
+
+## Configuración
+
+`src/environments/` define a dónde pega el frontend:
+
+| Archivo | Configuración | `apiUrl` |
+|---|---|---|
+| `environment.development.ts` | `ng serve` | `http://localhost:8080/api` |
+| `environment.ts` | `ng build` (producción) | `/api` |
+
+En producción la URL es **relativa** porque el frontend se sirve detrás de nginx junto
+a la API: mismo origen, sin CORS y sin recompilar para cambiar de host.
+
+## Estructura
+
+```
+src/app/
+├── core/        # servicios, interceptores, guards y modelos (una sola instancia)
+├── shared/      # componentes, pipes y directivas reutilizables sin dominio
+└── features/    # un directorio por dominio, cargado con lazy loading
 ```
 
-## Building
+Cada carpeta tiene su propio `README.md` con la regla que la separa de las demás.
 
-To build the project run:
+## Decisiones
 
-```bash
-ng build
-```
+- **Standalone y zoneless.** El scaffold no usa NgModules ni `zone.js`; la detección de
+  cambios va por signals, que es el camino soportado desde Angular 20.
+- **Vitest en vez de Karma.** Karma está deprecado y Angular 22 genera el proyecto con
+  Vitest; el API de `TestBed` es el mismo.
+- **Material 3 con el tema azure/blue** vía `mat.theme()`, que define variables CSS
+  (`--mat-sys-*`) — eso deja el tema oscuro del Día 34 como un cambio de `color-scheme`.
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Usuarios de prueba
 
-## Running unit tests
+Los que siembra la API (ver su README):
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+| Email | Contraseña | Rol |
+|---|---|---|
+| `admin@escuela.com` | `admin123` | ADMIN |
+| `juan.perez@escuela.com` | `maestro123` | MAESTRO |
+| `ana.lopez@escuela.com` | `alumno123` | ALUMNO |
