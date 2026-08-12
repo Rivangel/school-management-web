@@ -1,0 +1,40 @@
+.denegado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.denegado__card {
+  max-width: 28rem;
+}
+
+.denegado__contenido {
+  text-align: center;
+}
+
+.denegado__icono {
+  --mat-icon-color: var(--mat-sys-error);
+  font-size: 3rem;
+  width: 3rem;
+  height: 3rem;
+}
+
+h1 {
+  margin: 0.5rem 0;
+  font: var(--mat-sys-headline-small);
+}
+
+p {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+}
+
+.denegado__acciones {
+  justify-content: center;
+  padding-bottom: 1rem;
+  gap: 0.5rem;
+}

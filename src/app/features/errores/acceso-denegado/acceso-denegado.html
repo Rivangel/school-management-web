@@ -1,0 +1,20 @@
+<main class="denegado">
+  <mat-card appearance="outlined" class="denegado__card">
+    <mat-card-content class="denegado__contenido">
+      <mat-icon class="denegado__icono">lock</mat-icon>
+      <h1>Acceso denegado</h1>
+      <p>
+        @if (rol(); as rolActual) {
+          Tu rol <strong>{{ rolActual }}</strong> no tiene permiso para ver esta sección.
+        } @else {
+          No tienes permiso para ver esta sección.
+        }
+      </p>
+      <p>Si crees que es un error, pide a un administrador que revise tus permisos.</p>
+    </mat-card-content>
+    <mat-card-actions class="denegado__acciones">
+      <a mat-flat-button routerLink="/">Ir al inicio</a>
+      <button mat-button type="button" (click)="salir()">Cerrar sesión</button>
+    </mat-card-actions>
+  </mat-card>
+</main>
