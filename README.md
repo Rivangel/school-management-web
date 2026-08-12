@@ -69,7 +69,8 @@ claims sólo se leen para conocer la expiración y el rol.
 |---|---|---|
 | `/login` | `invitadoGuard` | Formulario de acceso; reservado a quien **no** tiene sesión |
 | `/acceso-denegado` | — | Aviso para quien entró con un rol sin permiso |
-| `/` y el resto | `authGuard` | La aplicación; sin sesión redirige a `/login` |
+| `/` | `authGuard` | El shell (barra + menú); dentro, la portada y las secciones |
+| `/alumnos`, `/maestros`, … | `rolGuard(…)` | Cada sección, con los roles que declara `core/navegacion.ts` |
 
 - `authGuard` guarda la ruta pedida en `?returnUrl=` y el login vuelve a ella al entrar,
   de modo que un enlace directo no acabe siempre en la portada. El `returnUrl` sólo se
@@ -82,6 +83,21 @@ claims sólo se leen para conocer la expiración y el rol.
 
 Los guards son **navegación, no seguridad**: sólo miran el token de `localStorage`. Quien
 decide de verdad es la API, que responde 401/403 aunque el guard haya dejado pasar.
+
+## Shell y menú
+
+`features/shell/` es el marco de la aplicación: barra superior, menú lateral y el
+`router-outlet` de las secciones. Se monta como componente de la ruta padre, así que al
+navegar sólo cambia el contenido — la barra y el menú no se vuelven a construir.
+
+- Las entradas del menú y sus roles están en **`core/navegacion.ts`**, y las rutas toman
+  de ahí los roles con `rolesDe()`. Una sola lista: si el menú enseña algo que la ruta
+  cierra, el enlace lleva a un "acceso denegado".
+- El menú es fijo (`side`) a partir de 960 px y flotante (`over`) por debajo, donde se
+  cierra solo al navegar. El estado por defecto lo decide el ancho y el usuario puede
+  forzarlo con el botón (`linkedSignal`).
+- Las secciones que aún no existen apuntan a `shared/components/proximamente/`, con su
+  `rolGuard` ya puesto. Cada día siguiente sólo cambia el `loadComponent` de una ruta.
 
 ## Decisiones
 
