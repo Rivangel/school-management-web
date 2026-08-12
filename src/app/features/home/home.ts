@@ -1,24 +1,30 @@
-import { Component } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
+import { Component, computed, inject } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { MatToolbarModule } from '@angular/material/toolbar';
+import { RouterLink } from '@angular/router';
 
-import { environment } from '../../../environments/environment';
+import { menuPara } from '../../core/navegacion';
+import { AuthService } from '../../core/services/auth-service';
 
 /**
- * Pantalla de arranque provisional.
+ * Portada de la aplicación, dentro del shell.
  *
- * Existe para tener algo visible mientras llegan el login (Día 11) y el shell con
- * sidenav (Día 12), y de paso verifica que el tema de Material y los iconos estén
- * bien cableados. Se sustituye en cuanto haya rutas reales.
+ * Repite como tarjetas las secciones que el rol tiene permitidas: en pantalla
+ * ancha el menú lateral ya está a la vista, pero en móvil está plegado y sin
+ * esto la portada quedaría vacía. En el Día 26 la sustituye el dashboard con
+ * estadísticas.
  */
 @Component({
   selector: 'app-home',
-  imports: [MatButtonModule, MatCardModule, MatIconModule, MatToolbarModule],
+  imports: [MatIconModule, RouterLink],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
 export class Home {
-  protected readonly apiUrl = environment.apiUrl;
+  private readonly auth = inject(AuthService);
+
+  protected readonly nombre = this.auth.nombre;
+  protected readonly rol = this.auth.rol;
+  protected readonly accesos = computed(() =>
+    menuPara(this.rol()).filter((elemento) => elemento.ruta !== '/'),
+  );
 }

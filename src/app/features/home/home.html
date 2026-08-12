@@ -1,27 +1,13 @@
-<mat-toolbar color="primary">
-  <mat-icon>school</mat-icon>
-  <span class="title">School Management</span>
-</mat-toolbar>
+<header class="portada__saludo">
+  <h1>Hola, {{ nombre() }}</h1>
+  <p>Entraste como {{ rol() }}. Estas son las secciones a las que tienes acceso.</p>
+</header>
 
-<main>
-  <mat-card appearance="outlined">
-    <mat-card-header>
-      <mat-card-title>El scaffold está en pie</mat-card-title>
-      <mat-card-subtitle>Angular + Angular Material</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <p>
-        Esta pantalla es provisional: la reemplazan el login y el layout con navegación por rol.
-      </p>
-      <p>
-        API configurada en <code>{{ apiUrl }}</code>
-      </p>
-    </mat-card-content>
-    <mat-card-actions>
-      <a mat-button href="http://localhost:8080/swagger-ui.html" target="_blank" rel="noopener">
-        <mat-icon>api</mat-icon>
-        Abrir Swagger
-      </a>
-    </mat-card-actions>
-  </mat-card>
-</main>
+<nav class="portada__accesos" aria-label="Secciones disponibles">
+  @for (acceso of accesos(); track acceso.ruta) {
+    <a class="portada__acceso" [routerLink]="acceso.ruta">
+      <mat-icon>{{ acceso.icono }}</mat-icon>
+      <span>{{ acceso.etiqueta }}</span>
+    </a>
+  }
+</nav>
