@@ -1,0 +1,85 @@
+.shell {
+  height: 100dvh;
+}
+
+.shell__menu {
+  width: 15rem;
+  border-right: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.shell__marca {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  color: var(--mat-sys-primary);
+  font: var(--mat-sys-title-medium);
+}
+
+.shell__barra {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  gap: 0.5rem;
+  background: var(--mat-sys-surface);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.shell__titulo {
+  font: var(--mat-sys-title-medium);
+}
+
+.shell__separador {
+  flex: 1;
+}
+
+.shell__usuario {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.shell__avatar {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  font: var(--mat-sys-label-medium);
+}
+
+// En móvil sobra el nombre completo: basta el avatar para saber de quién es la
+// sesión, y así el título no se parte en dos líneas.
+@media (max-width: 599.98px) {
+  .shell__nombre {
+    display: none;
+  }
+}
+
+.shell__ficha {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem 1rem;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.shell__rol {
+  margin-top: 0.25rem;
+  color: var(--mat-sys-primary);
+  font: var(--mat-sys-label-small);
+  letter-spacing: 0.06em;
+}
+
+.shell__contenido {
+  padding: 1.5rem;
+}
+
+@media (max-width: 599.98px) {
+  .shell__contenido {
+    padding: 1rem;
+  }
+}

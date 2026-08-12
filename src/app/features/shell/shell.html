@@ -1,0 +1,76 @@
+<mat-sidenav-container class="shell" [hasBackdrop]="modo() === 'over'">
+  <mat-sidenav
+    class="shell__menu"
+    [mode]="modo()"
+    [opened]="abierto()"
+    (openedChange)="abierto.set($event)"
+  >
+    <div class="shell__marca">
+      <mat-icon>school</mat-icon>
+      <span>School Management</span>
+    </div>
+
+    <mat-nav-list>
+      @for (elemento of menu(); track elemento.ruta) {
+        <a
+          mat-list-item
+          [routerLink]="elemento.ruta"
+          routerLinkActive
+          #activo="routerLinkActive"
+          [routerLinkActiveOptions]="{ exact: elemento.ruta === '/' }"
+          [activated]="activo.isActive"
+          (click)="alNavegar()"
+        >
+          <mat-icon matListItemIcon>{{ elemento.icono }}</mat-icon>
+          <span matListItemTitle>{{ elemento.etiqueta }}</span>
+        </a>
+      }
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="shell__cuerpo">
+    <mat-toolbar class="shell__barra">
+      <button
+        mat-icon-button
+        type="button"
+        (click)="alternarMenu()"
+        [attr.aria-expanded]="abierto()"
+        aria-label="Mostrar u ocultar el menú"
+      >
+        <mat-icon>menu</mat-icon>
+      </button>
+
+      <span class="shell__titulo">School Management</span>
+      <span class="shell__separador"></span>
+
+      <button
+        mat-button
+        type="button"
+        [matMenuTriggerFor]="menuUsuario"
+        class="shell__usuario"
+        aria-label="Abrir el menú de la cuenta"
+      >
+        <span class="shell__avatar" aria-hidden="true">{{ iniciales() }}</span>
+        <span class="shell__nombre">{{ nombre() }}</span>
+        <mat-icon>arrow_drop_down</mat-icon>
+      </button>
+
+      <mat-menu #menuUsuario="matMenu">
+        <div class="shell__ficha">
+          <strong>{{ nombre() }}</strong>
+          <span>{{ email() }}</span>
+          <span class="shell__rol">{{ rol() }}</span>
+        </div>
+        <mat-divider />
+        <button mat-menu-item type="button" (click)="salir()">
+          <mat-icon>logout</mat-icon>
+          <span>Cerrar sesión</span>
+        </button>
+      </mat-menu>
+    </mat-toolbar>
+
+    <main class="shell__contenido">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>
