@@ -1,0 +1,81 @@
+<main class="login">
+  <mat-card appearance="outlined" class="login__card">
+    <div class="login__barra">
+      @if (enviando()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+    </div>
+
+    <mat-card-header class="login__cabecera">
+      <mat-icon class="login__logo">school</mat-icon>
+      <mat-card-title>School Management</mat-card-title>
+      <mat-card-subtitle>Inicia sesión para continuar</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+        <mat-form-field appearance="outline">
+          <mat-label>Correo electrónico</mat-label>
+          <input
+            matInput
+            type="email"
+            formControlName="email"
+            autocomplete="username"
+            placeholder="admin@escuela.com"
+          />
+          <mat-icon matSuffix>alternate_email</mat-icon>
+          @if (formulario.controls.email.hasError('required')) {
+            <mat-error>El correo es obligatorio.</mat-error>
+          } @else if (formulario.controls.email.hasError('email')) {
+            <mat-error>Escribe un correo con formato válido.</mat-error>
+          } @else if (formulario.controls.email.hasError('maxlength')) {
+            <mat-error>El correo no puede pasar de 120 caracteres.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Contraseña</mat-label>
+          <input
+            matInput
+            [type]="verPassword() ? 'text' : 'password'"
+            formControlName="password"
+            autocomplete="current-password"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="verPassword.set(!verPassword())"
+            [attr.aria-label]="verPassword() ? 'Ocultar la contraseña' : 'Mostrar la contraseña'"
+            [attr.aria-pressed]="verPassword()"
+          >
+            <mat-icon>{{ verPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (formulario.controls.password.hasError('required')) {
+            <mat-error>La contraseña es obligatoria.</mat-error>
+          } @else if (formulario.controls.password.hasError('minlength')) {
+            <mat-error>La contraseña tiene al menos 6 caracteres.</mat-error>
+          }
+        </mat-form-field>
+
+        @if (error(); as mensaje) {
+          <p class="login__error" role="alert">
+            <mat-icon>error_outline</mat-icon>
+            <span>{{ mensaje }}</span>
+          </p>
+        }
+
+        <button mat-flat-button type="submit" class="login__enviar" [disabled]="enviando()">
+          {{ enviando() ? 'Entrando…' : 'Entrar' }}
+        </button>
+      </form>
+    </mat-card-content>
+
+    @if (mostrarAyuda) {
+      <mat-card-footer class="login__ayuda">
+        Entorno de desarrollo — usuario de prueba
+        <code>admin&#64;escuela.com</code> / <code>admin123</code>
+      </mat-card-footer>
+    }
+  </mat-card>
+</main>
