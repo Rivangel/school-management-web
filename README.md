@@ -63,6 +63,26 @@ Cada carpeta tiene su propio `README.md` con la regla que la separa de las demá
 La firma del JWT **no** se verifica en el navegador — el secreto vive en la API. Los
 claims sólo se leen para conocer la expiración y el rol.
 
+## Rutas y guards
+
+| Ruta | Protección | Qué muestra |
+|---|---|---|
+| `/login` | `invitadoGuard` | Formulario de acceso; reservado a quien **no** tiene sesión |
+| `/acceso-denegado` | — | Aviso para quien entró con un rol sin permiso |
+| `/` y el resto | `authGuard` | La aplicación; sin sesión redirige a `/login` |
+
+- `authGuard` guarda la ruta pedida en `?returnUrl=` y el login vuelve a ella al entrar,
+  de modo que un enlace directo no acabe siempre en la portada. El `returnUrl` sólo se
+  respeta si es una ruta **interna**: si no, `/login?returnUrl=//sitio-falso.com`
+  convertiría el login en un redirector abierto.
+- `rolGuard('ADMIN', 'MAESTRO')` es una fábrica, porque cada ruta admite una lista
+  distinta y `CanActivateFn` no recibe parámetros propios. Sin sesión manda al login;
+  con sesión pero sin el rol, a `/acceso-denegado` — devolver al login a quien ya entró
+  sólo consigue que choque otra vez contra la misma pared.
+
+Los guards son **navegación, no seguridad**: sólo miran el token de `localStorage`. Quien
+decide de verdad es la API, que responde 401/403 aunque el guard haya dejado pasar.
+
 ## Decisiones
 
 - **Standalone y zoneless.** El scaffold no usa NgModules ni `zone.js`; la detección de
