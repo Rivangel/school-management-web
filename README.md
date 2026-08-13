@@ -99,6 +99,32 @@ navegar sólo cambia el contenido — la barra y el menú no se vuelven a constr
 - Las secciones que aún no existen apuntan a `shared/components/proximamente/`, con su
   `rolGuard` ya puesto. Cada día siguiente sólo cambia el `loadComponent` de una ruta.
 
+## Listados paginados
+
+`GET /api/alumnos`, `/maestros` y `/materias` devuelven una página (`content`, `page`,
+`size`, `totalElements`, …), no un arreglo. El listado de alumnos (`features/alumnos/`)
+fija el patrón que reutilizan los demás:
+
+- **Paginar y ordenar es cosa del servidor.** La tabla dibuja la página que llega y nada
+  más — por eso no usa `MatTableDataSource`, que sólo sabe rebanar el arreglo que ya
+  tiene en memoria y acabaría paginando 20 filas sobre un total de 300. El paginador
+  toma su `length` de `totalElements`.
+- **El estado vive en la URL** (`?page=&size=&sort=`), no en un signal del componente:
+  recargar, compartir el enlace o volver con el botón "atrás" caen en la misma página y
+  el mismo orden, y al volver de la ficha de un alumno el listado se reconstruye solo.
+- **Lo que llega por la URL se valida** (`core/paginacion.ts`): la barra de direcciones
+  es texto que cualquiera edita, y un `page=-1`, un `size=5000` o un `sort` por una
+  propiedad que la API no conoce convertirían un enlace mal escrito en un 400.
+- **Cambiar el orden vuelve a la página 0.** Los registros se recolocan, así que seguir
+  en la página 7 no enseña "lo mismo ordenado" y puede dejar la pantalla vacía.
+- Sin `sort` propio manda el de la API (apellido y nombre ascendente), y el encabezado lo
+  marca: una tabla sin marcar sugeriría un orden arbitrario.
+
+Los datos se piden con `rxResource`, que da `isLoading()` y `error()` como signals. Ojo:
+su `value()` **lanza** cuando el recurso está en error, así que se lee a través de
+`hasValue()` — si no, un 500 de la API revienta la detección de cambios en vez de
+enseñar el aviso con el botón de reintentar.
+
 ## Decisiones
 
 - **Standalone y zoneless.** El scaffold no usa NgModules ni `zone.js`; la detección de
