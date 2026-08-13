@@ -6,6 +6,9 @@ Lo que existe **una sola vez** en toda la aplicación y no se dibuja en pantalla
 - `interceptors/` — interceptores funcionales de `HttpClient` (JWT, manejo de errores).
 - `guards/` — guards funcionales de ruta (`authGuard`, `roleGuard`).
 - `models/` — interfaces TypeScript espejo de los DTOs de la API.
+- `paginacion.ts` — traducción entre los query params de la URL (`page`, `size`, `sort`)
+  y lo que espera la API. Lo comparten todas las pantallas de listado, y es donde se
+  valida lo que llega escrito en la barra de direcciones.
 - `navegacion.ts` — las secciones de la aplicación y los roles que las ven. Vive aquí, y
   no en el shell, porque el menú y los `rolGuard` de las rutas leen la misma lista: si
   cada uno tuviera la suya, tarde o temprano dirían cosas distintas.
