@@ -1,0 +1,88 @@
+<header class="alumnos__cabecera">
+  <div>
+    <h1>Alumnos</h1>
+    <p>
+      @if (total() === 1) {
+        1 alumno registrado.
+      } @else {
+        {{ total() }} alumnos registrados.
+      }
+    </p>
+  </div>
+</header>
+
+<!-- Altura fija para que la tabla no salte al aparecer y desaparecer la barra. -->
+<div class="alumnos__barra">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando alumnos" />
+  }
+</div>
+
+@if (error(); as mensaje) {
+  <div class="alumnos__aviso alumnos__aviso--error" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <p>{{ mensaje }}</p>
+    <button mat-flat-button type="button" (click)="reintentar()">Reintentar</button>
+  </div>
+} @else {
+  <div class="alumnos__tabla">
+    <table
+      mat-table
+      [dataSource]="filas()"
+      matSort
+      [matSortActive]="orden().activo"
+      [matSortDirection]="orden().direccion"
+      (matSortChange)="ordenar($event)"
+    >
+      <caption class="alumnos__caption">
+        Listado de alumnos, ordenado por la columna que se elija en el encabezado.
+      </caption>
+
+      <ng-container matColumnDef="matricula">
+        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">Matrícula</th>
+        <td mat-cell *matCellDef="let alumno">{{ alumno.matricula }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="apellido">
+        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">Apellido</th>
+        <td mat-cell *matCellDef="let alumno">{{ alumno.apellido }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="nombre">
+        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">Nombre</th>
+        <td mat-cell *matCellDef="let alumno">{{ alumno.nombre }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="grupo">
+        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">Grupo</th>
+        <td mat-cell *matCellDef="let alumno">{{ alumno.grupo }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col" class="alumnos__email">
+          Correo
+        </th>
+        <td mat-cell *matCellDef="let alumno" class="alumnos__email">{{ alumno.email }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+    </table>
+
+    @if (vacio()) {
+      <p class="alumnos__aviso">
+        <mat-icon>groups</mat-icon>
+        Todavía no hay alumnos registrados.
+      </p>
+    }
+
+    <mat-paginator
+      [length]="total()"
+      [pageIndex]="consulta().page"
+      [pageSize]="consulta().size"
+      [pageSizeOptions]="tamanos"
+      (page)="paginar($event)"
+      showFirstLastButtons
+    />
+  </div>
+}
