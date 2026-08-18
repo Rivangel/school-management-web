@@ -9,6 +9,14 @@
       }
     </p>
   </div>
+
+  @if (puedeEditar()) {
+    <!-- `preserve` arrastra el `?page=&size=&sort=` para poder volver aquí mismo. -->
+    <a mat-flat-button routerLink="/alumnos/nuevo" queryParamsHandling="preserve">
+      <mat-icon>add</mat-icon>
+      Nuevo alumno
+    </a>
+  }
 </header>
 
 <!-- Altura fija para que la tabla no salte al aparecer y desaparecer la barra. -->
@@ -65,8 +73,24 @@
         <td mat-cell *matCellDef="let alumno" class="alumnos__email">{{ alumno.email }}</td>
       </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-      <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+      @if (puedeEditar()) {
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+          <td mat-cell *matCellDef="let alumno">
+            <a
+              mat-icon-button
+              [routerLink]="['/alumnos', alumno.id, 'editar']"
+              queryParamsHandling="preserve"
+              [attr.aria-label]="'Editar a ' + alumno.nombre + ' ' + alumno.apellido"
+            >
+              <mat-icon>edit</mat-icon>
+            </a>
+          </td>
+        </ng-container>
+      }
+
+      <tr mat-header-row *matHeaderRowDef="columnas()"></tr>
+      <tr mat-row *matRowDef="let fila; columns: columnas()"></tr>
     </table>
 
     @if (vacio()) {

@@ -6,8 +6,9 @@ import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/materi
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { ROLES_ESCRITURA } from '../../../core/navegacion';
 import {
   ConsultaPagina,
   TAMANOS_PAGINA,
@@ -16,16 +17,21 @@ import {
   sortDe,
 } from '../../../core/paginacion';
 import { AlumnoService } from '../../../core/services/alumno-service';
+import { AuthService } from '../../../core/services/auth-service';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
 import { paginadorEnEspanol } from '../../../shared/paginador-en-espanol';
 
 /**
- * Columnas de la tabla, en orden. Los identificadores son los nombres de las
+ * Columnas con datos, en orden. Los identificadores son los nombres de las
  * propiedades de la entidad porque son también los que acepta el `sort` de la
  * API: así la columna que se pulsa y el criterio que se manda no se pueden
  * desincronizar.
+ *
+ * La columna de acciones queda **fuera** de esta lista a propósito: esto es
+ * además lo que se acepta como `sort` en la URL, y `?sort=acciones,asc` sería un
+ * criterio que la API no conoce y devolvería como un 400.
  */
-const COLUMNAS = ['matricula', 'apellido', 'nombre', 'grupo', 'email'] as const;
+const ORDENABLES = ['matricula', 'apellido', 'nombre', 'grupo', 'email'] as const;
 
 /**
  * Listado paginado de alumnos.
@@ -44,6 +50,7 @@ const COLUMNAS = ['matricula', 'apellido', 'nombre', 'grupo', 'email'] as const;
     MatProgressBarModule,
     MatSortModule,
     MatTableModule,
+    RouterLink,
   ],
   // Se provee aquí y no en `app.config.ts` para no meter el paginador de
   // Material en el bundle inicial, que es el que carga el login.
@@ -53,13 +60,24 @@ const COLUMNAS = ['matricula', 'apellido', 'nombre', 'grupo', 'email'] as const;
 })
 export class ListaAlumnos {
   private readonly alumnos = inject(AlumnoService);
+  private readonly auth = inject(AuthService);
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  // Copias mutables: las entradas de `matHeaderRowDef` y `pageSizeOptions` piden
-  // `string[]` / `number[]`, y las constantes son tuplas `readonly`.
-  protected readonly columnas: string[] = [...COLUMNAS];
+  // Copia mutable: `pageSizeOptions` pide `number[]` y la constante es una tupla
+  // `readonly`.
   protected readonly tamanos: number[] = [...TAMANOS_PAGINA];
+
+  /**
+   * Ocultar no es proteger —la API rechaza igual el POST de un MAESTRO—, pero
+   * enseñar un botón que lleva a "acceso denegado" es peor que no enseñarlo. Lee
+   * la misma lista que el `rolGuard` de las rutas del formulario.
+   */
+  protected readonly puedeEditar = computed(() => this.auth.tieneAlgunRol(...ROLES_ESCRITURA));
+
+  protected readonly columnas = computed<string[]>(() =>
+    this.puedeEditar() ? [...ORDENABLES, 'acciones'] : [...ORDENABLES],
+  );
 
   private readonly query = toSignal(this.ruta.queryParamMap, {
     initialValue: this.ruta.snapshot.queryParamMap,
@@ -73,7 +91,7 @@ export class ListaAlumnos {
    * navegación ajena (abrir la ficha de un alumno y volver) dispararía otro GET
    * idéntico.
    */
-  protected readonly consulta = computed(() => leerConsultaDeUrl(this.query(), COLUMNAS), {
+  protected readonly consulta = computed(() => leerConsultaDeUrl(this.query(), ORDENABLES), {
     equal: (uno, otro) =>
       uno.page === otro.page && uno.size === otro.size && uno.sort === otro.sort,
   });

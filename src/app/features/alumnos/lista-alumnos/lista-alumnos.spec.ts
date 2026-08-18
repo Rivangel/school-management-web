@@ -9,7 +9,8 @@ import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { environment } from '../../../../environments/environment';
-import { Alumno, Pagina } from '../../../core/models';
+import { Alumno, Pagina, Rol } from '../../../core/models';
+import { sembrarSesion } from '../../../core/services/testing/sesion-falsa';
 import { ListaAlumnos } from './lista-alumnos';
 
 const URL = `${environment.apiUrl}/alumnos`;
@@ -41,8 +42,14 @@ describe('ListaAlumnos', () => {
   let http: HttpTestingController;
   let harness: RouterTestingHarness;
 
-  /** Navega a la pantalla y deja la primera petición **sin** responder. */
-  async function abrir(url = '/alumnos'): Promise<void> {
+  /**
+   * Navega a la pantalla y deja la primera petición **sin** responder.
+   *
+   * La sesión se siembra antes de montar nada: `AuthService` lee
+   * `localStorage` una sola vez, al construirse.
+   */
+  async function abrir(url = '/alumnos', rol: Rol = 'ADMIN'): Promise<void> {
+    sembrarSesion(rol);
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -98,6 +105,7 @@ describe('ListaAlumnos', () => {
   }
 
   beforeEach(() => {
+    localStorage.clear();
     TestBed.resetTestingModule();
   });
 
@@ -201,5 +209,40 @@ describe('ListaAlumnos', () => {
 
     await responder(pagina([alumno(1, 'López')]));
     expect(filas()).toHaveLength(1);
+  });
+
+  it('el ADMIN puede dar de alta y editar desde el listado', async () => {
+    await montar('/alumnos?page=2', pagina([alumno(1, 'López')], 137, 2));
+
+    const alta = harness.fixture.nativeElement.querySelector(
+      'a[href^="/alumnos/nuevo"]',
+    ) as HTMLAnchorElement;
+    const editar = harness.fixture.nativeElement.querySelector(
+      'a[aria-label^="Editar"]',
+    ) as HTMLAnchorElement;
+
+    // `preserve` mantiene la página en el enlace: al guardar se vuelve aquí.
+    expect(alta.getAttribute('href')).toBe('/alumnos/nuevo?page=2');
+    expect(editar.getAttribute('href')).toBe('/alumnos/1/editar?page=2');
+  });
+
+  it('el MAESTRO no ve las acciones de escritura', async () => {
+    // Ocultar no protege —la API le devuelve 403 igual—, pero un botón que sólo
+    // lleva a "acceso denegado" sobra.
+    await abrir('/alumnos', 'MAESTRO');
+    await responder(pagina([alumno(1, 'López')]));
+
+    expect(texto()).not.toContain('Nuevo alumno');
+    expect(harness.fixture.nativeElement.querySelector('a[aria-label^="Editar"]')).toBeNull();
+  });
+
+  it('ignora un orden por la columna de acciones', async () => {
+    // La columna existe en la tabla pero no en la entidad: mandarla como `sort`
+    // haría que la API respondiera 400 y la pantalla enseñara un error.
+    await abrir('/alumnos?sort=acciones,asc');
+
+    const pendiente = peticion();
+    expect(pendiente.request.params.has('sort')).toBe(false);
+    await responder(pagina([alumno(1, 'López')]), pendiente);
   });
 });
