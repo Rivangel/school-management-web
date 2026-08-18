@@ -37,6 +37,10 @@
         <!-- Mientras llega la ficha los campos están vacíos: dejar escribir en
              ellos sólo consigue que la respuesta borre lo tecleado. -->
         <fieldset class="alumno-form__campos" [disabled]="cargando()">
+          <!-- El título de la pantalla ya lo dice, pero un `fieldset` sin
+               `legend` deja el grupo de campos sin nombre accesible. -->
+          <legend class="alumno-form__legend">Datos del alumno</legend>
+
           <mat-form-field appearance="outline">
             <mat-label>Nombre</mat-label>
             <input matInput formControlName="nombre" autocomplete="given-name" maxlength="100" />

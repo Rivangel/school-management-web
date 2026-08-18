@@ -125,6 +125,40 @@ su `value()` **lanza** cuando el recurso está en error, así que se lee a trav�
 `hasValue()` — si no, un 500 de la API revienta la detección de cambios en vez de
 enseñar el aviso con el botón de reintentar.
 
+## Formularios
+
+`features/alumnos/formulario-alumno/` fija el patrón de alta y edición que repiten los
+demás módulos (Días 16–24):
+
+- **Es una ruta, no un diálogo.** `/alumnos/nuevo` y `/alumnos/7/editar` se comparten,
+  se recargan y se cierran con el botón "atrás" como cualquier otra pantalla, igual que
+  el listado. Los enlaces llevan `queryParamsHandling="preserve"` para arrastrar el
+  `?page=&size=&sort=` del listado: al guardar se vuelve **a la página desde la que se
+  entró**, sin guardar estado en ningún lado.
+- **Un componente para los dos modos.** Sin `id` en la ruta es un alta y el recurso ni
+  llega a pedir nada. Un id que no es un número (`/alumnos/abc/editar`) se distingue del
+  alta a propósito: si no, el formulario abriría vacío y el primer guardado crearía un
+  alumno que nadie pidió.
+- **Las validaciones espejan el DTO** (`AlumnoRequest`) campo a campo. `textoRequerido`
+  sustituye a `Validators.required` porque este da por bueno un campo de sólo espacios,
+  que el `@NotBlank` de la API rechaza después del viaje.
+- **Lo que objeta la API se marca en su campo** (`core/services/errores-formulario.ts`).
+  Hay dos formas de error y la diferencia importa: los 400 de validación traen el mapa
+  `detalles` (campo → mensaje) y se reparten solos; los 400 de negocio ("Ya existe un
+  alumno con la matrícula A-001") llegan como una frase suelta y se colocan por pistas
+  sobre el texto. Lo que ninguna pista reconoce **se enseña al pie** en vez de
+  descartarse, así que reescribir un mensaje en la API degrada el error a aviso general
+  en lugar de hacerlo desaparecer.
+- Ese error se borra solo al editar el campo: cambiar el valor recalcula los validadores
+  del control y reemplaza su mapa de errores. De eso depende que el formulario no se
+  quede bloqueado por una objeción ya corregida.
+
+Las escrituras son **sólo del ADMIN** (`ROLES_ESCRITURA` en `core/navegacion.ts`, espejo
+de `SecurityConfig`). El listado oculta el botón de alta y la columna de acciones para el
+MAESTRO y las rutas del formulario leen esa misma lista en su `rolGuard`: ocultar no
+protege —la API responde 403 igual—, pero un botón que sólo lleva a "acceso denegado"
+sobra.
+
 ## Decisiones
 
 - **Standalone y zoneless.** El scaffold no usa NgModules ni `zone.js`; la detección de
