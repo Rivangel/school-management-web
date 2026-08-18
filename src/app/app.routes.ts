@@ -3,9 +3,13 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth-guard';
 import { invitadoGuard } from './core/guards/invitado-guard';
 import { rolGuard } from './core/guards/rol-guard';
-import { rolesDe } from './core/navegacion';
+import { ROLES_ESCRITURA, rolesDe } from './core/navegacion';
 
 const titulo = (seccion: string) => `${seccion} · School Management`;
+
+/** Alta y edición comparten componente: el modo lo decide el `id` de la ruta. */
+const formularioDeAlumno = () =>
+  import('./features/alumnos/formulario-alumno/formulario-alumno').then((m) => m.FormularioAlumno);
 
 /** Pantalla provisional de las secciones que aún no existen (ver `Proximamente`). */
 const proximamente = () =>
@@ -47,6 +51,21 @@ export const routes: Routes = [
         canActivate: [rolGuard(...rolesDe('/alumnos'))],
         loadComponent: () =>
           import('./features/alumnos/lista-alumnos/lista-alumnos').then((m) => m.ListaAlumnos),
+      },
+      {
+        // Las escrituras son sólo del ADMIN, así que estas dos rutas no heredan
+        // los roles de la sección: los toman de `ROLES_ESCRITURA`, la misma
+        // lista que decide si el listado enseña los botones que traen aquí.
+        path: 'alumnos/nuevo',
+        title: titulo('Nuevo alumno'),
+        canActivate: [rolGuard(...ROLES_ESCRITURA)],
+        loadComponent: formularioDeAlumno,
+      },
+      {
+        path: 'alumnos/:id/editar',
+        title: titulo('Editar alumno'),
+        canActivate: [rolGuard(...ROLES_ESCRITURA)],
+        loadComponent: formularioDeAlumno,
       },
       {
         path: 'maestros',
