@@ -30,6 +30,17 @@ export const MENU: readonly ElementoMenu[] = [
   { ruta: '/reportes', etiqueta: 'Reportes', icono: 'description', roles: TODOS },
 ];
 
+/**
+ * Quién puede crear, editar y borrar en las secciones de gestión.
+ *
+ * Espeja `SecurityConfig`: la API abre el `GET` de alumnos, maestros y materias
+ * al MAESTRO, pero reserva las escrituras al ADMIN. Vive aquí, junto a `MENU`,
+ * por la misma razón que los roles de las secciones — el botón que ofrece la
+ * acción y el guard que protege la ruta tienen que leer lo mismo, o el usuario
+ * acaba pulsando un "Nuevo alumno" que lo lleva a "acceso denegado".
+ */
+export const ROLES_ESCRITURA: readonly Rol[] = ['ADMIN'];
+
 /** Entradas visibles para un rol. Sin sesión no se enseña ninguna. */
 export function menuPara(rol: Rol | null): readonly ElementoMenu[] {
   return rol === null ? [] : MENU.filter((elemento) => elemento.roles.includes(rol));

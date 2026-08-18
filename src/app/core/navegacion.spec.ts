@@ -1,4 +1,4 @@
-import { MENU, menuPara, rolesDe } from './navegacion';
+import { MENU, ROLES_ESCRITURA, menuPara, rolesDe } from './navegacion';
 
 describe('menuPara', () => {
   function etiquetas(rol: Parameters<typeof menuPara>[0]): string[] {
@@ -39,5 +39,21 @@ describe('rolesDe', () => {
 
   it('protesta ante una ruta que no está en el menú', () => {
     expect(() => rolesDe('/inventada')).toThrowError(/no está en el menú/);
+  });
+});
+
+describe('ROLES_ESCRITURA', () => {
+  it('reserva las escrituras al ADMIN', () => {
+    // Espejo de `SecurityConfig`: el MAESTRO consulta alumnos pero recibe 403 al
+    // crear, actualizar o borrar.
+    expect([...ROLES_ESCRITURA]).toEqual(['ADMIN']);
+  });
+
+  it('sólo incluye roles que ven la sección de alumnos', () => {
+    // Un rol que pudiera escribir sin tener la sección en el menú llegaría al
+    // formulario sin poder volver al listado.
+    for (const rol of ROLES_ESCRITURA) {
+      expect(rolesDe('/alumnos')).toContain(rol);
+    }
   });
 });
