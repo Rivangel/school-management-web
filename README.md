@@ -159,6 +159,50 @@ MAESTRO y las rutas del formulario leen esa misma lista en su `rolGuard`: oculta
 protege —la API responde 403 igual—, pero un botón que sólo lleva a "acceso denegado"
 sobra.
 
+## Ficha y borrado
+
+`/alumnos/7` enseña la ficha completa y es **desde donde se borra**, no desde una fila
+del listado: decidir sobre alguien de quien sólo se ven cinco columnas es fácil de
+hacer mal. La confirmación (`shared/components/confirmar/`) nombra a quien se va a
+eliminar y su matrícula, y su botón dice la acción ("Eliminar") en vez de "Aceptar", que
+obliga a releer el mensaje para saber qué se está aceptando. Escapar, pulsar el fondo o
+cancelar cierran sin confirmar.
+
+El listado corrige por su cuenta una página que se quedó **fuera de rango**: al volver
+de un borrado la página que se miraba puede haber dejado de existir, y un `?page=99`
+escrito a mano dejaría la tabla en blanco sin explicar nada. En ambos casos se cae a la
+última página con datos.
+
+## Errores y avisos
+
+`errorInterceptor` (`core/interceptors/`) es la red de seguridad, y hace dos cosas que
+conviene no mezclar:
+
+| Caso | Qué pasa |
+|---|---|
+| 401 con sesión abierta | El token venció: se cierra la sesión y se va al login con `?returnUrl=` |
+| 401 en `/auth/login` | Nada — ahí significa "credenciales incorrectas" y lo explica el formulario |
+| Cualquier otro error | Aviso flotante con el mensaje de la API |
+
+Las peticiones cuyo error **pinta la propia pantalla** se marcan con `sinAvisoGlobal()`:
+el listado y la ficha tienen su aviso con botón de reintentar, y el formulario coloca el
+error en el campo que lo provocó. Sin eso el usuario vería el mismo fallo dos veces. El
+borrado es la excepción a propósito — no tiene dónde enseñarlo, así que lo cuenta el
+interceptor. El valor de que el aviso sea el comportamiento **por defecto** está en las
+acciones que vengan después: una que nadie se acuerde de manejar avisa igual en vez de
+fallar en silencio.
+
+Los avisos salen por `Avisos` (`core/services/avisos.ts`), que importa `MatSnackBar`
+**dinámicamente**. Al servicio lo alcanza el interceptor, que se registra en
+`app.config.ts`, así que un `import` normal mete el aviso y el overlay del CDK en el
+grafo inicial: son 158 kB extra en la primera carga, la del login, que no enseña
+ninguno.
+
+> Ojo con medir eso: el presupuesto de 500 kB **no** lo detectó. esbuild movió el código
+> compartido a un chunk que marca como *lazy* pero que `main` importa de forma estática,
+> de modo que el "Initial total" que informa `ng build` bajó mientras la descarga real
+> crecía. Lo que hay que mirar es el cierre estático de `main`, no ese número.
+
 ## Decisiones
 
 - **Standalone y zoneless.** El scaffold no usa NgModules ni `zone.js`; la detección de

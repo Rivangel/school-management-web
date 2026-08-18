@@ -3,7 +3,9 @@
 Lo que existe **una sola vez** en toda la aplicación y no se dibuja en pantalla:
 
 - `services/` — servicios de dominio que hablan con la API (`AuthService`, `AlumnoService`, …).
-- `interceptors/` — interceptores funcionales de `HttpClient` (JWT, manejo de errores).
+- `interceptors/` — interceptores funcionales de `HttpClient`: `authInterceptor` (JWT) y
+  `errorInterceptor`, que cierra la sesión ante un 401 y avisa del resto de errores salvo
+  que la petición venga marcada con `sinAvisoGlobal()`.
 - `guards/` — guards funcionales de ruta (`authGuard`, `roleGuard`).
 - `models/` — interfaces TypeScript espejo de los DTOs de la API.
 - `paginacion.ts` — traducción entre los query params de la URL (`page`, `size`, `sort`)
@@ -17,6 +19,8 @@ Lo que existe **una sola vez** en toda la aplicación y no se dibuja en pantalla
   (`textoRequerido`: un campo de sólo espacios está vacío para un `@NotBlank`).
 - `services/errores-formulario.ts` — reparte un error de la API entre los campos del
   formulario y devuelve lo que no supo colocar, para enseñarlo como aviso general.
+- `services/avisos.ts` — los mensajes flotantes de éxito y error, en un solo sitio.
+  Carga `MatSnackBar` con un `import` dinámico para no meterlo en el grafo inicial.
 
 Regla: `core/` no importa de `features/`. Si algo aquí necesita saber de un feature,
 la dependencia está al revés.
