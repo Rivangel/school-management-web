@@ -1,0 +1,80 @@
+<header class="ficha__cabecera">
+  <h1>Ficha del alumno</h1>
+  <button mat-stroked-button type="button" (click)="volver()">
+    <mat-icon>arrow_back</mat-icon>
+    Volver al listado
+  </button>
+</header>
+
+@if (idInvalido()) {
+  <div class="ficha__aviso" role="alert">
+    <mat-icon>link_off</mat-icon>
+    <p>La dirección no apunta a ningún alumno.</p>
+  </div>
+} @else if (error(); as mensaje) {
+  <div class="ficha__aviso" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <p>{{ mensaje }}</p>
+    <button mat-flat-button type="button" (click)="reintentar()">Reintentar</button>
+  </div>
+} @else {
+  <mat-card appearance="outlined" class="ficha__tarjeta">
+    <!-- Altura fija para que la tarjeta no salte al aparecer la barra. -->
+    <div class="ficha__barra">
+      @if (cargando() || borrando()) {
+        <mat-progress-bar mode="indeterminate" aria-label="Cargando la ficha" />
+      }
+    </div>
+
+    @if (alumno(); as alumno) {
+      <mat-card-header>
+        <mat-card-title>{{ alumno.nombre }} {{ alumno.apellido }}</mat-card-title>
+        <mat-card-subtitle>Matrícula {{ alumno.matricula }}</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <dl class="ficha__datos">
+          <dt>Nombre</dt>
+          <dd>{{ alumno.nombre }}</dd>
+
+          <dt>Apellido</dt>
+          <dd>{{ alumno.apellido }}</dd>
+
+          <dt>Matrícula</dt>
+          <dd>{{ alumno.matricula }}</dd>
+
+          <dt>Grupo</dt>
+          <dd>{{ alumno.grupo }}</dd>
+
+          <dt>Correo</dt>
+          <dd>
+            <a href="mailto:{{ alumno.email }}">{{ alumno.email }}</a>
+          </dd>
+        </dl>
+      </mat-card-content>
+
+      @if (puedeEditar()) {
+        <mat-card-actions align="end">
+          <button
+            mat-button
+            type="button"
+            class="ficha__eliminar"
+            [disabled]="borrando()"
+            (click)="eliminar()"
+          >
+            <mat-icon>delete</mat-icon>
+            Eliminar
+          </button>
+          <a
+            mat-flat-button
+            [routerLink]="['/alumnos', alumno.id, 'editar']"
+            queryParamsHandling="preserve"
+          >
+            <mat-icon>edit</mat-icon>
+            Editar
+          </a>
+        </mat-card-actions>
+      }
+    }
+  </mat-card>
+}

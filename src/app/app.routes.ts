@@ -62,6 +62,15 @@ export const routes: Routes = [
         loadComponent: formularioDeAlumno,
       },
       {
+        // Después de `alumnos/nuevo`: el router prueba en orden y `:id` se
+        // tragaría "nuevo" como si fuera un identificador.
+        path: 'alumnos/:id',
+        title: titulo('Ficha del alumno'),
+        canActivate: [rolGuard(...rolesDe('/alumnos'))],
+        loadComponent: () =>
+          import('./features/alumnos/detalle-alumno/detalle-alumno').then((m) => m.DetalleAlumno),
+      },
+      {
         path: 'alumnos/:id/editar',
         title: titulo('Editar alumno'),
         canActivate: [rolGuard(...ROLES_ESCRITURA)],
