@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, effect, inject } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -75,9 +75,8 @@ export class ListaAlumnos {
    */
   protected readonly puedeEditar = computed(() => this.auth.tieneAlgunRol(...ROLES_ESCRITURA));
 
-  protected readonly columnas = computed<string[]>(() =>
-    this.puedeEditar() ? [...ORDENABLES, 'acciones'] : [...ORDENABLES],
-  );
+  /** La columna de acciones está siempre: consultar la ficha lo puede todo el mundo. */
+  protected readonly columnas: string[] = [...ORDENABLES, 'acciones'];
 
   private readonly query = toSignal(this.ruta.queryParamMap, {
     initialValue: this.ruta.snapshot.queryParamMap,
@@ -130,6 +129,24 @@ export class ListaAlumnos {
    * tabla sin marcar sugeriría un orden arbitrario.
    */
   protected readonly orden = computed(() => partirSort(this.consulta().sort ?? 'apellido,asc'));
+
+  constructor() {
+    // Una página vacía por encima de la última suele venir de un borrado: se
+    // vuelve del detalle a `?page=4` y ya sólo quedan cuatro páginas. Corregirlo
+    // aquí cubre además el `?page=99` escrito a mano, que si no deja la tabla en
+    // blanco sin explicar nada.
+    effect(() => {
+      const pagina = this.resultado();
+      if (pagina === undefined || pagina.content.length > 0) {
+        return;
+      }
+
+      const ultima = Math.max(pagina.totalPages - 1, 0);
+      if (pagina.page > ultima) {
+        this.irA({ page: ultima });
+      }
+    });
+  }
 
   protected paginar(evento: PageEvent): void {
     this.irA({ page: evento.pageIndex, size: evento.pageSize });

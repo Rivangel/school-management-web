@@ -73,10 +73,18 @@
         <td mat-cell *matCellDef="let alumno" class="alumnos__email">{{ alumno.email }}</td>
       </ng-container>
 
-      @if (puedeEditar()) {
-        <ng-container matColumnDef="acciones">
-          <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
-          <td mat-cell *matCellDef="let alumno">
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+        <td mat-cell *matCellDef="let alumno">
+          <a
+            mat-icon-button
+            [routerLink]="['/alumnos', alumno.id]"
+            queryParamsHandling="preserve"
+            [attr.aria-label]="'Ver la ficha de ' + alumno.nombre + ' ' + alumno.apellido"
+          >
+            <mat-icon>visibility</mat-icon>
+          </a>
+          @if (puedeEditar()) {
             <a
               mat-icon-button
               [routerLink]="['/alumnos', alumno.id, 'editar']"
@@ -85,12 +93,12 @@
             >
               <mat-icon>edit</mat-icon>
             </a>
-          </td>
-        </ng-container>
-      }
+          }
+        </td>
+      </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="columnas()"></tr>
-      <tr mat-row *matRowDef="let fila; columns: columnas()"></tr>
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
     </table>
 
     @if (vacio()) {

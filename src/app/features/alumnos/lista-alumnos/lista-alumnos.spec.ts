@@ -226,6 +226,40 @@ describe('ListaAlumnos', () => {
     expect(editar.getAttribute('href')).toBe('/alumnos/1/editar?page=2');
   });
 
+  it('cualquiera que vea el listado puede abrir la ficha', async () => {
+    await abrir('/alumnos', 'MAESTRO');
+    await responder(pagina([alumno(1, 'López')]));
+
+    const ficha = harness.fixture.nativeElement.querySelector(
+      'a[aria-label^="Ver la ficha"]',
+    ) as HTMLAnchorElement;
+
+    expect(ficha.getAttribute('href')).toBe('/alumnos/1');
+  });
+
+  it('una página que se quedó fuera de rango cae en la última con datos', async () => {
+    // Pasa al volver del detalle después de borrar —la página que se miraba ya
+    // no existe— y con un `?page=99` escrito a mano. Sin esto la tabla se queda
+    // en blanco sin explicar nada.
+    await abrir('/alumnos?page=9');
+    // Sin `responder`: la corrección encadena otra petición, y esperar la
+    // estabilidad con una en vuelo cuelga el test hasta que expira.
+    peticion().flush({ ...pagina([], 40, 9), totalPages: 2 });
+    await asentar();
+
+    expect(TestBed.inject(Router).url).toContain('page=1');
+    const pendiente = peticion();
+    expect(pendiente.request.params.get('page')).toBe('1');
+    await responder(pagina([alumno(1, 'López')], 40, 1), pendiente);
+  });
+
+  it('no corrige la página cuando sencillamente no hay alumnos', async () => {
+    await montar('/alumnos', { ...pagina([]), totalPages: 0 });
+
+    expect(TestBed.inject(Router).url).toBe('/alumnos');
+    expect(texto()).toContain('Todavía no hay alumnos registrados');
+  });
+
   it('el MAESTRO no ve las acciones de escritura', async () => {
     // Ocultar no protege —la API le devuelve 403 igual—, pero un botón que sólo
     // lleva a "acceso denegado" sobra.
