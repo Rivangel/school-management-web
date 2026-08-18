@@ -7,11 +7,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { AlumnoRequest } from '../../../core/models';
 import { AlumnoService } from '../../../core/services/alumno-service';
+import { Avisos } from '../../../core/services/avisos';
 import { PistaDeCampo, aplicarErroresDeApi } from '../../../core/services/errores-formulario';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
 import { textoRequerido } from '../../../core/validadores';
@@ -59,7 +59,7 @@ export class FormularioAlumno {
   private readonly alumnos = inject(AlumnoService);
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly aviso = inject(MatSnackBar);
+  private readonly avisos = inject(Avisos);
 
   /** Los máximos son los `@Size` de `AlumnoRequest`; el mínimo, su `@NotBlank`. */
   protected readonly formulario = inject(FormBuilder).nonNullable.group({
@@ -144,12 +144,10 @@ export class FormularioAlumno {
     peticion.subscribe({
       next: (alumno) => {
         this.enviando.set(false);
-        this.aviso.open(
+        this.avisos.exito(
           id === undefined
             ? `Alumno ${alumno.nombre} ${alumno.apellido} registrado.`
             : `Se guardaron los cambios de ${alumno.nombre} ${alumno.apellido}.`,
-          'Cerrar',
-          { duration: 5000 },
         );
         this.volver();
       },

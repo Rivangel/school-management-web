@@ -104,4 +104,15 @@ describe('AlumnoService', () => {
     expect(peticion.request.body).toEqual(DATOS);
     peticion.flush({ ...ALUMNO, id: 7 });
   });
+
+  it('elimina con DELETE al recurso', () => {
+    let terminado = false;
+    servicio.eliminar(7).subscribe(() => (terminado = true));
+
+    const peticion = http.expectOne(`${URL}/7`);
+    expect(peticion.request.method).toBe('DELETE');
+    peticion.flush(null, { status: 204, statusText: 'No Content' });
+
+    expect(terminado).toBe(true);
+  });
 });

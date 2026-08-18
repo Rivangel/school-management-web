@@ -199,11 +199,16 @@ describe('FormularioAlumno', () => {
       await abrir('/alumnos/nuevo');
       rellenar();
       await enviar();
-      guardado().flush(ALUMNO, { status: 201, statusText: 'Created' });
+      // Nombre distinto al de los demás tests: el overlay del aviso cuelga del
+      // `body` y sobrevive al fixture, así que uno de otro test lo daría por
+      // bueno sin haber comprobado nada.
+      guardado().flush(
+        { ...ALUMNO, nombre: 'Beatriz', apellido: 'Núñez' },
+        { status: 201, statusText: 'Created' },
+      );
       await asentar();
 
-      // El aviso vive en un overlay, fuera del elemento del componente.
-      expect(document.body.textContent).toContain('Alumno Ana López registrado.');
+      expect(document.body.textContent).toContain('Alumno Beatriz Núñez registrado.');
     });
   });
 

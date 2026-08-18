@@ -3,6 +3,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { sinAvisoGlobal } from '../interceptors/error-interceptor';
 import { AuthResponse, LoginRequest, RegisterRequest, Rol, Sesion, esRol } from '../models';
 import { estaExpirado } from './jwt';
 
@@ -32,16 +33,21 @@ export class AuthService {
     return this.sesionActual()?.token ?? null;
   }
 
+  /** El 401 lo traduce el propio login ("correo o contraseña incorrectos"). */
   login(credenciales: LoginRequest): Observable<AuthResponse> {
     return this.http
-      .post<AuthResponse>(`${environment.apiUrl}/auth/login`, credenciales)
+      .post<AuthResponse>(`${environment.apiUrl}/auth/login`, credenciales, {
+        context: sinAvisoGlobal(),
+      })
       .pipe(tap((respuesta) => this.abrirSesion(respuesta)));
   }
 
   /** La API responde 201 y devuelve ya un token, así que registrarse deja al usuario dentro. */
   registrar(datos: RegisterRequest): Observable<AuthResponse> {
     return this.http
-      .post<AuthResponse>(`${environment.apiUrl}/auth/register`, datos)
+      .post<AuthResponse>(`${environment.apiUrl}/auth/register`, datos, {
+        context: sinAvisoGlobal(),
+      })
       .pipe(tap((respuesta) => this.abrirSesion(respuesta)));
   }
 

@@ -37,3 +37,16 @@ body {
   height: 100%;
 }
 /* You can add global styles to this file, and also import other style files */
+
+// Los avisos flotantes viven en un overlay colgado del `body`, fuera del ámbito
+// de estilos de cualquier componente: sus colores tienen que declararse aquí.
+.aviso--exito {
+  --mat-snack-bar-container-color: var(--mat-sys-inverse-surface);
+  --mat-snack-bar-supporting-text-color: var(--mat-sys-inverse-on-surface);
+}
+
+.aviso--error {
+  --mat-snack-bar-container-color: var(--mat-sys-error-container);
+  --mat-snack-bar-supporting-text-color: var(--mat-sys-on-error-container);
+  --mat-snack-bar-button-color: var(--mat-sys-on-error-container);
+}
