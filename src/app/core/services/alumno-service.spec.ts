@@ -3,7 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { environment } from '../../../environments/environment';
-import { Alumno, Pagina } from '../models';
+import { Alumno, AlumnoRequest, Pagina } from '../models';
 import { AlumnoService } from './alumno-service';
 
 const URL = `${environment.apiUrl}/alumnos`;
@@ -25,6 +25,16 @@ const PAGINA: Pagina<Alumno> = {
   totalPages: 1,
   first: true,
   last: true,
+};
+
+const ALUMNO: Alumno = PAGINA.content[0];
+
+const DATOS: AlumnoRequest = {
+  nombre: 'Ana',
+  apellido: 'López',
+  matricula: 'A-001',
+  email: 'ana@escuela.com',
+  grupo: '1A',
 };
 
 describe('AlumnoService', () => {
@@ -64,5 +74,34 @@ describe('AlumnoService', () => {
     expect(peticion.request.params.get('size')).toBe('50');
     expect(peticion.request.params.get('sort')).toBe('apellido,desc');
     peticion.flush(PAGINA);
+  });
+
+  it('pide un alumno por id', () => {
+    let recibido: Alumno | undefined;
+    servicio.obtenerPorId(7).subscribe((alumno) => (recibido = alumno));
+
+    const peticion = http.expectOne(`${URL}/7`);
+    expect(peticion.request.method).toBe('GET');
+    peticion.flush(ALUMNO);
+
+    expect(recibido).toEqual(ALUMNO);
+  });
+
+  it('crea un alumno con POST a la colección', () => {
+    servicio.crear(DATOS).subscribe();
+
+    const peticion = http.expectOne(URL);
+    expect(peticion.request.method).toBe('POST');
+    expect(peticion.request.body).toEqual(DATOS);
+    peticion.flush(ALUMNO, { status: 201, statusText: 'Created' });
+  });
+
+  it('actualiza con PUT al recurso, no a la colección', () => {
+    servicio.actualizar(7, DATOS).subscribe();
+
+    const peticion = http.expectOne(`${URL}/7`);
+    expect(peticion.request.method).toBe('PUT');
+    expect(peticion.request.body).toEqual(DATOS);
+    peticion.flush({ ...ALUMNO, id: 7 });
   });
 });
