@@ -102,8 +102,19 @@ navegar sólo cambia el contenido — la barra y el menú no se vuelven a constr
 ## Listados paginados
 
 `GET /api/alumnos`, `/maestros` y `/materias` devuelven una página (`content`, `page`,
-`size`, `totalElements`, …), no un arreglo. El listado de alumnos (`features/alumnos/`)
-fija el patrón que reutilizan los demás:
+`size`, `totalElements`, …), no un arreglo. Todas las pantallas de listado
+(`features/alumnos/`, `features/maestros/`, …) comparten el mismo estado, que vive en
+**`shared/listado-paginado.ts`**; el componente pone las columnas, la cabecera y las
+acciones, que es donde los listados se diferencian de verdad:
+
+```ts
+protected readonly listado = listadoPaginado({
+  ordenables: ORDENABLES,
+  ordenPorDefecto: 'apellido,asc',
+  cargar: (consulta) => this.maestros.listar(consulta),
+  mensajeDeFallo: 'No se pudo cargar el listado de maestros.',
+});
+```
 
 - **Paginar y ordenar es cosa del servidor.** La tabla dibuja la página que llega y nada
   más — por eso no usa `MatTableDataSource`, que sólo sabe rebanar el arreglo que ya
@@ -112,18 +123,27 @@ fija el patrón que reutilizan los demás:
 - **El estado vive en la URL** (`?page=&size=&sort=`), no en un signal del componente:
   recargar, compartir el enlace o volver con el botón "atrás" caen en la misma página y
   el mismo orden, y al volver de la ficha de un alumno el listado se reconstruye solo.
-- **Lo que llega por la URL se valida** (`core/paginacion.ts`): la barra de direcciones
-  es texto que cualquiera edita, y un `page=-1`, un `size=5000` o un `sort` por una
-  propiedad que la API no conoce convertirían un enlace mal escrito en un 400.
+- **Lo que llega por la URL se valida** (`core/paginacion.ts`) contra `ordenables`, que es
+  también la lista de columnas que se pueden pulsar: la barra de direcciones es texto que
+  cualquiera edita, y un `page=-1`, un `size=5000` o un `sort` por una propiedad que la
+  API no conoce convertirían un enlace mal escrito en un 400. Ojo al llegar de otra
+  sección: `?sort=grupo,asc` es válido en alumnos y no existe en maestros.
 - **Cambiar el orden vuelve a la página 0.** Los registros se recolocan, así que seguir
   en la página 7 no enseña "lo mismo ordenado" y puede dejar la pantalla vacía.
+- **Una página fuera de rango cae sola en la última con datos.** Pasa al volver de una
+  ficha después de borrar y con un `?page=99` escrito a mano; sin esto la tabla se queda
+  en blanco sin explicar nada.
 - Sin `sort` propio manda el de la API (apellido y nombre ascendente), y el encabezado lo
-  marca: una tabla sin marcar sugeriría un orden arbitrario.
+  marca con `ordenPorDefecto`: una tabla sin marcar sugeriría un orden arbitrario.
 
 Los datos se piden con `rxResource`, que da `isLoading()` y `error()` como signals. Ojo:
 su `value()` **lanza** cuando el recurso está en error, así que se lee a través de
 `hasValue()` — si no, un 500 de la API revienta la detección de cambios en vez de
 enseñar el aviso con el botón de reintentar.
+
+El aspecto (cabecera, caja de la tabla, aviso vacío y de error) va en
+`shared/estilos/_listado.scss` y cada pantalla lo trae con `@use`, en vez de vivir en
+`styles.scss`: la hoja global la carga el login, que no dibuja ninguna tabla.
 
 ## Formularios
 
@@ -211,6 +231,10 @@ ninguno.
   Vitest; el API de `TestBed` es el mismo.
 - **Material 3 con el tema azure/blue** vía `mat.theme()`, que define variables CSS
   (`--mat-sys-*`) — eso deja el tema oscuro del Día 34 como un cambio de `color-scheme`.
+- **Lo repetido se extrae al segundo caso, no al primero.** El listado de alumnos se
+  escribió entero en su pantalla; al llegar el de maestros quedó claro qué era del
+  dominio y qué no, y sólo entonces se sacó a `shared/listado-paginado.ts`. Adivinarlo
+  con un solo caso delante suele producir la abstracción equivocada.
 
 ## Usuarios de prueba
 
