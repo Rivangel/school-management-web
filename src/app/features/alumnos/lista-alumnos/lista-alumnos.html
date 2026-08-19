@@ -1,11 +1,11 @@
-<header class="alumnos__cabecera">
+<header class="listado__cabecera">
   <div>
     <h1>Alumnos</h1>
     <p>
-      @if (total() === 1) {
+      @if (listado.total() === 1) {
         1 alumno registrado.
       } @else {
-        {{ total() }} alumnos registrados.
+        {{ listado.total() }} alumnos registrados.
       }
     </p>
   </div>
@@ -20,29 +20,29 @@
 </header>
 
 <!-- Altura fija para que la tabla no salte al aparecer y desaparecer la barra. -->
-<div class="alumnos__barra">
-  @if (cargando()) {
+<div class="listado__barra">
+  @if (listado.cargando()) {
     <mat-progress-bar mode="indeterminate" aria-label="Cargando alumnos" />
   }
 </div>
 
-@if (error(); as mensaje) {
-  <div class="alumnos__aviso alumnos__aviso--error" role="alert">
+@if (listado.error(); as mensaje) {
+  <div class="listado__aviso listado__aviso--error" role="alert">
     <mat-icon>error_outline</mat-icon>
     <p>{{ mensaje }}</p>
-    <button mat-flat-button type="button" (click)="reintentar()">Reintentar</button>
+    <button mat-flat-button type="button" (click)="listado.reintentar()">Reintentar</button>
   </div>
 } @else {
-  <div class="alumnos__tabla">
+  <div class="listado__tabla">
     <table
       mat-table
-      [dataSource]="filas()"
+      [dataSource]="listado.filas()"
       matSort
-      [matSortActive]="orden().activo"
-      [matSortDirection]="orden().direccion"
-      (matSortChange)="ordenar($event)"
+      [matSortActive]="listado.orden().activo"
+      [matSortDirection]="listado.orden().direccion"
+      (matSortChange)="listado.ordenar($event)"
     >
-      <caption class="alumnos__caption">
+      <caption class="listado__caption">
         Listado de alumnos, ordenado por la columna que se elija en el encabezado.
       </caption>
 
@@ -101,19 +101,19 @@
       <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
     </table>
 
-    @if (vacio()) {
-      <p class="alumnos__aviso">
+    @if (listado.vacio()) {
+      <p class="listado__aviso">
         <mat-icon>groups</mat-icon>
         Todavía no hay alumnos registrados.
       </p>
     }
 
     <mat-paginator
-      [length]="total()"
-      [pageIndex]="consulta().page"
-      [pageSize]="consulta().size"
+      [length]="listado.total()"
+      [pageIndex]="listado.consulta().page"
+      [pageSize]="listado.consulta().size"
       [pageSizeOptions]="tamanos"
-      (page)="paginar($event)"
+      (page)="listado.paginar($event)"
       showFirstLastButtons
     />
   </div>
