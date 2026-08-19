@@ -1,0 +1,9 @@
+@use '../../../shared/estilos/listado';
+
+// El correo es el dato más largo y el menos consultado de un vistazo: en móvil
+// se esconde antes que obligar a desplazar la tabla entera.
+@media (max-width: 599.98px) {
+  .maestros__email {
+    display: none;
+  }
+}
