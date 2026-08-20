@@ -103,9 +103,9 @@ navegar sólo cambia el contenido — la barra y el menú no se vuelven a constr
 
 `GET /api/alumnos`, `/maestros` y `/materias` devuelven una página (`content`, `page`,
 `size`, `totalElements`, …), no un arreglo. Todas las pantallas de listado
-(`features/alumnos/`, `features/maestros/`, …) comparten el mismo estado, que vive en
-**`shared/listado-paginado.ts`**; el componente pone las columnas, la cabecera y las
-acciones, que es donde los listados se diferencian de verdad:
+(`features/alumnos/`, `features/maestros/`, `features/materias/`) comparten el mismo
+estado, que vive en **`shared/listado-paginado.ts`**; el componente pone las columnas, la
+cabecera y las acciones, que es donde los listados se diferencian de verdad:
 
 ```ts
 protected readonly listado = listadoPaginado({
@@ -135,6 +135,19 @@ protected readonly listado = listadoPaginado({
   en blanco sin explicar nada.
 - Sin `sort` propio manda el de la API (apellido y nombre ascendente), y el encabezado lo
   marca con `ordenPorDefecto`: una tabla sin marcar sugeriría un orden arbitrario.
+- **Los filtros son del servidor y viven en la URL como todo lo demás.** Materias filtra
+  por maestro (`?maestroId=2`, `leerFiltros` en las opciones del listado) y ese parámetro
+  viaja a la API: quedarse con las filas de un maestro **en el cliente** sólo alcanzaría
+  a las 20 que tiene la página en memoria, y el paginador seguiría contando todas. Como
+  el `sort`, se valida antes de viajar. Cambiar el filtro vuelve a la página 0 — al
+  filtrar quedan menos registros y la página que se miraba puede no existir.
+
+El selector de maestro de `/materias` pide su propia lista (`?size=100`, el tope de la
+API) y ofrece "Todos los maestros" para quitar el filtro. Es un desplegable y no un
+buscador porque la plantilla de una escuela cabe entera en él; el día que pase de cien
+maestros habrá que cambiarlo por un campo que consulte al escribir. Cuando el filtro deja
+la tabla vacía, el aviso lo dice con esas palabras ("este maestro no tiene materias
+asignadas") en vez de sugerir que la escuela no tiene ninguna.
 
 Los datos se piden con `rxResource`, que da `isLoading()` y `error()` como signals. Ojo:
 su `value()` **lanza** cuando el recurso está en error, así que se lee a través de

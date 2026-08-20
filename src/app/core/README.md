@@ -2,7 +2,8 @@
 
 Lo que existe **una sola vez** en toda la aplicación y no se dibuja en pantalla:
 
-- `services/` — servicios de dominio que hablan con la API (`AuthService`, `AlumnoService`, …).
+- `services/` — servicios de dominio que hablan con la API (`AuthService`, `AlumnoService`,
+  `MaestroService`, `MateriaService`, …).
 - `interceptors/` — interceptores funcionales de `HttpClient`: `authInterceptor` (JWT) y
   `errorInterceptor`, que cierra la sesión ante un 401 y avisa del resto de errores salvo
   que la petición venga marcada con `sinAvisoGlobal()`.
