@@ -1,4 +1,4 @@
-<header class="alumno-form__cabecera">
+<header class="formulario__cabecera">
   <h1>{{ editando() ? 'Editar alumno' : 'Nuevo alumno' }}</h1>
   <p>
     {{
@@ -11,22 +11,22 @@
 
 @if (idInvalido()) {
   <!-- `/alumnos/abc/editar`: ni es un alta ni hay ficha que cargar. -->
-  <div class="alumno-form__aviso" role="alert">
+  <div class="formulario__aviso" role="alert">
     <mat-icon>link_off</mat-icon>
     <p>La dirección no apunta a ningún alumno.</p>
     <button mat-flat-button type="button" (click)="volver()">Volver al listado</button>
   </div>
 } @else if (errorDeCarga(); as mensaje) {
-  <div class="alumno-form__aviso" role="alert">
+  <div class="formulario__aviso" role="alert">
     <mat-icon>error_outline</mat-icon>
     <p>{{ mensaje }}</p>
     <button mat-stroked-button type="button" (click)="volver()">Volver al listado</button>
     <button mat-flat-button type="button" (click)="reintentar()">Reintentar</button>
   </div>
 } @else {
-  <mat-card appearance="outlined" class="alumno-form__tarjeta">
+  <mat-card appearance="outlined" class="formulario__tarjeta">
     <!-- Altura fija para que el formulario no salte al aparecer la barra. -->
-    <div class="alumno-form__barra">
+    <div class="formulario__barra">
       @if (cargando() || enviando()) {
         <mat-progress-bar mode="indeterminate" aria-label="Guardando" />
       }
@@ -36,10 +36,10 @@
       <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
         <!-- Mientras llega la ficha los campos están vacíos: dejar escribir en
              ellos sólo consigue que la respuesta borre lo tecleado. -->
-        <fieldset class="alumno-form__campos" [disabled]="cargando()">
+        <fieldset class="formulario__campos" [disabled]="cargando()">
           <!-- El título de la pantalla ya lo dice, pero un `fieldset` sin
                `legend` deja el grupo de campos sin nombre accesible. -->
-          <legend class="alumno-form__legend">Datos del alumno</legend>
+          <legend class="formulario__legend">Datos del alumno</legend>
 
           <mat-form-field appearance="outline">
             <mat-label>Nombre</mat-label>
@@ -90,7 +90,7 @@
             }
           </mat-form-field>
 
-          <mat-form-field appearance="outline" class="alumno-form__ancho-completo">
+          <mat-form-field appearance="outline" class="formulario__ancho-completo">
             <mat-label>Correo electrónico</mat-label>
             <input
               matInput
@@ -114,13 +114,13 @@
         </fieldset>
 
         @if (error(); as mensaje) {
-          <p class="alumno-form__error" role="alert">
+          <p class="formulario__error" role="alert">
             <mat-icon>error_outline</mat-icon>
             <span>{{ mensaje }}</span>
           </p>
         }
 
-        <div class="alumno-form__acciones">
+        <div class="formulario__acciones">
           <button mat-stroked-button type="button" (click)="volver()">Cancelar</button>
           <button mat-flat-button type="submit" [disabled]="enviando() || cargando()">
             {{ enviando() ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Registrar alumno' }}

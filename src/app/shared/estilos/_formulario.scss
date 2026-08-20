@@ -1,0 +1,108 @@
+// Aspecto de una pantalla de formulario (tarjeta, rejilla de campos, error al
+// pie y aviso de dirección inválida o carga fallida).
+//
+// Se comparte con `@use` desde cada componente en vez de vivir en `styles.scss`,
+// por lo mismo que `_listado.scss`: la hoja global la carga también el login,
+// que no dibuja ninguna de estas cajas. Lo propio de cada formulario —qué campo
+// ocupa el ancho completo, por ejemplo— se queda en su componente.
+
+.formulario__cabecera {
+  h1 {
+    margin: 0 0 0.25rem;
+    font: var(--mat-sys-headline-medium);
+  }
+
+  p {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
+    font: var(--mat-sys-body-medium);
+  }
+}
+
+.formulario__tarjeta {
+  max-width: 46rem;
+  margin-top: 1rem;
+  padding-bottom: 1rem;
+  overflow: hidden;
+}
+
+// Reserva el alto de la barra de progreso: sin esto la tarjeta salta 4px cada
+// vez que se guarda.
+.formulario__barra {
+  height: 4px;
+}
+
+// Dos columnas donde caben; una sola en móvil, sin media queries.
+.formulario__campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0 1rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+// Visible sólo para lectores de pantalla: nombra el grupo sin ocupar sitio.
+.formulario__legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.formulario__ancho-completo {
+  grid-column: 1 / -1;
+}
+
+.formulario__error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font: var(--mat-sys-body-medium);
+
+  mat-icon {
+    flex: none;
+    --mat-icon-color: var(--mat-sys-error);
+  }
+}
+
+.formulario__acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.formulario__aviso {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  max-width: 46rem;
+  margin-top: 1rem;
+  padding: 2rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font: var(--mat-sys-body-medium);
+  text-align: center;
+
+  p {
+    margin: 0;
+  }
+
+  mat-icon {
+    --mat-icon-color: var(--mat-sys-error);
+  }
+}
