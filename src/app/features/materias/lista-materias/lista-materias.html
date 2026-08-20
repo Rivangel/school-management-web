@@ -1,0 +1,99 @@
+<header class="listado__cabecera">
+  <div>
+    <h1>Materias</h1>
+    <p>
+      @if (listado.total() === 1) {
+        1 materia registrada.
+      } @else {
+        {{ listado.total() }} materias registradas.
+      }
+      @if (filtrando()) {
+        <span class="materias__filtrado">Filtrando por maestro.</span>
+      }
+    </p>
+  </div>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="materias__filtro">
+    <mat-label>Maestro</mat-label>
+    <!-- El valor sale de la URL y vuelve a ella: el desplegable no guarda estado
+         propio, así que recargar o compartir el enlace conserva el filtro. -->
+    <mat-select [ngModel]="maestroElegido()" (ngModelChange)="filtrarPorMaestro($event)">
+      <mat-option [value]="null">Todos los maestros</mat-option>
+      @for (maestro of maestrosDelSelector(); track maestro.id) {
+        <mat-option [value]="maestro.id">{{ maestro.apellido }}, {{ maestro.nombre }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</header>
+
+<!-- Altura fija para que la tabla no salte al aparecer y desaparecer la barra. -->
+<div class="listado__barra">
+  @if (listado.cargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando materias" />
+  }
+</div>
+
+@if (listado.error(); as mensaje) {
+  <div class="listado__aviso listado__aviso--error" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <p>{{ mensaje }}</p>
+    <button mat-flat-button type="button" (click)="listado.reintentar()">Reintentar</button>
+  </div>
+} @else {
+  <div class="listado__tabla">
+    <table
+      mat-table
+      [dataSource]="listado.filas()"
+      matSort
+      [matSortActive]="listado.orden().activo"
+      [matSortDirection]="listado.orden().direccion"
+      (matSortChange)="listado.ordenar($event)"
+    >
+      <caption class="listado__caption">
+        Listado de materias, ordenado por la columna que se elija en el encabezado.
+      </caption>
+
+      <ng-container matColumnDef="nombre">
+        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">Materia</th>
+        <td mat-cell *matCellDef="let materia">{{ materia.nombre }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="creditos">
+        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">Créditos</th>
+        <td mat-cell *matCellDef="let materia">{{ materia.creditos }}</td>
+      </ng-container>
+
+      <!-- La columna enseña el nombre completo que compone la API, pero ordena
+           por `maestro.apellido`: `maestroNombre` no existe en la entidad y la
+           API lo rechazaría con un 400. -->
+      <ng-container matColumnDef="maestro.apellido">
+        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">Maestro</th>
+        <td mat-cell *matCellDef="let materia">{{ materia.maestroNombre }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+    </table>
+
+    @if (listado.vacio()) {
+      <p class="listado__aviso">
+        <mat-icon>menu_book</mat-icon>
+        @if (filtrando()) {
+          Este maestro no tiene materias asignadas.
+          <button mat-button type="button" (click)="quitarFiltro()">Ver todas</button>
+        } @else {
+          Todavía no hay materias registradas.
+        }
+      </p>
+    }
+
+    <mat-paginator
+      [length]="listado.total()"
+      [pageIndex]="listado.consulta().page"
+      [pageSize]="listado.consulta().size"
+      [pageSizeOptions]="tamanos"
+      (page)="listado.paginar($event)"
+      showFirstLastButtons
+    />
+  </div>
+}

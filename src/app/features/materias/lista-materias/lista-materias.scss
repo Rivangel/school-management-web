@@ -1,0 +1,11 @@
+@use '../../../shared/estilos/listado';
+
+// El desplegable no debe estirarse con la cabecera: a ancho completo parece un
+// campo de formulario y no un filtro.
+.materias__filtro {
+  min-width: 16rem;
+}
+
+.materias__filtrado {
+  color: var(--mat-sys-primary);
+}

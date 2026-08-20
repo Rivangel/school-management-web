@@ -119,8 +119,8 @@ export const routes: Routes = [
         path: 'materias',
         title: titulo('Materias'),
         canActivate: [rolGuard(...rolesDe('/materias'))],
-        data: { titulo: 'Materias', dia: 18 },
-        loadComponent: proximamente,
+        loadComponent: () =>
+          import('./features/materias/lista-materias/lista-materias').then((m) => m.ListaMaterias),
       },
       {
         path: 'calificaciones',
