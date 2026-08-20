@@ -1,5 +1,5 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
-import { rxResource, toSignal } from '@angular/core/rxjs-interop';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -7,7 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 
 import { AlumnoRequest } from '../../../core/models';
 import { AlumnoService } from '../../../core/services/alumno-service';
@@ -15,6 +15,7 @@ import { Avisos } from '../../../core/services/avisos';
 import { PistaDeCampo, aplicarErroresDeApi } from '../../../core/services/errores-formulario';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
 import { textoRequerido } from '../../../core/validadores';
+import { idDeRuta } from '../../../shared/id-de-ruta';
 
 /**
  * Cómo repartir los 400 de negocio, que llegan sin desglose por campo.
@@ -57,7 +58,6 @@ const DUPLICADOS: readonly PistaDeCampo[] = [
 })
 export class FormularioAlumno {
   private readonly alumnos = inject(AlumnoService);
-  private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly avisos = inject(Avisos);
 
@@ -70,17 +70,10 @@ export class FormularioAlumno {
     grupo: ['', [textoRequerido, Validators.maxLength(10)]],
   });
 
-  private readonly parametros = toSignal(this.ruta.paramMap, {
-    initialValue: this.ruta.snapshot.paramMap,
-  });
-
-  private readonly idEnLaUrl = computed(() => this.parametros().get('id'));
+  private readonly enLaRuta = idDeRuta();
 
   /** El id que se va a actualizar, o `undefined` si esto es un alta. */
-  protected readonly id = computed(() => {
-    const crudo = this.idEnLaUrl();
-    return crudo !== null && /^\d+$/.test(crudo) ? Number(crudo) : undefined;
-  });
+  protected readonly id = this.enLaRuta.id;
 
   /**
    * `/alumnos/abc/editar`: hay id en la ruta pero no es un número.
@@ -89,11 +82,9 @@ export class FormularioAlumno {
    * abriría vacío y el primer guardado crearía un alumno nuevo, que no es en
    * absoluto lo que pedía quien entró por ese enlace.
    */
-  protected readonly idInvalido = computed(
-    () => this.idEnLaUrl() !== null && this.id() === undefined,
-  );
+  protected readonly idInvalido = this.enLaRuta.invalido;
 
-  protected readonly editando = computed(() => this.idEnLaUrl() !== null);
+  protected readonly editando = this.enLaRuta.presente;
 
   /** Sin `id` los parámetros son `undefined` y el recurso ni llega a pedir nada. */
   private readonly alumno = rxResource({

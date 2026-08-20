@@ -1,11 +1,11 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { rxResource, toSignal } from '@angular/core/rxjs-interop';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { Alumno } from '../../../core/models';
 import { ROLES_ESCRITURA } from '../../../core/navegacion';
@@ -14,6 +14,7 @@ import { AuthService } from '../../../core/services/auth-service';
 import { Avisos } from '../../../core/services/avisos';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
 import { Confirmar, DatosConfirmacion } from '../../../shared/components/confirmar/confirmar';
+import { idDeRuta } from '../../../shared/id-de-ruta';
 
 /**
  * Ficha de un alumno.
@@ -36,19 +37,16 @@ export class DetalleAlumno {
   private readonly auth = inject(AuthService);
   private readonly avisos = inject(Avisos);
   private readonly dialogo = inject(MatDialog);
-  private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  private readonly parametros = toSignal(this.ruta.paramMap, {
-    initialValue: this.ruta.snapshot.paramMap,
-  });
+  protected readonly id = idDeRuta().id;
 
-  protected readonly id = computed(() => {
-    const crudo = this.parametros().get('id');
-    return crudo !== null && /^\d+$/.test(crudo) ? Number(crudo) : undefined;
-  });
-
-  /** `/alumnos/abc`: la dirección no apunta a ninguna ficha. */
+  /**
+   * `/alumnos/abc`: la dirección no apunta a ninguna ficha.
+   *
+   * Aquí basta con que no haya id — a diferencia del formulario, esta ruta no
+   * tiene un modo "sin id" que valga la pena distinguir.
+   */
   protected readonly idInvalido = computed(() => this.id() === undefined);
 
   private readonly recurso = rxResource({
