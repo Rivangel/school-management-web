@@ -30,6 +30,17 @@ export function sinAvisoGlobal(contexto: HttpContext = new HttpContext()): HttpC
 }
 
 /**
+ * Si el error de esta petición saldrá como aviso flotante.
+ *
+ * Lo lee el propio interceptor, y existe como función para que un test pueda
+ * comprobar la marca de un servicio sin exponer el token: qué peticiones avisan
+ * y cuáles no es una decisión de diseño, no un detalle interno.
+ */
+export function avisaGlobalmente(contexto: HttpContext): boolean {
+  return !contexto.get(SIN_AVISO);
+}
+
+/**
  * Red de seguridad para los errores de la API.
  *
  * Hace dos cosas distintas:
@@ -65,7 +76,7 @@ export const errorInterceptor: HttpInterceptorFn = (peticion, siguiente) => {
         return throwError(() => fallo);
       }
 
-      if (!peticion.context.get(SIN_AVISO)) {
+      if (avisaGlobalmente(peticion.context)) {
         avisos.error(mensajeDeError(fallo));
       }
       return throwError(() => fallo);
