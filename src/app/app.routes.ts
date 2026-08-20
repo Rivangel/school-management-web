@@ -101,6 +101,15 @@ export const routes: Routes = [
       {
         // Después de `maestros/nuevo`: el router prueba en orden y `:id` se
         // tragaría "nuevo" como si fuera un identificador.
+        path: 'maestros/:id',
+        title: titulo('Ficha del maestro'),
+        canActivate: [rolGuard(...rolesDe('/maestros'))],
+        loadComponent: () =>
+          import('./features/maestros/detalle-maestro/detalle-maestro').then(
+            (m) => m.DetalleMaestro,
+          ),
+      },
+      {
         path: 'maestros/:id/editar',
         title: titulo('Editar maestro'),
         canActivate: [rolGuard(...ROLES_ESCRITURA)],

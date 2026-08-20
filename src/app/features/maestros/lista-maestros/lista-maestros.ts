@@ -75,5 +75,11 @@ export class ListaMaestros {
    */
   protected readonly puedeEditar = computed(() => this.auth.tieneAlgunRol(...ROLES_ESCRITURA));
 
-  protected readonly columnas: string[] = [...ORDENABLES];
+  /**
+   * La columna de acciones está siempre —consultar la ficha lo puede todo el
+   * mundo— y **no** entra en `ORDENABLES`: esa lista es también lo que se acepta
+   * como `sort` en la URL, y `?sort=acciones,asc` viajaría a la API como una
+   * propiedad que no existe.
+   */
+  protected readonly columnas: string[] = [...ORDENABLES, 'acciones'];
 }

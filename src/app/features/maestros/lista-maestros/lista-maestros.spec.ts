@@ -232,11 +232,35 @@ describe('ListaMaestros', () => {
     expect(alta.getAttribute('href')).toBe('/maestros/nuevo?page=2&sort=especialidad,desc');
   });
 
-  it('el MAESTRO no ve el botón de alta', async () => {
+  it('el MAESTRO no ve las acciones de escritura, pero sí la ficha', async () => {
     // Ocultar no protege —la API le devuelve 403 igual—, pero un botón que sólo
     // lleva a "acceso denegado" sobra.
     await montar('/maestros', pagina([maestro(1, 'Ruiz')]), 'MAESTRO');
 
     expect(texto()).not.toContain('Nuevo maestro');
+    expect(harness.fixture.nativeElement.querySelector('a[aria-label^="Editar"]')).toBeNull();
+    expect(
+      harness.fixture.nativeElement.querySelector('a[aria-label^="Ver la ficha"]'),
+    ).not.toBeNull();
+  });
+
+  it('cada fila abre su ficha arrastrando la página del listado', async () => {
+    await montar('/maestros?page=2', pagina([maestro(1, 'Ruiz')], 60, 2));
+
+    const ficha = harness.fixture.nativeElement.querySelector(
+      'a[aria-label^="Ver la ficha"]',
+    ) as HTMLAnchorElement;
+
+    expect(ficha.getAttribute('href')).toBe('/maestros/1?page=2');
+  });
+
+  it('ignora un orden por la columna de acciones', async () => {
+    // La columna existe en la tabla pero no en la entidad: mandarla como `sort`
+    // haría que la API respondiera 400 y la pantalla enseñara un error.
+    await abrir('/maestros?sort=acciones,asc');
+
+    const pendiente = peticion();
+    expect(pendiente.request.params.has('sort')).toBe(false);
+    await responder(pagina([maestro(1, 'Ruiz')]), pendiente);
   });
 });
