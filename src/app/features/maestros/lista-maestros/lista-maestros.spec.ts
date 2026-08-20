@@ -9,7 +9,8 @@ import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { environment } from '../../../../environments/environment';
-import { Maestro, Pagina } from '../../../core/models';
+import { Maestro, Pagina, Rol } from '../../../core/models';
+import { sembrarSesion } from '../../../core/services/testing/sesion-falsa';
 import { ListaMaestros } from './lista-maestros';
 
 const URL = `${environment.apiUrl}/maestros`;
@@ -41,7 +42,10 @@ describe('ListaMaestros', () => {
   let harness: RouterTestingHarness;
 
   /** Navega a la pantalla y deja la primera petición **sin** responder. */
-  async function abrir(url = '/maestros'): Promise<void> {
+  async function abrir(url = '/maestros', rol: Rol = 'ADMIN'): Promise<void> {
+    localStorage.clear();
+    sembrarSesion(rol);
+
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -56,8 +60,9 @@ describe('ListaMaestros', () => {
   async function montar(
     url = '/maestros',
     respuesta = pagina([maestro(1, 'Ruiz')]),
+    rol: Rol = 'ADMIN',
   ): Promise<void> {
-    await abrir(url);
+    await abrir(url, rol);
     await responder(respuesta);
   }
 
@@ -215,5 +220,23 @@ describe('ListaMaestros', () => {
     const pendiente = peticion();
     expect(pendiente.request.params.has('sort')).toBe(false);
     await responder(pagina([maestro(1, 'Ruiz')]), pendiente);
+  });
+
+  it('ofrece el alta al ADMIN, arrastrando la página del listado', async () => {
+    await montar('/maestros?page=2&sort=especialidad,desc');
+
+    const alta = harness.fixture.nativeElement.querySelector(
+      'a[href^="/maestros/nuevo"]',
+    ) as HTMLAnchorElement;
+
+    expect(alta.getAttribute('href')).toBe('/maestros/nuevo?page=2&sort=especialidad,desc');
+  });
+
+  it('el MAESTRO no ve el botón de alta', async () => {
+    // Ocultar no protege —la API le devuelve 403 igual—, pero un botón que sólo
+    // lleva a "acceso denegado" sobra.
+    await montar('/maestros', pagina([maestro(1, 'Ruiz')]), 'MAESTRO');
+
+    expect(texto()).not.toContain('Nuevo maestro');
   });
 });

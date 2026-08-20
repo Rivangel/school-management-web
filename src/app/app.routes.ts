@@ -11,6 +11,12 @@ const titulo = (seccion: string) => `${seccion} · School Management`;
 const formularioDeAlumno = () =>
   import('./features/alumnos/formulario-alumno/formulario-alumno').then((m) => m.FormularioAlumno);
 
+/** Igual que el de alumnos: el modo lo decide el `id` de la ruta. */
+const formularioDeMaestro = () =>
+  import('./features/maestros/formulario-maestro/formulario-maestro').then(
+    (m) => m.FormularioMaestro,
+  );
+
 /** Pantalla provisional de las secciones que aún no existen (ver `Proximamente`). */
 const proximamente = () =>
   import('./shared/components/proximamente/proximamente').then((m) => m.Proximamente);
@@ -82,6 +88,23 @@ export const routes: Routes = [
         canActivate: [rolGuard(...rolesDe('/maestros'))],
         loadComponent: () =>
           import('./features/maestros/lista-maestros/lista-maestros').then((m) => m.ListaMaestros),
+      },
+      {
+        // Las escrituras son del ADMIN, aunque el listado lo vea también el
+        // MAESTRO: `ROLES_ESCRITURA` es la lista que leen a la vez el botón que
+        // trae aquí y este guard.
+        path: 'maestros/nuevo',
+        title: titulo('Nuevo maestro'),
+        canActivate: [rolGuard(...ROLES_ESCRITURA)],
+        loadComponent: formularioDeMaestro,
+      },
+      {
+        // Después de `maestros/nuevo`: el router prueba en orden y `:id` se
+        // tragaría "nuevo" como si fuera un identificador.
+        path: 'maestros/:id/editar',
+        title: titulo('Editar maestro'),
+        canActivate: [rolGuard(...ROLES_ESCRITURA)],
+        loadComponent: formularioDeMaestro,
       },
       {
         path: 'materias',

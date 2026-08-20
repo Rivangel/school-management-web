@@ -9,6 +9,14 @@
       }
     </p>
   </div>
+
+  @if (puedeEditar()) {
+    <!-- `preserve` arrastra el `?page=&size=&sort=` para poder volver aquí mismo. -->
+    <a mat-flat-button routerLink="/maestros/nuevo" queryParamsHandling="preserve">
+      <mat-icon>add</mat-icon>
+      Nuevo maestro
+    </a>
+  }
 </header>
 
 <!-- Altura fija para que la tabla no salte al aparecer y desaparecer la barra. -->

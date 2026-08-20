@@ -1,12 +1,15 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorIntl, MatPaginatorModule } from '@angular/material/paginator';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
+import { RouterLink } from '@angular/router';
 
+import { ROLES_ESCRITURA } from '../../../core/navegacion';
 import { TAMANOS_PAGINA } from '../../../core/paginacion';
+import { AuthService } from '../../../core/services/auth-service';
 import { MaestroService } from '../../../core/services/maestro-service';
 import { listadoPaginado } from '../../../shared/listado-paginado';
 import { paginadorEnEspanol } from '../../../shared/paginador-en-espanol';
@@ -30,8 +33,8 @@ const ORDENABLES = ['apellido', 'nombre', 'especialidad', 'email'] as const;
  * son del servidor y el estado vive en la URL, todo dentro de `listadoPaginado`.
  * Aquí sólo quedan las columnas y los textos.
  *
- * Todavía no hay columna de acciones: la ficha y el alta llegan el día 17, y una
- * columna vacía sólo ocuparía sitio.
+ * Las escrituras son sólo del ADMIN, así que el botón de alta lee
+ * `ROLES_ESCRITURA` — la misma lista que protege la ruta a la que lleva.
  */
 @Component({
   selector: 'app-lista-maestros',
@@ -42,6 +45,7 @@ const ORDENABLES = ['apellido', 'nombre', 'especialidad', 'email'] as const;
     MatProgressBarModule,
     MatSortModule,
     MatTableModule,
+    RouterLink,
   ],
   // Se provee aquí y no en `app.config.ts` para no meter el paginador de
   // Material en el bundle inicial, que es el que carga el login.
@@ -51,6 +55,7 @@ const ORDENABLES = ['apellido', 'nombre', 'especialidad', 'email'] as const;
 })
 export class ListaMaestros {
   private readonly maestros = inject(MaestroService);
+  private readonly auth = inject(AuthService);
 
   protected readonly listado = listadoPaginado({
     ordenables: ORDENABLES,
@@ -62,6 +67,13 @@ export class ListaMaestros {
   // Copia mutable: `pageSizeOptions` pide `number[]` y la constante es una tupla
   // `readonly`.
   protected readonly tamanos: number[] = [...TAMANOS_PAGINA];
+
+  /**
+   * Ocultar no es proteger —la API rechaza igual el POST de un MAESTRO—, pero
+   * enseñar un botón que lleva a "acceso denegado" es peor que no enseñarlo. Lee
+   * la misma lista que el `rolGuard` de las rutas de escritura.
+   */
+  protected readonly puedeEditar = computed(() => this.auth.tieneAlgunRol(...ROLES_ESCRITURA));
 
   protected readonly columnas: string[] = [...ORDENABLES];
 }
