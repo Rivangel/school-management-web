@@ -143,12 +143,15 @@ enseñar el aviso con el botón de reintentar.
 
 El aspecto (cabecera, caja de la tabla, aviso vacío y de error) va en
 `shared/estilos/_listado.scss` y cada pantalla lo trae con `@use`, en vez de vivir en
-`styles.scss`: la hoja global la carga el login, que no dibuja ninguna tabla.
+`styles.scss`: la hoja global la carga el login, que no dibuja ninguna tabla. Las
+pantallas de formulario y de ficha hacen lo mismo con `_formulario.scss` y `_ficha.scss`;
+lo que cada una tiene de propio —qué columna se esconde en móvil, qué campo ocupa el ancho
+completo— se queda en su componente.
 
 ## Formularios
 
-`features/alumnos/formulario-alumno/` fija el patrón de alta y edición que repiten los
-demás módulos (Días 16–24):
+`features/alumnos/formulario-alumno/` fijó el patrón de alta y edición, y
+`features/maestros/formulario-maestro/` es el primero que lo repite (Días 18–24 siguen):
 
 - **Es una ruta, no un diálogo.** `/alumnos/nuevo` y `/alumnos/7/editar` se comparten,
   se recargan y se cierran con el botón "atrás" como cualquier otra pantalla, igual que
@@ -158,7 +161,11 @@ demás módulos (Días 16–24):
 - **Un componente para los dos modos.** Sin `id` en la ruta es un alta y el recurso ni
   llega a pedir nada. Un id que no es un número (`/alumnos/abc/editar`) se distingue del
   alta a propósito: si no, el formulario abriría vacío y el primer guardado crearía un
-  alumno que nadie pidió.
+  alumno que nadie pidió. Esa lectura de tres respuestas —no hay segmento, hay un número,
+  hay algo que no lo es— vive en **`shared/id-de-ruta.ts`**, que comparten los cuatro
+  formularios y fichas. Va por el `paramMap` y no por el `snapshot` porque el router
+  **reutiliza** el componente entre `/maestros/7` y `/maestros/9`: con el snapshot, la
+  pantalla se quedaría enseñando al anterior.
 - **Las validaciones espejan el DTO** (`AlumnoRequest`) campo a campo. `textoRequerido`
   sustituye a `Validators.required` porque este da por bueno un campo de sólo espacios,
   que el `@NotBlank` de la API rechaza después del viaje.
@@ -174,10 +181,11 @@ demás módulos (Días 16–24):
   quede bloqueado por una objeción ya corregida.
 
 Las escrituras son **sólo del ADMIN** (`ROLES_ESCRITURA` en `core/navegacion.ts`, espejo
-de `SecurityConfig`). El listado oculta el botón de alta y la columna de acciones para el
-MAESTRO y las rutas del formulario leen esa misma lista en su `rolGuard`: ocultar no
-protege —la API responde 403 igual—, pero un botón que sólo lleva a "acceso denegado"
-sobra.
+de `SecurityConfig`). Los listados de alumnos y maestros ocultan el botón de alta y el
+enlace de edición para el MAESTRO, y las rutas del formulario leen esa misma lista en su
+`rolGuard`: ocultar no protege —la API responde 403 igual—, pero un botón que sólo lleva
+a "acceso denegado" sobra. La ficha sí la ve: consultarla la puede todo el que llegue al
+listado.
 
 ## Ficha y borrado
 
@@ -192,6 +200,17 @@ El listado corrige por su cuenta una página que se quedó **fuera de rango**: a
 de un borrado la página que se miraba puede haber dejado de existir, y un `?page=99`
 escrito a mano dejaría la tabla en blanco sin explicar nada. En ambos casos se cae a la
 última página con datos.
+
+**Un borrado que falla no siempre se cuenta igual.** El de alumnos deja el mensaje al
+aviso global, porque no hay una causa concreta que anticipar. El de maestros sí la tiene:
+`materias.maestro_id` no admite nulos, así que eliminar a quien imparte algo devuelve un
+**409** con la frase genérica de la API ("la operación viola una restricción de datos"),
+que es exacta y no le sirve a nadie — y no es el caso raro, es el de cualquier maestro con
+clases. `features/maestros/detalle-maestro/` la traduce a la única causa posible ("tiene
+materias a su cargo, asígnalas a otro maestro o elimínalas primero") y la deja **dentro de
+la tarjeta**, junto al botón: un mensaje que explica qué hacer y se desvanece a los ocho
+segundos no sirve de mucho. Por eso su `eliminar()` va con `sinAvisoGlobal()` y el de
+alumnos no.
 
 ## Errores y avisos
 

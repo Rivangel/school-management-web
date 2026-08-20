@@ -14,8 +14,12 @@ sin arrastrar nada más.
   si cargó o falló), leído de la URL. Lo comparten alumnos, maestros y los listados que
   vienen; el componente sólo pone columnas, cabecera y acciones. Sabe de páginas, no de
   alumnos, así que cumple la regla de abajo.
-- `estilos/_listado.scss` — el aspecto de esas pantallas, traído con `@use` desde cada
-  componente. No va en `styles.scss` porque la hoja global la carga también el login, que
-  no dibuja ninguna tabla.
+- `id-de-ruta.ts` — el `:id` de la URL ya interpretado, con la distinción entre no traer
+  segmento (un alta), traer un número (una edición) y traer algo que no lo es. Lo
+  comparten los formularios y las fichas; perder el tercer caso es lo que hace que
+  `/alumnos/abc/editar` abra un alta encubierta.
+- `estilos/_listado.scss`, `_formulario.scss`, `_ficha.scss` — el aspecto de esas
+  pantallas, traído con `@use` desde cada componente. No van en `styles.scss` porque la
+  hoja global la carga también el login, que no dibuja ninguna de esas cajas.
 
 Regla: si un componente sabe qué es un alumno, no va aquí — va en su feature.
