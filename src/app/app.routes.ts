@@ -17,6 +17,12 @@ const formularioDeMaestro = () =>
     (m) => m.FormularioMaestro,
   );
 
+/** Igual que los otros dos: el modo lo decide el `id` de la ruta. */
+const formularioDeMateria = () =>
+  import('./features/materias/formulario-materia/formulario-materia').then(
+    (m) => m.FormularioMateria,
+  );
+
 /** Pantalla provisional de las secciones que aún no existen (ver `Proximamente`). */
 const proximamente = () =>
   import('./shared/components/proximamente/proximamente').then((m) => m.Proximamente);
@@ -121,6 +127,24 @@ export const routes: Routes = [
         canActivate: [rolGuard(...rolesDe('/materias'))],
         loadComponent: () =>
           import('./features/materias/lista-materias/lista-materias').then((m) => m.ListaMaterias),
+      },
+      {
+        // El listado de materias lo ve todo el mundo, incluido el ALUMNO, pero
+        // las escrituras siguen siendo del ADMIN: `ROLES_ESCRITURA` otra vez.
+        //
+        // La ruta es `nueva` y no `nuevo` porque la materia es femenina, y por
+        // lo mismo que en las otras dos secciones va **antes** que `:id`: el
+        // router prueba en orden y se la tragaría como un identificador.
+        path: 'materias/nueva',
+        title: titulo('Nueva materia'),
+        canActivate: [rolGuard(...ROLES_ESCRITURA)],
+        loadComponent: formularioDeMateria,
+      },
+      {
+        path: 'materias/:id/editar',
+        title: titulo('Editar materia'),
+        canActivate: [rolGuard(...ROLES_ESCRITURA)],
+        loadComponent: formularioDeMateria,
       },
       {
         path: 'calificaciones',

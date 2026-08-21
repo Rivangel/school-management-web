@@ -1,0 +1,113 @@
+<header class="formulario__cabecera">
+  <h1>{{ editando() ? 'Editar materia' : 'Nueva materia' }}</h1>
+  <p>
+    {{
+      editando()
+        ? 'Cambia los datos y guarda para actualizar la materia.'
+        : 'Completa los datos para registrar la materia.'
+    }}
+  </p>
+</header>
+
+@if (idInvalido()) {
+  <!-- `/materias/abc/editar`: ni es un alta ni hay materia que cargar. -->
+  <div class="formulario__aviso" role="alert">
+    <mat-icon>link_off</mat-icon>
+    <p>La dirección no apunta a ninguna materia.</p>
+    <button mat-flat-button type="button" (click)="volver()">Volver al listado</button>
+  </div>
+} @else if (errorDeCarga(); as mensaje) {
+  <div class="formulario__aviso" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <p>{{ mensaje }}</p>
+    <button mat-stroked-button type="button" (click)="volver()">Volver al listado</button>
+    <button mat-flat-button type="button" (click)="reintentar()">Reintentar</button>
+  </div>
+} @else {
+  <mat-card appearance="outlined" class="formulario__tarjeta">
+    <!-- Altura fija para que el formulario no salte al aparecer la barra. -->
+    <div class="formulario__barra">
+      @if (cargando() || enviando()) {
+        <mat-progress-bar mode="indeterminate" aria-label="Guardando" />
+      }
+    </div>
+
+    <mat-card-content>
+      <form [formGroup]="formulario" (ngSubmit)="enviar()" novalidate>
+        <!-- Mientras llegan la materia y los maestros los campos están vacíos:
+             dejar elegir en un desplegable sin opciones no lleva a ningún lado. -->
+        <fieldset class="formulario__campos" [disabled]="cargando()">
+          <!-- El título de la pantalla ya lo dice, pero un `fieldset` sin
+               `legend` deja el grupo de campos sin nombre accesible. -->
+          <legend class="formulario__legend">Datos de la materia</legend>
+
+          <mat-form-field appearance="outline" class="formulario__ancho-completo">
+            <mat-label>Nombre</mat-label>
+            <input matInput formControlName="nombre" maxlength="100" placeholder="Álgebra" />
+            @if (formulario.controls.nombre.hasError('required')) {
+              <mat-error>El nombre es obligatorio.</mat-error>
+            } @else if (formulario.controls.nombre.hasError('maxlength')) {
+              <mat-error>El nombre no puede pasar de 100 caracteres.</mat-error>
+            } @else if (formulario.controls.nombre.hasError('servidor')) {
+              <mat-error>{{ formulario.controls.nombre.getError('servidor') }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Créditos</mat-label>
+            <input
+              matInput
+              type="number"
+              formControlName="creditos"
+              inputmode="numeric"
+              [min]="creditosMinimo"
+              [max]="creditosMaximo"
+            />
+            <mat-hint>Entre {{ creditosMinimo }} y {{ creditosMaximo }}.</mat-hint>
+            @if (formulario.controls.creditos.hasError('required')) {
+              <mat-error>Los créditos son obligatorios.</mat-error>
+            } @else if (formulario.controls.creditos.hasError('min')) {
+              <mat-error>Los créditos deben ser al menos {{ creditosMinimo }}.</mat-error>
+            } @else if (formulario.controls.creditos.hasError('max')) {
+              <mat-error>Los créditos no pueden pasar de {{ creditosMaximo }}.</mat-error>
+            } @else if (formulario.controls.creditos.hasError('servidor')) {
+              <mat-error>{{ formulario.controls.creditos.getError('servidor') }}</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Maestro</mat-label>
+            <!-- La materia guarda el id; el nombre lo pone la lista. Las
+                 opciones incluyen siempre la del maestro que ya tenía asignado,
+                 aunque no venga en la página que devolvió la API. -->
+            <mat-select formControlName="maestroId">
+              @for (opcion of opcionesDeMaestro(); track opcion.id) {
+                <mat-option [value]="opcion.id">{{ opcion.etiqueta }}</mat-option>
+              }
+            </mat-select>
+            <mat-hint>Quien imparte la materia.</mat-hint>
+            @if (formulario.controls.maestroId.hasError('required')) {
+              <mat-error>Elige el maestro que la imparte.</mat-error>
+            } @else if (formulario.controls.maestroId.hasError('servidor')) {
+              <mat-error>{{ formulario.controls.maestroId.getError('servidor') }}</mat-error>
+            }
+          </mat-form-field>
+        </fieldset>
+
+        @if (error(); as mensaje) {
+          <p class="formulario__error" role="alert">
+            <mat-icon>error_outline</mat-icon>
+            <span>{{ mensaje }}</span>
+          </p>
+        }
+
+        <div class="formulario__acciones">
+          <button mat-stroked-button type="button" (click)="volver()">Cancelar</button>
+          <button mat-flat-button type="submit" [disabled]="enviando() || cargando()">
+            {{ enviando() ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Registrar materia' }}
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+}

@@ -92,6 +92,20 @@ describe('aplicarErroresDeApi', () => {
     );
   });
 
+  it('una pista con mensaje propio sustituye la frase de la API', () => {
+    // Para cuando la API habla de algo que el usuario no ha visto: el
+    // formulario de materias elige un maestro por su nombre en un desplegable y
+    // recibe de vuelta un "Maestro con id 3 no encontrado".
+    const form = formulario();
+
+    const aviso = aplicarErroresDeApi(form, errorDeNegocio('Maestro con id 3 no encontrado'), [
+      { patron: /maestro/i, campo: 'nombre', mensaje: 'Ese maestro ya no existe.' },
+    ]);
+
+    expect(aviso).toBeNull();
+    expect(form.controls['nombre'].getError(ERROR_SERVIDOR)).toBe('Ese maestro ya no existe.');
+  });
+
   it('enseña como aviso general el mensaje que ninguna pista reconoce', () => {
     // La degradación que importa: si cambia la redacción de la API el error deja
     // de marcar el campo, pero sigue viéndose en pantalla.

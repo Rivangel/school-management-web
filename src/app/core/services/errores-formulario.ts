@@ -17,6 +17,16 @@ export const ERROR_SERVIDOR = 'servidor';
 export interface PistaDeCampo {
   readonly patron: RegExp;
   readonly campo: string;
+  /**
+   * Qué enseñar en lugar de la frase de la API.
+   *
+   * Sin esto se enseña la suya, que es lo normal: "Ya existe un maestro con el
+   * email …" se lee perfectamente bajo el campo del email. Hace falta cuando la
+   * API habla de algo que el usuario no ha visto — el formulario de materias
+   * elige un maestro **por su nombre** en un desplegable y recibe de vuelta un
+   * "Maestro con id 3 no encontrado".
+   */
+  readonly mensaje?: string;
 }
 
 /**
@@ -67,7 +77,7 @@ export function aplicarErroresDeApi(
     return mensaje;
   }
 
-  marcar(control, mensaje);
+  marcar(control, pista?.mensaje ?? mensaje);
   return null;
 }
 
