@@ -1,0 +1,90 @@
+<header class="ficha__cabecera">
+  <h1>Ficha de la materia</h1>
+  <button mat-stroked-button type="button" (click)="volver()">
+    <mat-icon>arrow_back</mat-icon>
+    Volver al listado
+  </button>
+</header>
+
+@if (idInvalido()) {
+  <div class="ficha__aviso" role="alert">
+    <mat-icon>link_off</mat-icon>
+    <p>La dirección no apunta a ninguna materia.</p>
+  </div>
+} @else if (error(); as mensaje) {
+  <div class="ficha__aviso" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <p>{{ mensaje }}</p>
+    <button mat-flat-button type="button" (click)="reintentar()">Reintentar</button>
+  </div>
+} @else {
+  <mat-card appearance="outlined" class="ficha__tarjeta">
+    <!-- Altura fija para que la tarjeta no salte al aparecer la barra. -->
+    <div class="ficha__barra">
+      @if (cargando() || borrando()) {
+        <mat-progress-bar mode="indeterminate" aria-label="Cargando la ficha" />
+      }
+    </div>
+
+    @if (materia(); as materia) {
+      <mat-card-header>
+        <mat-card-title>{{ materia.nombre }}</mat-card-title>
+        <mat-card-subtitle>{{ materia.maestroNombre }}</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <dl class="ficha__datos">
+          <dt>Nombre</dt>
+          <dd>{{ materia.nombre }}</dd>
+
+          <dt>Créditos</dt>
+          <dd>{{ materia.creditos }}</dd>
+
+          <dt>Maestro</dt>
+          <dd>
+            <!-- Enlace sólo para quien puede abrir la sección de maestros: al
+                 ALUMNO lo llevaría a "acceso denegado". -->
+            @if (puedeVerAlMaestro()) {
+              <a [routerLink]="['/maestros', materia.maestroId]">{{ materia.maestroNombre }}</a>
+            } @else {
+              {{ materia.maestroNombre }}
+            }
+          </dd>
+        </dl>
+
+        <!-- El borrado de una materia falla por razones concretas y frecuentes
+             (tiene calificaciones o asistencias), así que se explica aquí y no
+             en un aviso flotante que desaparece antes de poder hacer nada. -->
+        @if (errorAlBorrar(); as mensaje) {
+          <p class="ficha__error" role="alert">
+            <mat-icon>error_outline</mat-icon>
+            <span>{{ mensaje }}</span>
+          </p>
+        }
+      </mat-card-content>
+
+      @if (puedeEditar()) {
+        <mat-card-actions align="end">
+          <button
+            mat-button
+            type="button"
+            class="ficha__eliminar"
+            [disabled]="borrando()"
+            (click)="eliminar()"
+          >
+            <mat-icon>delete</mat-icon>
+            Eliminar
+          </button>
+          <a
+            mat-flat-button
+            [routerLink]="['/materias', materia.id, 'editar']"
+            queryParamsHandling="preserve"
+          >
+            <mat-icon>edit</mat-icon>
+            Editar
+          </a>
+        </mat-card-actions>
+      }
+    }
+  </mat-card>
+}

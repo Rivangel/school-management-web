@@ -141,6 +141,17 @@ export const routes: Routes = [
         loadComponent: formularioDeMateria,
       },
       {
+        // Después de `materias/nueva`, por lo mismo de siempre: el router prueba
+        // en orden y `:id` se la tragaría como un identificador.
+        path: 'materias/:id',
+        title: titulo('Ficha de la materia'),
+        canActivate: [rolGuard(...rolesDe('/materias'))],
+        loadComponent: () =>
+          import('./features/materias/detalle-materia/detalle-materia').then(
+            (m) => m.DetalleMateria,
+          ),
+      },
+      {
         path: 'materias/:id/editar',
         title: titulo('Editar materia'),
         canActivate: [rolGuard(...ROLES_ESCRITURA)],

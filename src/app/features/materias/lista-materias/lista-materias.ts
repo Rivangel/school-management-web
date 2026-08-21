@@ -9,9 +9,9 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
-import { ParamMap } from '@angular/router';
+import { ParamMap, RouterLink } from '@angular/router';
 
-import { rolesDe } from '../../../core/navegacion';
+import { ROLES_ESCRITURA, rolesDe } from '../../../core/navegacion';
 import { TAMANOS_PAGINA } from '../../../core/paginacion';
 import { AuthService } from '../../../core/services/auth-service';
 import { MaestroService } from '../../../core/services/maestro-service';
@@ -76,6 +76,7 @@ function leerFiltro(query: ParamMap): FiltroDeMaterias {
     MatSelectModule,
     MatSortModule,
     MatTableModule,
+    RouterLink,
   ],
   // Se provee aquí y no en `app.config.ts` para no meter el paginador de
   // Material en el bundle inicial, que es el que carga el login.
@@ -146,5 +147,22 @@ export class ListaMaterias {
   // `readonly`.
   protected readonly tamanos: number[] = [...TAMANOS_PAGINA];
 
-  protected readonly columnas: string[] = [...ORDENABLES];
+  /**
+   * Quién puede dar de alta, editar y borrar. Ocultar no es proteger —la API
+   * rechaza igual el POST de un MAESTRO—, pero enseñar un botón que lleva a
+   * "acceso denegado" es peor que no enseñarlo.
+   *
+   * Aquí se separa de las otras dos secciones: el listado lo ve **todo el
+   * mundo**, así que la mayoría de quienes abren esta pantalla no verán ninguna
+   * de estas acciones.
+   */
+  protected readonly puedeEditar = computed(() => this.auth.tieneAlgunRol(...ROLES_ESCRITURA));
+
+  /**
+   * La columna de acciones está siempre —la ficha la puede consultar cualquiera—
+   * y **no** entra en `ORDENABLES`: esa lista es también lo que se acepta como
+   * `sort` en la URL, y `?sort=acciones,asc` viajaría a la API como una
+   * propiedad que no existe.
+   */
+  protected readonly columnas: string[] = [...ORDENABLES, 'acciones'];
 }

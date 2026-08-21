@@ -31,6 +31,15 @@
          para siempre y sin forma de volver al listado completo. -->
     <button mat-stroked-button type="button" (click)="quitarFiltro()">Ver todas</button>
   }
+
+  @if (puedeEditar()) {
+    <!-- `preserve` arrastra el `?page=&size=&sort=&maestroId=` para volver aquí
+         mismo, con el filtro puesto incluido. -->
+    <a mat-flat-button routerLink="/materias/nueva" queryParamsHandling="preserve">
+      <mat-icon>add</mat-icon>
+      Nueva materia
+    </a>
+  }
 </header>
 
 <!-- Altura fija para que la tabla no salte al aparecer y desaparecer la barra. -->
@@ -76,6 +85,30 @@
       <ng-container matColumnDef="maestro.apellido">
         <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">Maestro</th>
         <td mat-cell *matCellDef="let materia">{{ materia.maestroNombre }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+        <td mat-cell *matCellDef="let materia">
+          <a
+            mat-icon-button
+            [routerLink]="['/materias', materia.id]"
+            queryParamsHandling="preserve"
+            [attr.aria-label]="'Ver la ficha de ' + materia.nombre"
+          >
+            <mat-icon>visibility</mat-icon>
+          </a>
+          @if (puedeEditar()) {
+            <a
+              mat-icon-button
+              [routerLink]="['/materias', materia.id, 'editar']"
+              queryParamsHandling="preserve"
+              [attr.aria-label]="'Editar ' + materia.nombre"
+            >
+              <mat-icon>edit</mat-icon>
+            </a>
+          }
+        </td>
       </ng-container>
 
       <tr mat-header-row *matHeaderRowDef="columnas"></tr>

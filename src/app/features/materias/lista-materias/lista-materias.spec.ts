@@ -300,4 +300,42 @@ describe('ListaMaterias', () => {
     expect(TestBed.inject(Router).url).not.toContain('maestroId');
     await responder(pagina([materia(1, 'Bases de Datos'), materia(2, 'Álgebra', 1)]));
   });
+
+  it('la ficha se abre con el filtro y la página puestos', async () => {
+    // `preserve` en el enlace: volver de la ficha tiene que caer en el mismo
+    // sitio del que se salió.
+    await montar('/materias?page=1&maestroId=2', pagina([materia(1, 'Bases de Datos')], 40, 1));
+
+    const ficha = harness.fixture.nativeElement.querySelector(
+      'a[href^="/materias/1?"]',
+    ) as HTMLAnchorElement;
+    expect(ficha.getAttribute('href')).toContain('maestroId=2');
+    expect(ficha.getAttribute('href')).toContain('page=1');
+  });
+
+  it('el ADMIN tiene alta y edición; el MAESTRO sólo consulta', async () => {
+    // La API abre el listado a todos los roles y reserva las escrituras al
+    // ADMIN: un botón que lleva a "acceso denegado" es peor que no enseñarlo.
+    await montar();
+    expect(texto()).toContain('Nueva materia');
+    expect(
+      harness.fixture.nativeElement.querySelector('a[href^="/materias/1/editar"]'),
+    ).not.toBeNull();
+
+    await montar('/materias', pagina([materia(1, 'Bases de Datos')]), 'MAESTRO');
+    expect(texto()).not.toContain('Nueva materia');
+    expect(harness.fixture.nativeElement.querySelector('a[href^="/materias/1/editar"]')).toBeNull();
+    // La ficha sí, que consultarla lo puede cualquiera.
+    expect(harness.fixture.nativeElement.querySelector('a[href^="/materias/1"]')).not.toBeNull();
+  });
+
+  it('ignora un orden por la columna de acciones', async () => {
+    // `ORDENABLES` valida también el `sort` de la URL, y `acciones` no es una
+    // propiedad de la entidad: la API lo devolvería como un 400.
+    await abrir('/materias?sort=acciones,asc');
+
+    const pendiente = peticion();
+    expect(pendiente.request.params.has('sort')).toBe(false);
+    await responder(pagina([materia(1, 'Bases de Datos')]), pendiente);
+  });
 });
