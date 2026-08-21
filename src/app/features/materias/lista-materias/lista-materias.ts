@@ -11,7 +11,9 @@ import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ParamMap } from '@angular/router';
 
+import { rolesDe } from '../../../core/navegacion';
 import { TAMANOS_PAGINA } from '../../../core/paginacion';
+import { AuthService } from '../../../core/services/auth-service';
 import { MaestroService } from '../../../core/services/maestro-service';
 import { MateriaService } from '../../../core/services/materia-service';
 import { listadoPaginado } from '../../../shared/listado-paginado';
@@ -84,6 +86,7 @@ function leerFiltro(query: ParamMap): FiltroDeMaterias {
 export class ListaMaterias {
   private readonly materias = inject(MateriaService);
   private readonly maestros = inject(MaestroService);
+  private readonly auth = inject(AuthService);
 
   protected readonly listado = listadoPaginado({
     ordenables: ORDENABLES,
@@ -94,14 +97,31 @@ export class ListaMaterias {
   });
 
   /**
+   * Si esta sesión puede siquiera pedir la lista de maestros.
+   *
+   * El listado de materias lo ve **todo el mundo**, el de maestros no: la API lo
+   * reserva a ADMIN y MAESTRO. Un ALUMNO que abriera esta pantalla se llevaba un
+   * 403 silencioso —el servicio no avisa por su cuenta— y un desplegable vacío
+   * con una sola opción, "Todos los maestros", que no filtra nada. Lee de
+   * `MENU`, que es el espejo de `SecurityConfig`, y no una lista escrita aquí.
+   */
+  protected readonly puedeFiltrar = computed(() =>
+    this.auth.tieneAlgunRol(...rolesDe('/maestros')),
+  );
+
+  /**
    * Los maestros que ofrece el selector.
    *
    * Se piden una sola vez y en una sola página: son la plantilla de una escuela,
    * no un catálogo. Si algún día pasan de cien —el tope de la API— este `select`
    * se queda corto y habrá que cambiarlo por un buscador que consulte al
    * escribir; mientras tanto, un desplegable es más rápido que teclear.
+   *
+   * Con `params` en `undefined` el recurso **no pide nada**: quien no puede leer
+   * maestros tampoco manda la petición que iba a volver como 403.
    */
   private readonly recursoMaestros = rxResource({
+    params: () => (this.puedeFiltrar() ? true : undefined),
     stream: () => this.maestros.listar({ size: MAESTROS_EN_EL_SELECTOR }),
   });
 

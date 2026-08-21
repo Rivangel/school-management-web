@@ -13,17 +13,24 @@
     </p>
   </div>
 
-  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="materias__filtro">
-    <mat-label>Maestro</mat-label>
-    <!-- El valor sale de la URL y vuelve a ella: el desplegable no guarda estado
-         propio, así que recargar o compartir el enlace conserva el filtro. -->
-    <mat-select [ngModel]="maestroElegido()" (ngModelChange)="filtrarPorMaestro($event)">
-      <mat-option [value]="null">Todos los maestros</mat-option>
-      @for (maestro of maestrosDelSelector(); track maestro.id) {
-        <mat-option [value]="maestro.id">{{ maestro.apellido }}, {{ maestro.nombre }}</mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
+  @if (puedeFiltrar()) {
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="materias__filtro">
+      <mat-label>Maestro</mat-label>
+      <!-- El valor sale de la URL y vuelve a ella: el desplegable no guarda
+           estado propio, así que recargar o compartir el enlace conserva el
+           filtro. -->
+      <mat-select [ngModel]="maestroElegido()" (ngModelChange)="filtrarPorMaestro($event)">
+        <mat-option [value]="null">Todos los maestros</mat-option>
+        @for (maestro of maestrosDelSelector(); track maestro.id) {
+          <mat-option [value]="maestro.id">{{ maestro.apellido }}, {{ maestro.nombre }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  } @else if (filtrando()) {
+    <!-- Sin selector, un enlace con `?maestroId=` dejaría la pantalla filtrada
+         para siempre y sin forma de volver al listado completo. -->
+    <button mat-stroked-button type="button" (click)="quitarFiltro()">Ver todas</button>
+  }
 </header>
 
 <!-- Altura fija para que la tabla no salte al aparecer y desaparecer la barra. -->

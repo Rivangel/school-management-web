@@ -9,7 +9,8 @@ import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 
 import { environment } from '../../../../environments/environment';
-import { Maestro, Materia, Pagina } from '../../../core/models';
+import { Maestro, Materia, Pagina, Rol } from '../../../core/models';
+import { sembrarSesion } from '../../../core/services/testing/sesion-falsa';
 import { ListaMaterias } from './lista-materias';
 
 const URL = `${environment.apiUrl}/materias`;
@@ -54,7 +55,10 @@ describe('ListaMaterias', () => {
   let harness: RouterTestingHarness;
 
   /** Navega a la pantalla y deja la petición del listado **sin** responder. */
-  async function abrir(url = '/materias'): Promise<void> {
+  async function abrir(url = '/materias', rol: Rol = 'ADMIN'): Promise<void> {
+    localStorage.clear();
+    sembrarSesion(rol);
+
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -65,15 +69,19 @@ describe('ListaMaterias', () => {
     });
     http = TestBed.inject(HttpTestingController);
     harness = await RouterTestingHarness.create(url);
-    // El selector pide sus maestros al montarse, en paralelo con el listado.
-    http.expectOne((solicitud) => solicitud.url === URL_MAESTROS).flush(MAESTROS);
+    // El selector pide sus maestros al montarse, en paralelo con el listado —
+    // salvo para el ALUMNO, que no puede leerlos.
+    if (rol !== 'ALUMNO') {
+      http.expectOne((solicitud) => solicitud.url === URL_MAESTROS).flush(MAESTROS);
+    }
   }
 
   async function montar(
     url = '/materias',
     respuesta = pagina([materia(1, 'Bases de Datos')]),
+    rol: Rol = 'ADMIN',
   ): Promise<void> {
-    await abrir(url);
+    await abrir(url, rol);
     await responder(respuesta);
   }
 
@@ -265,5 +273,31 @@ describe('ListaMaterias', () => {
     const pendiente = peticion();
     expect(pendiente.request.params.get('page')).toBe('1');
     await responder(pagina([materia(1, 'Bases de Datos')], 40, 1), pendiente);
+  });
+
+  it('el ALUMNO ve el listado sin pedir unos maestros que no puede leer', async () => {
+    // La API abre el GET de materias a todos los roles y el de maestros sólo a
+    // ADMIN y MAESTRO: pedirlos igualmente devolvía un 403 silencioso y dejaba
+    // un desplegable con una única opción que no filtraba nada.
+    await montar('/materias', pagina([materia(1, 'Bases de Datos')]), 'ALUMNO');
+
+    // Por la clase del filtro y no por `mat-select` a secas: el paginador trae
+    // el suyo para el tamaño de página.
+    expect(harness.fixture.nativeElement.querySelector('.materias__filtro')).toBeNull();
+    expect(filas()).toHaveLength(1);
+  });
+
+  it('el ALUMNO puede salir de un enlace que llega filtrado', async () => {
+    // Sin selector no habría forma de volver al listado completo.
+    await montar('/materias?maestroId=2', pagina([materia(1, 'Bases de Datos')]), 'ALUMNO');
+
+    const verTodas = [...harness.fixture.nativeElement.querySelectorAll('button')].find((boton) =>
+      (boton as HTMLElement).textContent!.includes('Ver todas'),
+    ) as HTMLButtonElement;
+    verTodas.click();
+    await asentar();
+
+    expect(TestBed.inject(Router).url).not.toContain('maestroId');
+    await responder(pagina([materia(1, 'Bases de Datos'), materia(2, 'Álgebra', 1)]));
   });
 });
