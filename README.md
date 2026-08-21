@@ -149,6 +149,14 @@ maestros habrá que cambiarlo por un campo que consulte al escribir. Cuando el f
 la tabla vacía, el aviso lo dice con esas palabras ("este maestro no tiene materias
 asignadas") en vez de sugerir que la escuela no tiene ninguna.
 
+> **Ese selector no lo ve todo el mundo.** `/materias` está abierta a los tres roles y
+> `/maestros` no, así que el ALUMNO pedía una lista que volvía como **403 en silencio** —el
+> servicio va con `sinAvisoGlobal()`— y se quedaba con un desplegable vacío que no
+> filtraba nada. Ahora el `rxResource` deja sus `params` en `undefined` cuando el rol no
+> da, y la petición condenada ni se manda. El filtro puede llegar igualmente en un enlace
+> compartido (`?maestroId=2`), y sin selector no habría forma de volver al listado
+> completo: para eso está el botón "Ver todas".
+
 Los datos se piden con `rxResource`, que da `isLoading()` y `error()` como signals. Ojo:
 su `value()` **lanza** cuando el recurso está en error, así que se lee a través de
 `hasValue()` — si no, un 500 de la API revienta la detección de cambios en vez de
@@ -163,8 +171,8 @@ completo— se queda en su componente.
 
 ## Formularios
 
-`features/alumnos/formulario-alumno/` fijó el patrón de alta y edición, y
-`features/maestros/formulario-maestro/` es el primero que lo repite (Días 18–24 siguen):
+`features/alumnos/formulario-alumno/` fijó el patrón de alta y edición; `maestros/` y
+`materias/` lo repiten (Días 20–24 siguen):
 
 - **Es una ruta, no un diálogo.** `/alumnos/nuevo` y `/alumnos/7/editar` se comparten,
   se recargan y se cierran con el botón "atrás" como cualquier otra pantalla, igual que
@@ -192,13 +200,47 @@ completo— se queda en su componente.
 - Ese error se borra solo al editar el campo: cambiar el valor recalcula los validadores
   del control y reemplaza su mapa de errores. De eso depende que el formulario no se
   quede bloqueado por una objeción ya corregida.
+- **Una pista puede traer su propio texto** (`mensaje` en `PistaDeCampo`). Lo normal es
+  enseñar la frase de la API, que se lee bien bajo el campo; hace falta cambiarla cuando
+  la API habla de algo que el usuario no ha visto — ver el maestro del formulario de
+  materias, aquí abajo.
+
+### El campo que apunta a otro registro
+
+`features/materias/formulario-materia/` es el primero que no se rellena entero
+escribiendo: la materia guarda el **id** de su maestro, no su nombre.
+
+- La pantalla pide las dos cosas a la vez (la materia y los maestros) y **espera a las
+  dos** antes de habilitar el `fieldset`: un desplegable que se abre sin opciones parece
+  roto, y en una edición elegir antes de que llegue la ficha sólo consigue que la
+  respuesta pise lo elegido.
+- Las opciones incluyen **siempre la del maestro que la materia ya tiene**, etiquetada con
+  el `maestroNombre` que la respuesta trae compuesto. La API devuelve como mucho cien
+  maestros: sin esa red, una materia cuyo maestro se quedó fuera de la página dibujaría el
+  `mat-select` vacío —como si no tuviera ninguno— y editarla para corregir el nombre la
+  reasignaría sin querer.
+- Elegir a un maestro que ya no existe **no vuelve como un 400**: la API lo busca antes de
+  guardar, así que responde **404** con "Maestro con id 3 no encontrado", un id que quien
+  rellenó el formulario nunca vio porque eligió un nombre en una lista. La pista lo cuelga
+  del desplegable con palabras propias ("ese maestro ya no existe, elige otro") y el fallo
+  **vuelve a pedir la lista**, que es lo que permite resolverlo sin recargar la pantalla.
+  En una edición ese 404 es ambiguo —puede faltar la materia o el maestro— y lo único que
+  los distingue es el mensaje.
+- El nombre de una materia **no es único** en la API: dos grupos pueden llamar igual a
+  Álgebra, así que su formulario no tiene ninguna pista de duplicados. Copiar la de
+  maestros habría dejado una regla que no dispara nunca.
 
 Las escrituras son **sólo del ADMIN** (`ROLES_ESCRITURA` en `core/navegacion.ts`, espejo
-de `SecurityConfig`). Los listados de alumnos y maestros ocultan el botón de alta y el
-enlace de edición para el MAESTRO, y las rutas del formulario leen esa misma lista en su
-`rolGuard`: ocultar no protege —la API responde 403 igual—, pero un botón que sólo lleva
-a "acceso denegado" sobra. La ficha sí la ve: consultarla la puede todo el que llegue al
-listado.
+de `SecurityConfig`). Los listados ocultan el botón de alta y el enlace de edición a quien
+no la tiene, y las rutas del formulario leen esa misma lista en su `rolGuard`: ocultar no
+protege —la API responde 403 igual—, pero un botón que sólo lleva a "acceso denegado"
+sobra. La ficha sí la ve: consultarla la puede todo el que llegue al listado.
+
+En materias eso se nota más que en las otras dos secciones, porque su listado está abierto
+a los tres roles y la mayoría de quienes lo abren no verán ninguna acción de escritura. Su
+ficha lleva la misma idea un paso más: el nombre del maestro es **enlace a `/maestros/2`
+sólo para quien puede abrir esa sección**; para el ALUMNO es texto, porque el enlace sería
+un viaje a "acceso denegado".
 
 ## Ficha y borrado
 
@@ -224,6 +266,18 @@ materias a su cargo, asígnalas a otro maestro o elimínalas primero") y la deja
 la tarjeta**, junto al botón: un mensaje que explica qué hacer y se desvanece a los ocho
 segundos no sirve de mucho. Por eso su `eliminar()` va con `sinAvisoGlobal()` y el de
 alumnos no.
+
+El de materias es el mismo caso con una diferencia: `calificaciones.materia_id` y
+`asistencias.materia_id` tampoco admiten nulos, así que el 409 tiene **dos** causas
+posibles y desde el frontend no se distinguen. El mensaje las nombra a las dos ("tiene
+calificaciones o asistencias registradas") en vez de adivinar una, que sería mandar al
+usuario a buscar donde quizá no hay nada. Alumnos sigue teniendo la misma trampa latente
+—esas dos tablas apuntan también al alumno—, pero todavía no hay pantallas que creen esas
+filas; cuando lleguen (Días 20–24) se verá si conviene generalizarlo.
+
+La confirmación de una materia nombra **a su maestro** donde la de un alumno nombra la
+matrícula: es lo que distingue dos "Álgebra" en una lista, porque una materia no tiene
+ningún identificador humano propio.
 
 ## Errores y avisos
 
