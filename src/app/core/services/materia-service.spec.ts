@@ -3,21 +3,29 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { environment } from '../../../environments/environment';
-import { Materia, Pagina } from '../models';
+import { avisaGlobalmente } from '../interceptors/error-interceptor';
+import { Materia, MateriaRequest, Pagina } from '../models';
 import { MateriaService } from './materia-service';
 
 const URL = `${environment.apiUrl}/materias`;
 
+const MATERIA: Materia = {
+  id: 1,
+  nombre: 'Bases de Datos',
+  creditos: 8,
+  maestroId: 2,
+  maestroNombre: 'Laura Gómez',
+};
+
+/** Lo que viaja: el maestro va por id, el nombre lo compone la API. */
+const DATOS: MateriaRequest = {
+  nombre: 'Bases de Datos',
+  creditos: 8,
+  maestroId: 2,
+};
+
 const PAGINA: Pagina<Materia> = {
-  content: [
-    {
-      id: 1,
-      nombre: 'Bases de Datos',
-      creditos: 8,
-      maestroId: 2,
-      maestroNombre: 'Laura Gómez',
-    },
-  ],
+  content: [MATERIA],
   page: 0,
   size: 20,
   totalElements: 1,
@@ -82,5 +90,53 @@ describe('MateriaService', () => {
     const peticion = http.expectOne((solicitud) => solicitud.url === URL);
     expect(peticion.request.params.has('maestroId')).toBe(false);
     peticion.flush(PAGINA);
+  });
+
+  it('pide una materia por id', () => {
+    let recibida: Materia | undefined;
+    servicio.obtenerPorId(1).subscribe((materia) => (recibida = materia));
+
+    const peticion = http.expectOne(`${URL}/1`);
+    expect(peticion.request.method).toBe('GET');
+    peticion.flush(MATERIA);
+
+    expect(recibida).toEqual(MATERIA);
+  });
+
+  it('crea con POST a la colección', () => {
+    servicio.crear(DATOS).subscribe();
+
+    const peticion = http.expectOne(URL);
+    expect(peticion.request.method).toBe('POST');
+    expect(peticion.request.body).toEqual(DATOS);
+    peticion.flush(MATERIA, { status: 201, statusText: 'Created' });
+  });
+
+  it('actualiza con PUT al recurso, mandando el registro entero', () => {
+    // La API espera un `MateriaRequest` completo, no un parche.
+    servicio.actualizar(1, { ...DATOS, creditos: 6 }).subscribe();
+
+    const peticion = http.expectOne(`${URL}/1`);
+    expect(peticion.request.method).toBe('PUT');
+    expect(peticion.request.body).toEqual({ ...DATOS, creditos: 6 });
+    peticion.flush({ ...MATERIA, creditos: 6 });
+  });
+
+  it('borra con DELETE al recurso', () => {
+    servicio.eliminar(1).subscribe();
+
+    const peticion = http.expectOne(`${URL}/1`);
+    expect(peticion.request.method).toBe('DELETE');
+    peticion.flush(null, { status: 204, statusText: 'No Content' });
+  });
+
+  it('ninguna petición avisa por su cuenta, tampoco el borrado', () => {
+    // El 409 del borrado llega con la frase genérica de las restricciones de
+    // datos: la traduce la ficha, no un aviso flotante.
+    servicio.eliminar(1).subscribe({ error: () => undefined });
+
+    const peticion = http.expectOne(`${URL}/1`);
+    expect(avisaGlobalmente(peticion.request.context)).toBe(false);
+    peticion.flush(null, { status: 409, statusText: 'Conflict' });
   });
 });
