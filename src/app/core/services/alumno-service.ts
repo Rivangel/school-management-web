@@ -35,6 +35,20 @@ export class AlumnoService {
     });
   }
 
+  /**
+   * El alumno vinculado a la sesión abierta.
+   *
+   * Es el único endpoint de la sección que un ALUMNO puede pedir, y hace falta
+   * porque sus notas y su asistencia se consultan **por id**: la sesión guarda
+   * email, nombre y rol, y el listado donde podría buscarse está cerrado para él
+   * justamente porque no debe ver a los demás.
+   *
+   * Un ADMIN o un MAESTRO no tienen alumno vinculado y reciben un 404.
+   */
+  obtenerActual(): Observable<Alumno> {
+    return this.http.get<Alumno>(`${this.url}/me`, { context: sinAvisoGlobal() });
+  }
+
   /** Un alumno por id. La API responde 404 si no existe. */
   obtenerPorId(id: number): Observable<Alumno> {
     return this.http.get<Alumno>(`${this.url}/${id}`, { context: sinAvisoGlobal() });

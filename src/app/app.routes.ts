@@ -161,8 +161,10 @@ export const routes: Routes = [
         path: 'calificaciones',
         title: titulo('Calificaciones'),
         canActivate: [rolGuard(...rolesDe('/calificaciones'))],
-        data: { titulo: 'Calificaciones', dia: 21 },
-        loadComponent: proximamente,
+        loadComponent: () =>
+          import('./features/calificaciones/calificaciones-alumno/calificaciones-alumno').then(
+            (m) => m.CalificacionesAlumno,
+          ),
       },
       {
         // Registrar no es `ROLES_ESCRITURA`: la API abre este POST también al

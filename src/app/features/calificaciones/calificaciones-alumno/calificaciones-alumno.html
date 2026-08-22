@@ -1,0 +1,104 @@
+<header class="listado__cabecera">
+  <div>
+    <h1>Calificaciones</h1>
+    <p>
+      @if (esAlumno()) {
+        Tus calificaciones registradas.
+      } @else if (nombreConsultado(); as nombre) {
+        Calificaciones de {{ nombre }}.
+      } @else {
+        Elige un alumno para ver sus calificaciones.
+      }
+      @if (promedio(); as media) {
+        <span class="calificaciones__resumen">
+          {{ filas().length }}
+          {{ filas().length === 1 ? 'materia' : 'materias' }} · promedio {{ media }}.
+        </span>
+      }
+    </p>
+  </div>
+
+  <!-- Un ALUMNO no elige: la API sólo le deja lo suyo, así que no hay nada que
+       elegir y el desplegable sólo prometería algo que no puede hacer. -->
+  @if (!esAlumno()) {
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="calificaciones__alumno">
+      <mat-label>Alumno</mat-label>
+      <mat-select [ngModel]="alumnoElegido()" (ngModelChange)="elegirAlumno($event)">
+        @for (alumno of opcionesDeAlumno(); track alumno.id) {
+          <mat-option [value]="alumno.id">
+            {{ alumno.apellido }}, {{ alumno.nombre }} · {{ alumno.matricula }}
+          </mat-option>
+        }
+      </mat-select>
+      @if (alumnosNoListados() > 0) {
+        <mat-hint>Sólo los primeros 100; faltan {{ alumnosNoListados() }}.</mat-hint>
+      }
+    </mat-form-field>
+  }
+
+  @if (puedeRegistrar()) {
+    <a mat-flat-button routerLink="/calificaciones/registrar">
+      <mat-icon>add</mat-icon>
+      Registrar calificación
+    </a>
+  }
+</header>
+
+<!-- Altura fija para que la tabla no salte al aparecer y desaparecer la barra. -->
+<div class="listado__barra">
+  @if (cargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando calificaciones" />
+  }
+</div>
+
+@if (error(); as mensaje) {
+  <div class="listado__aviso listado__aviso--error" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <p>{{ mensaje }}</p>
+    <button mat-flat-button type="button" (click)="reintentar()">Reintentar</button>
+  </div>
+} @else if (sinElegir()) {
+  <p class="listado__aviso">
+    <mat-icon>grade</mat-icon>
+    Elige un alumno en la lista de arriba.
+  </p>
+} @else {
+  <div class="listado__tabla">
+    <table mat-table [dataSource]="filas()" [trackBy]="idDe">
+      <caption class="listado__caption">
+        Calificaciones registradas, de lo más reciente a lo más antiguo.
+      </caption>
+
+      <ng-container matColumnDef="materia">
+        <th mat-header-cell *matHeaderCellDef scope="col">Materia</th>
+        <td mat-cell *matCellDef="let fila">{{ fila.materiaNombre }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="periodo">
+        <th mat-header-cell *matHeaderCellDef scope="col">Periodo</th>
+        <td mat-cell *matCellDef="let fila">{{ fila.periodo }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="calificacion">
+        <th mat-header-cell *matHeaderCellDef scope="col">Calificación</th>
+        <td mat-cell *matCellDef="let fila" class="calificaciones__nota">
+          {{ fila.calificacion }}
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+      <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+    </table>
+
+    @if (vacio()) {
+      <p class="listado__aviso">
+        <mat-icon>grade</mat-icon>
+        @if (esAlumno()) {
+          Todavía no tienes calificaciones registradas.
+        } @else {
+          Este alumno no tiene calificaciones registradas.
+        }
+      </p>
+    }
+  </div>
+}

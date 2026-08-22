@@ -115,4 +115,14 @@ describe('AlumnoService', () => {
 
     expect(terminado).toBe(true);
   });
+
+  it('pregunta por el alumno de la sesión con /me', () => {
+    // Sus notas se piden por id y la sesión no lo lleva: sin esto, el único rol
+    // que sólo ve lo suyo sería el que no puede nombrarlo.
+    servicio.obtenerActual().subscribe();
+
+    const peticion = http.expectOne(`${URL}/me`);
+    expect(peticion.request.method).toBe('GET');
+    peticion.flush(ALUMNO);
+  });
 });

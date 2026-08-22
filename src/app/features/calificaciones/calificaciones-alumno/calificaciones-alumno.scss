@@ -1,0 +1,16 @@
+@use '../../../shared/estilos/listado';
+
+// El selector no debe estirarse con la cabecera: a ancho completo parece un
+// campo de formulario y no un filtro.
+.calificaciones__alumno {
+  min-width: 18rem;
+}
+
+// El resumen acompaña al título, no a la tabla: es de quien se consulta.
+.calificaciones__resumen {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.calificaciones__nota {
+  font-variant-numeric: tabular-nums;
+}
