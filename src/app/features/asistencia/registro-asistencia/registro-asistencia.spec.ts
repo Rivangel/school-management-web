@@ -323,4 +323,23 @@ describe('RegistroAsistencia', () => {
 
     expect(filas()).toHaveLength(2);
   });
+
+  it('el campo de fecha es nativo y no admite días futuros', async () => {
+    // Medido: el calendario de Material cargaba 120 kB en esta pantalla y
+    // entregaba un `Date` que había que convertir a ISO con cuidado del huso.
+    await abrir();
+
+    const fecha = harness.fixture.nativeElement.querySelector(
+      'input[type="date"]',
+    ) as HTMLInputElement;
+    expect(fecha).not.toBeNull();
+    expect(fecha.getAttribute('max')).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('descarta un día que no existe en el calendario', async () => {
+    await abrir('/asistencia/registrar?materiaId=3&fecha=2026-02-31');
+
+    http.expectNone((s) => s.url.startsWith(`${URL}/materia`));
+    expect(texto()).toContain('Elige la materia y el día');
+  });
 });

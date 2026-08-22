@@ -3,8 +3,6 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { provideNativeDateAdapter } from '@angular/material/core';
-import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -32,10 +30,10 @@ const COLUMNAS = ['alumno', 'grupo', 'asistencia'] as const;
 /**
  * La fecha de hoy en formato ISO **local**.
  *
- * `toISOString()` da la fecha en UTC, así que a partir de media tarde en un huso
- * negativo devuelve el día siguiente: pasar lista un lunes por la noche la
- * guardaría como del martes, y con `@PastOrPresent` la API además la rechazaría
- * por futura. Se compone a mano con las partes locales.
+ * `toISOString()` daría la fecha en UTC, así que a partir de media tarde en un
+ * huso negativo devolvería el día siguiente: el tope del campo sería mañana y la
+ * API rechazaría esa fecha por futura (`@PastOrPresent`). Se compone a mano con
+ * las partes locales.
  */
 function isoLocal(fecha: Date): string {
   const mes = `${fecha.getMonth() + 1}`.padStart(2, '0');
@@ -43,10 +41,11 @@ function isoLocal(fecha: Date): string {
   return `${fecha.getFullYear()}-${mes}-${dia}`;
 }
 
-/** Interpreta `AAAA-MM-DD` como una fecha **local**, por lo mismo de arriba. */
-function desdeIso(iso: string): Date {
+/** Un día real, no sólo cuatro cifras y dos guiones (`2026-02-31` no lo es). */
+function esFechaReal(iso: string): boolean {
   const [anio, mes, dia] = iso.split('-').map(Number);
-  return new Date(anio, mes - 1, dia);
+  const fecha = new Date(anio, mes - 1, dia);
+  return fecha.getFullYear() === anio && fecha.getMonth() === mes - 1 && fecha.getDate() === dia;
 }
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
@@ -77,7 +76,6 @@ export interface FilaDeAsistencia {
     FormsModule,
     MatButtonModule,
     MatButtonToggleModule,
-    MatDatepickerModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -85,9 +83,6 @@ export interface FilaDeAsistencia {
     MatSelectModule,
     MatTableModule,
   ],
-  // El adaptador de fechas vive aquí y no en `app.config.ts` para no meterlo en
-  // el bundle inicial, que es el que carga el login.
-  providers: [provideNativeDateAdapter()],
   templateUrl: './registro-asistencia.html',
   styleUrl: './registro-asistencia.scss',
 })
@@ -103,8 +98,16 @@ export class RegistroAsistencia {
 
   protected readonly columnas: string[] = [...COLUMNAS];
 
-  /** Hoy, que es también el máximo que acepta la API (`@PastOrPresent`). */
-  protected readonly hoy = new Date();
+  /**
+   * Hoy en ISO, que es el máximo que acepta la API (`@PastOrPresent`).
+   *
+   * El campo es un `input type="date"` nativo y no el `matDatepicker`: **medido,
+   * el calendario de Material cargaba 120 kB en esta pantalla**, devuelve un
+   * `Date` que hay que convertir a ISO con cuidado de la zona horaria, y en un
+   * móvil abre un calendario propio en vez del del sistema. El nativo da la
+   * cadena `AAAA-MM-DD` ya hecha, que es exactamente lo que viaja a la API.
+   */
+  protected readonly hoyIso = isoLocal(new Date());
 
   private readonly query = toSignal(this.ruta.queryParamMap, {
     initialValue: this.ruta.snapshot.queryParamMap,
@@ -125,14 +128,7 @@ export class RegistroAsistencia {
    */
   protected readonly fecha = computed(() => {
     const crudo = this.query().get('fecha');
-    return crudo !== null && ISO.test(crudo) && !Number.isNaN(desdeIso(crudo).getTime())
-      ? crudo
-      : undefined;
-  });
-
-  protected readonly fechaComoDate = computed(() => {
-    const iso = this.fecha();
-    return iso === undefined ? null : desdeIso(iso);
+    return crudo !== null && ISO.test(crudo) && esFechaReal(crudo) ? crudo : undefined;
   });
 
   private readonly esMaestro = computed(() => this.auth.rol() === 'MAESTRO');
@@ -256,8 +252,9 @@ export class RegistroAsistencia {
     this.irA({ materiaId });
   }
 
-  protected elegirFecha(fecha: Date | null): void {
-    this.irA({ fecha: fecha === null ? null : isoLocal(fecha) });
+  /** El campo nativo entrega ya `AAAA-MM-DD`, o cadena vacía si se borra. */
+  protected elegirFecha(fecha: string): void {
+    this.irA({ fecha: fecha === '' ? null : fecha });
   }
 
   protected marcar(alumnoId: number, presente: boolean): void {

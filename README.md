@@ -393,10 +393,17 @@ pasar lista es apuntar algo que ocurrió un día concreto, y elegirlo por el usu
 clase de ayuda que acaba guardando faltas en el día equivocado. El calendario tiene `max` en
 hoy porque la API rechaza las futuras (`@PastOrPresent`).
 
-> **La fecha se compone a mano, no con `toISOString()`.** Ese método da la fecha en UTC, así
-> que a partir de media tarde en un huso negativo devuelve el día siguiente: pasar lista un
-> lunes por la noche la guardaría como del martes y la API la rechazaría por futura. Por lo
-> mismo, `fecha` es una **cadena** en los modelos y no un `Date`.
+El campo de fecha es un **`input type="date"` nativo**, no el `matDatepicker`. Se cambió
+después de medir: el calendario de Material se llevaba **133.1 kB** de esta pantalla y el
+nativo la deja en **36.5 kB**. Además entrega la cadena `AAAA-MM-DD` ya hecha —que es
+exactamente lo que viaja a la API— y en un móvil abre el selector del sistema en vez de uno
+propio.
+
+> **Ojo con `toISOString()`,** que es lo que se usaría para convertir un `Date`: da la fecha
+> en UTC, así que a partir de media tarde en un huso negativo devuelve el día siguiente.
+> Pasar lista un lunes por la noche la guardaría como del martes y la API la rechazaría por
+> futura. Por lo mismo, `fecha` es una **cadena** en los modelos y no un `Date`, y el `max`
+> de hoy se compone a mano con las partes locales.
 
 A quién se pasa lista es **todos los alumnos**: el esquema no tiene inscripciones, ninguna
 tabla dice quién cursa qué. Es una limitación del modelo, no de la pantalla, y por eso el

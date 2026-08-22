@@ -23,18 +23,17 @@
 
   <mat-form-field appearance="outline" subscriptSizing="dynamic" class="asistencia__fecha">
     <mat-label>Fecha</mat-label>
-    <!-- `max` es hoy: la API rechaza las futuras con su `@PastOrPresent`, y un
-         calendario que las ofrece sólo invita a llevarse un 400. -->
+    <!-- Campo de fecha nativo: da la cadena `AAAA-MM-DD` que viaja a la API sin
+         conversiones, y en móvil abre el selector del sistema. `max` es hoy,
+         porque la API rechaza las futuras con su `@PastOrPresent`. -->
     <input
       matInput
-      [matDatepicker]="calendario"
-      [max]="hoy"
-      [ngModel]="fechaComoDate()"
-      (ngModelChange)="elegirFecha($event)"
+      type="date"
       name="fecha"
+      [max]="hoyIso"
+      [ngModel]="fecha() ?? ''"
+      (ngModelChange)="elegirFecha($event)"
     />
-    <mat-datepicker-toggle matIconSuffix [for]="calendario" />
-    <mat-datepicker #calendario />
   </mat-form-field>
 </header>
 
