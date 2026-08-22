@@ -41,6 +41,17 @@ export const MENU: readonly ElementoMenu[] = [
  */
 export const ROLES_ESCRITURA: readonly Rol[] = ['ADMIN'];
 
+/**
+ * Quién registra calificaciones y asistencia.
+ *
+ * **No es `ROLES_ESCRITURA`**, y esa es la diferencia que importa: en alumnos,
+ * maestros y materias escribir es del ADMIN, pero aquí la API abre el `POST` al
+ * MAESTRO — que es justamente quien pone las notas y pasa lista. Lo que la API
+ * sigue exigiendo es que la materia sea suya, y eso no se puede comprobar con
+ * una lista de roles: lo valida el servidor materia a materia.
+ */
+export const ROLES_REGISTRO: readonly Rol[] = ['ADMIN', 'MAESTRO'];
+
 /** Entradas visibles para un rol. Sin sesión no se enseña ninguna. */
 export function menuPara(rol: Rol | null): readonly ElementoMenu[] {
   return rol === null ? [] : MENU.filter((elemento) => elemento.roles.includes(rol));

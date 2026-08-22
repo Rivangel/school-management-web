@@ -125,4 +125,31 @@ describe('MaestroService', () => {
     expect(avisaGlobalmente(peticion.request.context)).toBe(false);
     peticion.flush(null, { status: 409, statusText: 'Conflict' });
   });
+
+  it('pregunta por el maestro de la sesión con /me', () => {
+    // La sesión guarda email, nombre y rol, no el id del registro: sin esta
+    // pregunta un MAESTRO no puede pedir "mis materias".
+    let recibido: Maestro | undefined;
+    servicio.obtenerActual().subscribe((maestro) => (recibido = maestro));
+
+    const peticion = http.expectOne(`${URL}/me`);
+    expect(peticion.request.method).toBe('GET');
+    peticion.flush(MAESTRO);
+
+    expect(recibido).toEqual(MAESTRO);
+  });
+
+  it('un ADMIN no tiene maestro vinculado y eso llega como 404', () => {
+    let fallo: unknown;
+    servicio.obtenerActual().subscribe({ error: (error: unknown) => (fallo = error) });
+
+    http
+      .expectOne(`${URL}/me`)
+      .flush(
+        { message: 'No hay ningún maestro vinculado a admin@escuela.com' },
+        { status: 404, statusText: 'Not Found' },
+      );
+
+    expect(fallo).toBeDefined();
+  });
 });

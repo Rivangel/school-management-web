@@ -38,6 +38,19 @@ export class MaestroService {
     });
   }
 
+  /**
+   * El maestro vinculado a la sesión abierta.
+   *
+   * La sesión guarda email, nombre y rol —lo que trae el token—, pero **no el id**
+   * del registro, así que un MAESTRO no puede pedir "mis materias"
+   * (`?maestroId=…`) sin preguntar antes quién es. Un ADMIN no tiene maestro
+   * vinculado y recibe un 404: es la respuesta correcta, no una avería, y quien
+   * llame tiene que contar con ella.
+   */
+  obtenerActual(): Observable<Maestro> {
+    return this.http.get<Maestro>(`${this.url}/me`, { context: sinAvisoGlobal() });
+  }
+
   /** Un maestro por id. La API responde 404 si no existe. */
   obtenerPorId(id: number): Observable<Maestro> {
     return this.http.get<Maestro>(`${this.url}/${id}`, { context: sinAvisoGlobal() });
