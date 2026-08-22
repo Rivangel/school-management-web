@@ -279,6 +279,42 @@ La confirmación de una materia nombra **a su maestro** donde la de un alumno no
 matrícula: es lo que distingue dos "Álgebra" en una lista, porque una materia no tiene
 ningún identificador humano propio.
 
+## Calificaciones
+
+`GET /api/calificaciones/alumno/{id}` y `/materia/{id}` **no vienen paginados**: devuelven
+un arreglo, porque son las notas de un alumno o de una materia y no un catálogo. Por eso
+estas pantallas no usan `listadoPaginado` — es la primera vez que un dominio no lo hace, y
+no es una decisión del frontend.
+
+**Registrar es un *upsert*.** El `POST` inserta o actualiza según ya exista una calificación
+para el mismo alumno, materia y periodo, y responde **201 en los dos casos**: por el código
+de estado no se puede distinguir un alta de un reemplazo. No hay `PUT` ni `DELETE` —
+corregir una nota es volver a registrarla.
+
+Eso deja un riesgo que la API no cubre: sustituir un 5.8 por un 9 sin que nadie se entere.
+`features/calificaciones/formulario-calificacion/` lo comprueba antes de guardar (pide las
+notas de esa materia) y **pregunta**, nombrando las dos cifras. Si la comprobación falla,
+guarda igual: avisar es una cortesía y no poder avisar no es motivo para descartar lo que
+el usuario pidió.
+
+Otras tres decisiones de esa pantalla:
+
+- **Registrar no es `ROLES_ESCRITURA`.** La API abre este `POST` también al MAESTRO, que es
+  quien pone las notas (`ROLES_REGISTRO` en `core/navegacion.ts`). Lo que sigue exigiendo es
+  que la materia sea **suya**, y eso no lo puede decidir una lista de roles: lo valida el
+  servidor materia a materia. El desplegable se acota con `?maestroId=` —el filtro del Día
+  18— después de preguntar `GET /api/maestros/me` quién ha entrado, pero el 403 sigue
+  siendo posible: la materia puede cambiar de maestro entre que se carga la lista y se
+  pulsa guardar, así que también se maneja.
+- **Dos decimales como mucho.** La columna es `precision = 4, scale = 2` y ninguna
+  validación de la API lo cubre: un 9.567 se guardaría como 9.57 **en silencio**.
+- **El desplegable de alumnos dice cuántos no enseña.** La API recorta en cien y una escuela
+  puede pasar de ahí de sobra; dejar la lista como si estuviera completa sería mentir. El
+  buscador que consulte al escribir necesita un endpoint que hoy no existe.
+
+Al guardar, la materia y el periodo **se quedan puestos**: quien califica lo hace de varias
+personas seguidas.
+
 ## Errores y avisos
 
 `errorInterceptor` (`core/interceptors/`) es la red de seguridad, y hace dos cosas que
