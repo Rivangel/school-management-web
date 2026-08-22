@@ -9,7 +9,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Router, RouterLink } from '@angular/router';
 
 import { Materia } from '../../../core/models';
-import { ROLES_ESCRITURA, rolesDe } from '../../../core/navegacion';
+import { ROLES_ESCRITURA, ROLES_NOTAS_DE_MATERIA, rolesDe } from '../../../core/navegacion';
 import { AuthService } from '../../../core/services/auth-service';
 import { Avisos } from '../../../core/services/avisos';
 import { MateriaService } from '../../../core/services/materia-service';
@@ -70,6 +70,14 @@ export class DetalleMateria {
    */
   protected readonly puedeVerAlMaestro = computed(() =>
     this.auth.tieneAlgunRol(...rolesDe('/maestros')),
+  );
+
+  /**
+   * Quién puede ver las notas de esta materia. El ALUMNO ve esta ficha —qué
+   * materia es y quién la imparte— pero no las calificaciones de su grupo.
+   */
+  protected readonly puedeVerCalificaciones = computed(() =>
+    this.auth.tieneAlgunRol(...ROLES_NOTAS_DE_MATERIA),
   );
 
   protected readonly error = computed(() => {

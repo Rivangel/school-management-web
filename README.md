@@ -342,6 +342,34 @@ El **promedio** lo calcula la pantalla: la API no expone ninguno y no se guarda 
 sitio. Lo que **no** se hace es marcar notas como aprobadas o reprobadas — la API no define
 cuál es la mínima, y ponerla aquí sería inventar una regla de negocio que nadie ha escrito.
 
+### Consultar por materia, y corregir
+
+`/calificaciones/materia` es la otra mitad: la pantalla anterior mira a una persona en
+todas sus materias, esta mira una materia con todo su grupo. La materia elegida vive en la
+URL (`?materiaId=3`) y la ficha de la materia enlaza aquí.
+
+Quién puede abrirla es una lista aparte (`ROLES_NOTAS_DE_MATERIA`) que **hoy coincide con
+`ROLES_REGISTRO` y no significa lo mismo**: una dice quién escribe, la otra quién puede ver
+de una sentada las notas de un grupo entero. El ALUMNO consulta las suyas y no las de sus
+compañeros, así que no entra — aunque la sección de calificaciones sí sea suya.
+
+Un MAESTRO ve **todas** las materias en el desplegable, no sólo las que imparte: leer las
+notas de una materia no exige ser su maestro (la API no lo pide, a diferencia de
+registrarlas), y la pantalla no se inventa una restricción que el servidor no tiene.
+
+**Editar es volver a registrar.** La API no tiene `PUT` ni `DELETE` de calificaciones, así
+que la columna de acciones no lleva a otro formulario: lleva al de registro con los datos en
+la URL (`?alumnoId=1&materiaId=3&periodo=2026-1&calificacion=9.5`), que abre relleno y
+titulado "Corregir calificación". El aviso de "vas a reemplazar" sigue saliendo, porque es
+literalmente lo que va a pasar, y al guardar se vuelve a la tabla de la materia en vez de
+quedarse para encadenar altas.
+
+Lo que llega en esos parámetros **se valida** como el `sort` y los filtros de los listados:
+son texto que cualquiera edita en la barra de direcciones, y un `?calificacion=veinte` o un
+periodo con otro formato dejarían el formulario inválido desde el principio sin que se
+entienda por qué. Y "corregir" es sólo lo que la pantalla sabe —que el usuario viene de una
+nota que existe—, no algo que la API distinga: su `POST` y su 201 son los mismos.
+
 ## Errores y avisos
 
 `errorInterceptor` (`core/interceptors/`) es la red de seguridad, y hace dos cosas que

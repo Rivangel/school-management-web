@@ -1,5 +1,5 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { Component, computed, effect, inject, signal } from '@angular/core';
+import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -9,7 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
-import { Router } from '@angular/router';
+import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 
 import { Calificacion, CalificacionRequest, PATRON_PERIODO } from '../../../core/models';
 import { AlumnoService } from '../../../core/services/alumno-service';
@@ -79,6 +79,12 @@ function decimalesValidos(control: AbstractControl): Record<string, true> | null
  *
  * Tampoco es un alta en el otro sentido: no hay listado del que se venga ni al
  * que volver — se vuelve a `/calificaciones`.
+ *
+ * Y es, desde el Día 22, **también la pantalla de edición**: la API no tiene
+ * `PUT`, así que corregir una nota es registrarla otra vez. La consulta por
+ * materia enlaza aquí con los datos en la URL (`?alumnoId=1&materiaId=3&…`) y el
+ * formulario abre relleno; el aviso de "vas a reemplazar" sigue saliendo, que es
+ * literalmente lo que va a pasar.
  */
 @Component({
   selector: 'app-formulario-calificacion',
@@ -121,6 +127,33 @@ export class FormularioCalificacion {
       ],
     ],
     periodo: ['', [Validators.required, Validators.pattern(PATRON_PERIODO)]],
+  });
+
+  private readonly ruta = inject(ActivatedRoute);
+
+  private readonly query = toSignal(this.ruta.queryParamMap, {
+    initialValue: this.ruta.snapshot.queryParamMap,
+  });
+
+  /** Qué trae la URL para rellenar el formulario, ya validado. */
+  private readonly prefijado = computed(() => leerPrefijado(this.query()));
+
+  /**
+   * Si esto es una corrección y no un alta.
+   *
+   * Lo dicen los tres campos que identifican una nota en la API (alumno, materia
+   * y periodo): con los tres puestos, quien llega viene de una calificación que
+   * ya existe. **La API no sabe distinguirlo** —su `POST` es el mismo y su 201
+   * también—, así que esto es sólo lo que la pantalla puede decir con
+   * honestidad: de dónde viene el usuario.
+   */
+  protected readonly corrigiendo = computed(() => {
+    const prefijado = this.prefijado();
+    return (
+      prefijado.alumnoId !== undefined &&
+      prefijado.materiaId !== undefined &&
+      prefijado.periodo !== undefined
+    );
   });
 
   private readonly esMaestro = computed(() => this.auth.rol() === 'MAESTRO');
@@ -211,6 +244,22 @@ export class FormularioCalificacion {
     this.paginaDeMaterias.reload();
   }
 
+  constructor() {
+    // Se aplica cuando **cambian** los valores, no en cada emisión del router:
+    // el `paramMap` se reemite en cualquier navegación y volver a poner los
+    // mismos datos borraría lo que el usuario estuviera escribiendo.
+    let aplicado: string | null = null;
+    effect(() => {
+      const prefijado = this.prefijado();
+      const clave = JSON.stringify(prefijado);
+      if (clave === aplicado) {
+        return;
+      }
+      aplicado = clave;
+      this.formulario.patchValue(prefijado);
+    });
+  }
+
   protected enviar(): void {
     if (this.formulario.invalid) {
       this.formulario.markAllAsTouched();
@@ -271,6 +320,15 @@ export class FormularioCalificacion {
         this.avisos.exito(
           `${calificacion.calificacion} para ${calificacion.alumnoNombre} en ${calificacion.materiaNombre} (${calificacion.periodo}).`,
         );
+        if (this.corrigiendo()) {
+          // Quien viene a corregir una nota concreta viene de una tabla y quiere
+          // volver a ella para ver el cambio, no encadenar altas.
+          void this.router.navigate(['/calificaciones/materia'], {
+            queryParams: { materiaId: calificacion.materiaId },
+          });
+          return;
+        }
+
         // El formulario se queda abierto: quien califica lo hace de varias
         // personas seguidas, y volver a una pantalla vacía obligaría a elegir
         // otra vez materia y periodo para cada nota.
@@ -301,4 +359,38 @@ export class FormularioCalificacion {
       periodo: periodo.trim(),
     };
   }
+}
+
+/**
+ * Lee de la URL lo que se puede prerrellenar, descartando lo que no vale.
+ *
+ * Es texto que cualquiera edita en la barra de direcciones, como el `sort` y los
+ * filtros de los listados: un `?calificacion=veinte` no puede acabar en un campo
+ * numérico, y un periodo con otro formato dejaría el formulario inválido desde
+ * el principio sin que se entienda por qué.
+ */
+function leerPrefijado(query: ParamMap): {
+  alumnoId?: number;
+  materiaId?: number;
+  calificacion?: number;
+  periodo?: string;
+} {
+  const entero = (valor: string | null): number | undefined =>
+    valor !== null && /^\d+$/.test(valor) && Number(valor) > 0 ? Number(valor) : undefined;
+
+  const nota = Number(query.get('calificacion'));
+  const periodo = query.get('periodo');
+
+  return {
+    alumnoId: entero(query.get('alumnoId')),
+    materiaId: entero(query.get('materiaId')),
+    calificacion:
+      query.get('calificacion') !== null &&
+      Number.isFinite(nota) &&
+      nota >= NOTA_MINIMA &&
+      nota <= NOTA_MAXIMA
+        ? nota
+        : undefined,
+    periodo: periodo !== null && PATRON_PERIODO.test(periodo) ? periodo : undefined,
+  };
 }

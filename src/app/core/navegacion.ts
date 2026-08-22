@@ -52,6 +52,19 @@ export const ROLES_ESCRITURA: readonly Rol[] = ['ADMIN'];
  */
 export const ROLES_REGISTRO: readonly Rol[] = ['ADMIN', 'MAESTRO'];
 
+/**
+ * Quién puede ver las notas de **una materia entera**.
+ *
+ * Coincide hoy con `ROLES_REGISTRO` y no significa lo mismo: aquella dice quién
+ * escribe, esta quién puede ver de una sentada las calificaciones de todo un
+ * grupo. Un ALUMNO consulta las suyas y no las de sus compañeros, así que esta
+ * lista no lo incluye aunque la sección de calificaciones sí lo haga.
+ *
+ * Son dos constantes y no una porque el día que una cambie —una escuela que
+ * deje al alumno ver la media de su grupo, pongamos— la otra no tiene por qué.
+ */
+export const ROLES_NOTAS_DE_MATERIA: readonly Rol[] = ['ADMIN', 'MAESTRO'];
+
 /** Entradas visibles para un rol. Sin sesión no se enseña ninguna. */
 export function menuPara(rol: Rol | null): readonly ElementoMenu[] {
   return rol === null ? [] : MENU.filter((elemento) => elemento.roles.includes(rol));

@@ -10,7 +10,7 @@ import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { Calificacion } from '../../../core/models';
-import { ROLES_REGISTRO } from '../../../core/navegacion';
+import { ROLES_NOTAS_DE_MATERIA, ROLES_REGISTRO } from '../../../core/navegacion';
 import { AlumnoService } from '../../../core/services/alumno-service';
 import { AuthService } from '../../../core/services/auth-service';
 import { CalificacionService } from '../../../core/services/calificacion-service';
@@ -59,6 +59,11 @@ export class CalificacionesAlumno {
 
   protected readonly esAlumno = computed(() => this.auth.rol() === 'ALUMNO');
   protected readonly puedeRegistrar = computed(() => this.auth.tieneAlgunRol(...ROLES_REGISTRO));
+
+  /** Ver un grupo entero no es cosa del ALUMNO: vería las notas de sus compañeros. */
+  protected readonly puedeVerPorMateria = computed(() =>
+    this.auth.tieneAlgunRol(...ROLES_NOTAS_DE_MATERIA),
+  );
 
   private readonly query = toSignal(this.ruta.queryParamMap, {
     initialValue: this.ruta.snapshot.queryParamMap,

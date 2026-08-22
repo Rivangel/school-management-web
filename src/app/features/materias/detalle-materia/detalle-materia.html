@@ -52,6 +52,21 @@
           </dd>
         </dl>
 
+        @if (puedeVerCalificaciones()) {
+          <!-- La consulta por materia toma la materia de la URL, así que desde
+               aquí es un enlace y no una pantalla nueva. -->
+          <p class="ficha__enlaces">
+            <a
+              mat-stroked-button
+              [routerLink]="['/calificaciones/materia']"
+              [queryParams]="{ materiaId: materia.id }"
+            >
+              <mat-icon>grade</mat-icon>
+              Ver calificaciones
+            </a>
+          </p>
+        }
+
         <!-- El borrado de una materia falla por razones concretas y frecuentes
              (tiene calificaciones o asistencias), así que se explica aquí y no
              en un aviso flotante que desaparece antes de poder hacer nada. -->

@@ -86,7 +86,11 @@ describe('FormularioCalificacion', () => {
    * Navega y responde a lo que la pantalla pide al montarse: los alumnos, las
    * materias y —sólo si ha entrado un MAESTRO— quién es.
    */
-  async function abrir(rol: Rol = 'ADMIN', alumnos = ALUMNOS): Promise<void> {
+  async function abrir(
+    rol: Rol = 'ADMIN',
+    alumnos = ALUMNOS,
+    url = '/calificaciones/registrar',
+  ): Promise<void> {
     localStorage.clear();
     sembrarSesion(rol);
 
@@ -97,12 +101,13 @@ describe('FormularioCalificacion', () => {
         provideHttpClientTesting(),
         provideRouter([
           { path: 'calificaciones', component: ConsultaFalsa },
+          { path: 'calificaciones/materia', component: ConsultaFalsa },
           { path: 'calificaciones/registrar', component: FormularioCalificacion },
         ]),
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    harness = await RouterTestingHarness.create('/calificaciones/registrar');
+    harness = await RouterTestingHarness.create(url);
 
     http.expectOne((s) => s.url === URL_ALUMNOS).flush(alumnos);
     if (rol === 'MAESTRO') {
@@ -434,5 +439,78 @@ describe('FormularioCalificacion', () => {
     await asentar();
 
     expect(TestBed.inject(Router).url).toBe('/calificaciones');
+  });
+
+  describe('corregir una nota que ya existe', () => {
+    const EDICION =
+      '/calificaciones/registrar?alumnoId=1&materiaId=3&periodo=2026-1&calificacion=9.5';
+
+    it('abre con los datos de la URL puestos', async () => {
+      // No hay pantalla de edición: la API sólo tiene el POST que hace *upsert*,
+      // así que corregir es registrar otra vez con lo que ya había.
+      await abrir('ADMIN', ALUMNOS, EDICION);
+
+      expect(texto()).toContain('Corregir calificación');
+      expect(campo('periodo').value).toBe('2026-1');
+      expect(campo('calificacion').value).toBe('9.5');
+    });
+
+    it('guardar avisa igual de que reemplaza, porque eso es lo que hace', async () => {
+      await abrir('ADMIN', ALUMNOS, EDICION);
+      escribir('calificacion', '7');
+      await enviar();
+
+      comprobacion().flush([CALIFICACION]);
+      await asentar();
+
+      expect(document.body.textContent).toContain('Se reemplazará por 7');
+      await pulsarEnElDialogo('Reemplazar');
+      guardado().flush(
+        { ...CALIFICACION, calificacion: 7 },
+        { status: 201, statusText: 'Created' },
+      );
+      await asentar();
+    });
+
+    it('al guardar vuelve a la tabla de la materia', async () => {
+      // Quien corrige una nota concreta viene de una tabla y quiere ver el
+      // cambio, no encadenar altas.
+      await abrir('ADMIN', ALUMNOS, EDICION);
+      escribir('calificacion', '7');
+      await enviar();
+      comprobacion().flush([]);
+      await asentar();
+      guardado().flush(
+        { ...CALIFICACION, calificacion: 7 },
+        { status: 201, statusText: 'Created' },
+      );
+      await asentar();
+
+      expect(TestBed.inject(Router).url).toBe('/calificaciones/materia?materiaId=3');
+    });
+
+    it('descarta lo que llega mal escrito en la URL', async () => {
+      // Es texto que cualquiera edita en la barra de direcciones: un periodo con
+      // otro formato dejaría el formulario inválido desde el principio sin que
+      // se entienda por qué.
+      await abrir(
+        'ADMIN',
+        ALUMNOS,
+        '/calificaciones/registrar?alumnoId=abc&periodo=primer%20semestre&calificacion=20',
+      );
+
+      expect(texto()).toContain('Registrar calificación');
+      expect(campo('periodo').value).toBe('');
+      expect(campo('calificacion').value).toBe('');
+    });
+
+    it('sin los tres campos que identifican una nota, esto sigue siendo un alta', async () => {
+      // La API no distingue alta de corrección: lo único que la pantalla puede
+      // decir con honestidad es de dónde viene el usuario.
+      await abrir('ADMIN', ALUMNOS, '/calificaciones/registrar?materiaId=3');
+
+      expect(texto()).toContain('Registrar calificación');
+      expect(texto()).not.toContain('Corregir calificación');
+    });
   });
 });

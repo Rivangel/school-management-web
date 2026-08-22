@@ -1,5 +1,5 @@
 <header class="formulario__cabecera">
-  <h1>Registrar calificación</h1>
+  <h1>{{ corrigiendo() ? 'Corregir calificación' : 'Registrar calificación' }}</h1>
   <p>La nota sustituye a la que ya hubiera de ese alumno en esa materia y periodo.</p>
 </header>
 
@@ -112,7 +112,11 @@
         <div class="formulario__acciones">
           <button mat-stroked-button type="button" (click)="volver()">Volver</button>
           <button mat-flat-button type="submit" [disabled]="enviando() || cargando()">
-            {{ enviando() ? 'Guardando…' : 'Registrar calificación' }}
+            @if (enviando()) {
+              Guardando…
+            } @else {
+              {{ corrigiendo() ? 'Guardar calificación' : 'Registrar calificación' }}
+            }
           </button>
         </div>
       </form>

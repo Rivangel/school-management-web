@@ -247,4 +247,19 @@ describe('DetalleMateria', () => {
 
     expect(TestBed.inject(Router).url).toBe('/materias?page=3&size=50');
   });
+
+  it('enlaza a las calificaciones de la materia', async () => {
+    await montar();
+
+    const enlace = harness.fixture.nativeElement.querySelector(
+      'a[href^="/calificaciones/materia"]',
+    ) as HTMLAnchorElement;
+    expect(enlace.getAttribute('href')).toContain('materiaId=7');
+  });
+
+  it('el ALUMNO no ve ese enlace: son las notas de su grupo', async () => {
+    await montar('/materias/7', 'ALUMNO');
+
+    expect(harness.fixture.nativeElement.querySelector('a[href^="/calificaciones"]')).toBeNull();
+  });
 });

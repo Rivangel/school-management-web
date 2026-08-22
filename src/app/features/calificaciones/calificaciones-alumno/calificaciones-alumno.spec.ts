@@ -259,4 +259,13 @@ describe('CalificacionesAlumno', () => {
     await asentar();
     expect(filas()).toHaveLength(1);
   });
+
+  it('el ALUMNO tampoco ve la consulta por materia', async () => {
+    // Vería las notas de sus compañeros.
+    await abrir('/calificaciones', 'ALUMNO');
+    http.expectOne(`${URL}/alumno/1`).flush([]);
+    await asentar();
+
+    expect(texto()).not.toContain('Por materia');
+  });
 });

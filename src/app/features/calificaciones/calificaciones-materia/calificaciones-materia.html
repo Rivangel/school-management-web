@@ -1,47 +1,29 @@
 <header class="listado__cabecera">
   <div>
-    <h1>Calificaciones</h1>
+    <h1>Calificaciones por materia</h1>
     <p>
-      @if (esAlumno()) {
-        Tus calificaciones registradas.
-      } @else if (nombreConsultado(); as nombre) {
+      @if (nombreDeLaMateria(); as nombre) {
         Calificaciones de {{ nombre }}.
       } @else {
-        Elige un alumno para ver sus calificaciones.
+        Elige una materia para ver las calificaciones de su grupo.
       }
       @if (promedio(); as media) {
         <span class="calificaciones__resumen">
           {{ filas().length }}
-          {{ filas().length === 1 ? 'materia' : 'materias' }} · promedio {{ media }}.
+          {{ filas().length === 1 ? 'calificación' : 'calificaciones' }} · promedio {{ media }}.
         </span>
       }
     </p>
   </div>
 
-  <!-- Un ALUMNO no elige: la API sólo le deja lo suyo, así que no hay nada que
-       elegir y el desplegable sólo prometería algo que no puede hacer. -->
-  @if (!esAlumno()) {
-    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="calificaciones__alumno">
-      <mat-label>Alumno</mat-label>
-      <mat-select [ngModel]="alumnoElegido()" (ngModelChange)="elegirAlumno($event)">
-        @for (alumno of opcionesDeAlumno(); track alumno.id) {
-          <mat-option [value]="alumno.id">
-            {{ alumno.apellido }}, {{ alumno.nombre }} · {{ alumno.matricula }}
-          </mat-option>
-        }
-      </mat-select>
-      @if (alumnosNoListados() > 0) {
-        <mat-hint>Sólo los primeros 100; faltan {{ alumnosNoListados() }}.</mat-hint>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="calificaciones__materia">
+    <mat-label>Materia</mat-label>
+    <mat-select [ngModel]="materiaElegida()" (ngModelChange)="elegirMateria($event)">
+      @for (materia of opcionesDeMateria(); track materia.id) {
+        <mat-option [value]="materia.id">{{ materia.nombre }}</mat-option>
       }
-    </mat-form-field>
-  }
-
-  @if (puedeVerPorMateria()) {
-    <a mat-stroked-button routerLink="/calificaciones/materia">
-      <mat-icon>menu_book</mat-icon>
-      Por materia
-    </a>
-  }
+    </mat-select>
+  </mat-form-field>
 
   @if (puedeRegistrar()) {
     <a mat-flat-button routerLink="/calificaciones/registrar">
@@ -66,19 +48,19 @@
   </div>
 } @else if (sinElegir()) {
   <p class="listado__aviso">
-    <mat-icon>grade</mat-icon>
-    Elige un alumno en la lista de arriba.
+    <mat-icon>menu_book</mat-icon>
+    Elige una materia en la lista de arriba.
   </p>
 } @else {
   <div class="listado__tabla">
     <table mat-table [dataSource]="filas()" [trackBy]="idDe">
       <caption class="listado__caption">
-        Calificaciones registradas, de lo más reciente a lo más antiguo.
+        Calificaciones de la materia, de lo más reciente a lo más antiguo.
       </caption>
 
-      <ng-container matColumnDef="materia">
-        <th mat-header-cell *matHeaderCellDef scope="col">Materia</th>
-        <td mat-cell *matCellDef="let fila">{{ fila.materiaNombre }}</td>
+      <ng-container matColumnDef="alumno">
+        <th mat-header-cell *matHeaderCellDef scope="col">Alumno</th>
+        <td mat-cell *matCellDef="let fila">{{ fila.alumnoNombre }}</td>
       </ng-container>
 
       <ng-container matColumnDef="periodo">
@@ -93,6 +75,25 @@
         </td>
       </ng-container>
 
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+        <td mat-cell *matCellDef="let fila">
+          <!-- No hay pantalla de edición: la API sólo tiene el POST que hace
+               *upsert*, así que corregir es registrar otra vez con los datos ya
+               puestos. -->
+          @if (puedeRegistrar()) {
+            <a
+              mat-icon-button
+              routerLink="/calificaciones/registrar"
+              [queryParams]="parametrosDeEdicion(fila)"
+              [attr.aria-label]="'Corregir la calificación de ' + fila.alumnoNombre"
+            >
+              <mat-icon>edit</mat-icon>
+            </a>
+          }
+        </td>
+      </ng-container>
+
       <tr mat-header-row *matHeaderRowDef="columnas"></tr>
       <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
     </table>
@@ -100,11 +101,7 @@
     @if (vacio()) {
       <p class="listado__aviso">
         <mat-icon>grade</mat-icon>
-        @if (esAlumno()) {
-          Todavía no tienes calificaciones registradas.
-        } @else {
-          Este alumno no tiene calificaciones registradas.
-        }
+        Esta materia todavía no tiene calificaciones registradas.
       </p>
     }
   </div>

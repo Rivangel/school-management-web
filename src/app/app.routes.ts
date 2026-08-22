@@ -3,7 +3,12 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth-guard';
 import { invitadoGuard } from './core/guards/invitado-guard';
 import { rolGuard } from './core/guards/rol-guard';
-import { ROLES_ESCRITURA, ROLES_REGISTRO, rolesDe } from './core/navegacion';
+import {
+  ROLES_ESCRITURA,
+  ROLES_NOTAS_DE_MATERIA,
+  ROLES_REGISTRO,
+  rolesDe,
+} from './core/navegacion';
 
 const titulo = (seccion: string) => `${seccion} · School Management`;
 
@@ -164,6 +169,19 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/calificaciones/calificaciones-alumno/calificaciones-alumno').then(
             (m) => m.CalificacionesAlumno,
+          ),
+      },
+      {
+        // Ver de una sentada las notas de todo un grupo no es cosa del ALUMNO,
+        // aunque la sección de calificaciones sí lo sea: vería las de sus
+        // compañeros. Va antes de `registrar` por costumbre, no por necesidad —
+        // son dos rutas literales y ninguna es un comodín.
+        path: 'calificaciones/materia',
+        title: titulo('Calificaciones por materia'),
+        canActivate: [rolGuard(...ROLES_NOTAS_DE_MATERIA)],
+        loadComponent: () =>
+          import('./features/calificaciones/calificaciones-materia/calificaciones-materia').then(
+            (m) => m.CalificacionesMateria,
           ),
       },
       {

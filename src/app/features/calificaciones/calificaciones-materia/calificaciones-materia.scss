@@ -1,0 +1,13 @@
+@use '../../../shared/estilos/listado';
+
+.calificaciones__materia {
+  min-width: 18rem;
+}
+
+.calificaciones__resumen {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.calificaciones__nota {
+  font-variant-numeric: tabular-nums;
+}
