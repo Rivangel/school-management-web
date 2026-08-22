@@ -51,6 +51,19 @@
             <a href="mailto:{{ alumno.email }}">{{ alumno.email }}</a>
           </dd>
         </dl>
+
+        <!-- La consulta de calificaciones toma el alumno de la URL, así que
+             desde aquí es un enlace y no una pantalla nueva. -->
+        <p class="ficha__enlaces">
+          <a
+            mat-stroked-button
+            [routerLink]="['/calificaciones']"
+            [queryParams]="{ alumnoId: alumno.id }"
+          >
+            <mat-icon>grade</mat-icon>
+            Ver calificaciones
+          </a>
+        </p>
       </mat-card-content>
 
       @if (puedeEditar()) {

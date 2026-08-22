@@ -60,6 +60,16 @@
   }
 }
 
+// Enlaces a otras pantallas sobre el mismo registro (sus calificaciones, su
+// asistencia). Van con los datos y no en `mat-card-actions`, que es donde están
+// las acciones que **cambian** algo.
+.ficha__enlaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1.5rem 0 0;
+}
+
 .ficha__eliminar {
   --mat-button-text-label-text-color: var(--mat-sys-error);
   --mat-icon-color: var(--mat-sys-error);

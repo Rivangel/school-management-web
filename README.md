@@ -315,6 +315,33 @@ Otras tres decisiones de esa pantalla:
 Al guardar, la materia y el periodo **se quedan puestos**: quien califica lo hace de varias
 personas seguidas.
 
+### Consultar por alumno
+
+`/calificaciones` es la primera pantalla de consulta que **no es un listado paginado**: la
+API devuelve el arreglo entero de notas de una persona, así que no hay paginador, ni `sort`
+que mandar, ni `listadoPaginado` que reutilizar.
+
+También es la primera que cambia **a quién consulta** según quién mire, y no sólo qué
+botones enseña:
+
+| Quién entra | Qué ve |
+|---|---|
+| ADMIN · MAESTRO | Un desplegable de alumnos; el elegido vive en la URL (`?alumnoId=3`) |
+| ALUMNO | Lo suyo, resuelto con `GET /api/alumnos/me`, sin desplegable |
+
+Para un ALUMNO el `?alumnoId=` de otro **se ignora a propósito**: pedirlo sólo conseguiría un
+403, así que la pantalla no lo intenta. Y no pide el listado de alumnos, que tiene cerrado.
+
+**Aquí sí se ordena en el cliente**, que fue justo el error del Día 18, y es correcto por la
+misma razón por la que allí no lo era: entonces la pantalla tenía en memoria una página de
+veinte filas de un total mayor, y ahora tiene el arreglo completo — no hay paginador que
+descuadrar ni `sort` que la API sepa interpretar. Por periodo descendente y, dentro de cada
+periodo, por materia.
+
+El **promedio** lo calcula la pantalla: la API no expone ninguno y no se guarda en ningún
+sitio. Lo que **no** se hace es marcar notas como aprobadas o reprobadas — la API no define
+cuál es la mínima, y ponerla aquí sería inventar una regla de negocio que nadie ha escrito.
+
 ## Errores y avisos
 
 `errorInterceptor` (`core/interceptors/`) es la red de seguridad, y hace dos cosas que

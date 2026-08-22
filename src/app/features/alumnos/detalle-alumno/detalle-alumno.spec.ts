@@ -200,4 +200,14 @@ describe('DetalleAlumno', () => {
 
     expect(TestBed.inject(Router).url).toBe('/alumnos?page=3&size=50');
   });
+
+  it('enlaza a las calificaciones del alumno', async () => {
+    // La consulta toma el alumno de la URL, así que desde aquí basta un enlace.
+    await montar();
+
+    const enlace = harness.fixture.nativeElement.querySelector(
+      'a[href^="/calificaciones"]',
+    ) as HTMLAnchorElement;
+    expect(enlace.getAttribute('href')).toContain('alumnoId=7');
+  });
 });
