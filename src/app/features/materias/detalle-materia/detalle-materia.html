@@ -64,6 +64,16 @@
               <mat-icon>grade</mat-icon>
               Ver calificaciones
             </a>
+            @if (puedePasarLista()) {
+              <a
+                mat-stroked-button
+                [routerLink]="['/asistencia/registrar']"
+                [queryParams]="{ materiaId: materia.id }"
+              >
+                <mat-icon>event_available</mat-icon>
+                Pasar lista
+              </a>
+            }
           </p>
         }
 

@@ -370,6 +370,40 @@ periodo con otro formato dejarían el formulario inválido desde el principio si
 entienda por qué. Y "corregir" es sólo lo que la pantalla sabe —que el usuario viene de una
 nota que existe—, no algo que la API distinga: su `POST` y su 201 son los mismos.
 
+## Asistencia
+
+`/asistencia/registrar` es la primera pantalla que **escribe varios registros de una vez**, y
+la API no sabe recibirlos juntos: `POST /api/asistencia` guarda a un alumno, así que una
+lista de treinta son treinta peticiones. De ahí las tres decisiones que la definen:
+
+- **Sólo se manda lo que cambió.** Reenviar la clase entera para corregir una falta es
+  gratis para quien mira la pantalla y no para el servidor. Lo ya registrado se pide con
+  `GET /api/asistencia/materia/{id}?fecha=` —el endpoint que faltaba— y lo que se ve empieza
+  siendo eso.
+- **Un fallo no cancela los demás.** Cada petición lleva su propio `catchError`: con un
+  `forkJoin` a secas, un 403 tiraría abajo la clase completa. Al terminar se dice **a quién
+  hay que repetirle**, por su nombre y no con un contador, y se recarga para que la pantalla
+  vuelva a contar la verdad del servidor.
+- **Tres estados por alumno, no dos**: presente, ausente y **sin marcar**. Un interruptor de
+  dos posiciones confundiría "todavía no he pasado lista" con "faltó", que es justo lo que no
+  se quiere apuntar por descuido.
+
+La materia y el día viven en la URL, como todo lo demás. **Sin fecha no se supone hoy**:
+pasar lista es apuntar algo que ocurrió un día concreto, y elegirlo por el usuario es la
+clase de ayuda que acaba guardando faltas en el día equivocado. El calendario tiene `max` en
+hoy porque la API rechaza las futuras (`@PastOrPresent`).
+
+> **La fecha se compone a mano, no con `toISOString()`.** Ese método da la fecha en UTC, así
+> que a partir de media tarde en un huso negativo devuelve el día siguiente: pasar lista un
+> lunes por la noche la guardaría como del martes y la API la rechazaría por futura. Por lo
+> mismo, `fecha` es una **cadena** en los modelos y no un `Date`.
+
+A quién se pasa lista es **todos los alumnos**: el esquema no tiene inscripciones, ninguna
+tabla dice quién cursa qué. Es una limitación del modelo, no de la pantalla, y por eso el
+aviso de "faltan N" pesa aquí más que en cualquier otro desplegable. Un MAESTRO sí ve
+acotadas sus materias, a diferencia de la consulta del Día 22: esta pantalla escribe, y la
+API rechaza con un 403 la materia que no imparte.
+
 ## Errores y avisos
 
 `errorInterceptor` (`core/interceptors/`) es la red de seguridad, y hace dos cosas que

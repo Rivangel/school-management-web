@@ -1,0 +1,18 @@
+@use '../../../shared/estilos/listado';
+
+.asistencia__materia,
+.asistencia__fecha {
+  min-width: 14rem;
+}
+
+.asistencia__pendientes {
+  color: var(--mat-sys-primary);
+}
+
+.asistencia__acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}

@@ -262,4 +262,13 @@ describe('DetalleMateria', () => {
 
     expect(harness.fixture.nativeElement.querySelector('a[href^="/calificaciones"]')).toBeNull();
   });
+
+  it('enlaza a pasar lista de la materia', async () => {
+    await montar();
+
+    const enlace = harness.fixture.nativeElement.querySelector(
+      'a[href^="/asistencia/registrar"]',
+    ) as HTMLAnchorElement;
+    expect(enlace.getAttribute('href')).toContain('materiaId=7');
+  });
 });

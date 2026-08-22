@@ -200,8 +200,19 @@ export const routes: Routes = [
         path: 'asistencia',
         title: titulo('Asistencia'),
         canActivate: [rolGuard(...rolesDe('/asistencia'))],
-        data: { titulo: 'Asistencia', dia: 23 },
+        data: { titulo: 'Asistencia', dia: 24 },
         loadComponent: proximamente,
+      },
+      {
+        // Pasar lista escribe, así que es `ROLES_REGISTRO` y no los roles de la
+        // sección: la consulta la ve también el ALUMNO, esto no.
+        path: 'asistencia/registrar',
+        title: titulo('Pasar lista'),
+        canActivate: [rolGuard(...ROLES_REGISTRO)],
+        loadComponent: () =>
+          import('./features/asistencia/registro-asistencia/registro-asistencia').then(
+            (m) => m.RegistroAsistencia,
+          ),
       },
       {
         path: 'reportes',
