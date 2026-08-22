@@ -3,7 +3,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth-guard';
 import { invitadoGuard } from './core/guards/invitado-guard';
 import { rolGuard } from './core/guards/rol-guard';
-import { ROLES_ESCRITURA, rolesDe } from './core/navegacion';
+import { ROLES_ESCRITURA, ROLES_REGISTRO, rolesDe } from './core/navegacion';
 
 const titulo = (seccion: string) => `${seccion} · School Management`;
 
@@ -161,8 +161,20 @@ export const routes: Routes = [
         path: 'calificaciones',
         title: titulo('Calificaciones'),
         canActivate: [rolGuard(...rolesDe('/calificaciones'))],
-        data: { titulo: 'Calificaciones', dia: 20 },
+        data: { titulo: 'Calificaciones', dia: 21 },
         loadComponent: proximamente,
+      },
+      {
+        // Registrar no es `ROLES_ESCRITURA`: la API abre este POST también al
+        // MAESTRO, que es quien pone las notas. Que la materia sea suya lo
+        // comprueba el servidor, materia a materia — un rol no puede decirlo.
+        path: 'calificaciones/registrar',
+        title: titulo('Registrar calificación'),
+        canActivate: [rolGuard(...ROLES_REGISTRO)],
+        loadComponent: () =>
+          import('./features/calificaciones/formulario-calificacion/formulario-calificacion').then(
+            (m) => m.FormularioCalificacion,
+          ),
       },
       {
         path: 'asistencia',
