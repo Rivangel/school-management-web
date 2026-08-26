@@ -63,6 +63,14 @@
             <mat-icon>grade</mat-icon>
             Ver calificaciones
           </a>
+          <a
+            mat-stroked-button
+            [routerLink]="['/asistencia']"
+            [queryParams]="{ alumnoId: alumno.id }"
+          >
+            <mat-icon>event_available</mat-icon>
+            Ver asistencia
+          </a>
         </p>
       </mat-card-content>
 
