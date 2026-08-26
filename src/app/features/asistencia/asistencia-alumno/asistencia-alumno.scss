@@ -1,0 +1,29 @@
+@use '../../../shared/estilos/listado';
+
+// El selector no debe estirarse con la cabecera: a ancho completo parece un
+// campo de formulario y no un filtro.
+.asistencia__alumno {
+  min-width: 18rem;
+}
+
+// El resumen acompana al titulo, no a la tabla: es de quien se consulta.
+.asistencia__resumen {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+// Chip visual para distinguir presente/ausente de un vistazo.
+.asistencia__chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.625rem;
+  border-radius: 1rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  background-color: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  &--presente {
+    background-color: var(--mat-sys-tertiary-container);
+    color: var(--mat-sys-on-tertiary-container);
+  }
+}
