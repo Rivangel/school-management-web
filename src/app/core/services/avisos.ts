@@ -33,7 +33,11 @@ export class Avisos {
   }
 
   private async abrir(mensaje: string, duration: number, panelClass: string): Promise<void> {
-    const { MatSnackBar } = await import('@angular/material/snack-bar');
-    this.inyector.get(MatSnackBar).open(mensaje, 'Cerrar', { duration, panelClass });
+    try {
+      const { MatSnackBar } = await import('@angular/material/snack-bar');
+      this.inyector.get(MatSnackBar).open(mensaje, 'Cerrar', { duration, panelClass });
+    } catch {
+      // Ignorar si el inyector fue destruido en un test antes de resolver el import efímero
+    }
   }
 }

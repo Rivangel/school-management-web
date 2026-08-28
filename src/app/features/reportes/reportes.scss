@@ -1,0 +1,73 @@
+.reportes__cabecera {
+  margin-bottom: 1rem;
+
+  h1 {
+    margin: 0;
+    font-size: 1.75rem;
+    font-weight: 500;
+  }
+
+  p {
+    margin: 0.25rem 0 0;
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.reportes__barra {
+  height: 4px;
+  margin-bottom: 1rem;
+}
+
+.reportes__contenido {
+  display: grid;
+  gap: 1.5rem;
+  max-width: 600px;
+}
+
+.reportes__tarjeta {
+  padding: 0.5rem;
+}
+
+.reportes__icono {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  width: 40px;
+  height: 40px;
+  color: var(--mat-sys-primary);
+}
+
+.reportes__datos-alumno {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: var(--mat-sys-surface-container-low);
+  border-radius: 8px;
+
+  p {
+    margin: 0.25rem 0;
+  }
+}
+
+.reportes__selector {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.reportes__aviso {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 8px;
+  background-color: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    flex-shrink: 0;
+  }
+
+  p {
+    margin: 0;
+  }
+}

@@ -71,6 +71,15 @@
             <mat-icon>event_available</mat-icon>
             Ver asistencia
           </a>
+          <button
+            mat-stroked-button
+            type="button"
+            [disabled]="descargandoBoleta()"
+            (click)="descargarBoleta(alumno.id)"
+          >
+            <mat-icon>download</mat-icon>
+            Descargar boleta
+          </button>
         </p>
       </mat-card-content>
 

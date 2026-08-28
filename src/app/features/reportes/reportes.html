@@ -1,0 +1,78 @@
+<header class="reportes__cabecera">
+  <div>
+    <h1>Reportes</h1>
+    <p>Descarga de boletas oficiales de calificaciones en formato PDF.</p>
+  </div>
+</header>
+
+<div class="reportes__barra">
+  @if (cargando() || descargando()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Procesando reporte" />
+  }
+</div>
+
+@if (errorCarga(); as mensaje) {
+  <div class="reportes__aviso reportes__aviso--error" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <p>{{ mensaje }}</p>
+  </div>
+} @else {
+  <div class="reportes__contenido">
+    <mat-card appearance="outlined" class="reportes__tarjeta">
+      <mat-card-header>
+        <mat-icon mat-card-avatar class="reportes__icono">description</mat-icon>
+        <mat-card-title>Boleta de Calificaciones</mat-card-title>
+        <mat-card-subtitle>
+          Documento PDF con el desglose de asignaturas, calificaciones y promedio general.
+        </mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        @if (esAlumno()) {
+          @if (miAlumno(); as yo) {
+            <div class="reportes__datos-alumno">
+              <p><strong>Alumno:</strong> {{ yo.nombre }} {{ yo.apellido }}</p>
+              <p><strong>Matrícula:</strong> {{ yo.matricula }}</p>
+              <p><strong>Grupo:</strong> {{ yo.grupo }}</p>
+            </div>
+          }
+        } @else {
+          <mat-form-field appearance="outline" class="reportes__selector">
+            <mat-label>Seleccionar Alumno</mat-label>
+            <mat-select [ngModel]="alumnoElegido()" (ngModelChange)="alumnoElegido.set($event)">
+              @for (alumno of opcionesDeAlumno(); track alumno.id) {
+                <mat-option [value]="alumno.id">
+                  {{ alumno.apellido }}, {{ alumno.nombre }} · {{ alumno.matricula }} ({{ alumno.grupo }})
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        }
+      </mat-card-content>
+
+      <mat-card-actions align="end">
+        @if (esAlumno()) {
+          <button
+            mat-flat-button
+            type="button"
+            [disabled]="cargando() || descargando() || !miAlumno()"
+            (click)="descargarMiBoleta()"
+          >
+            <mat-icon>download</mat-icon>
+            Descargar boleta PDF
+          </button>
+        } @else {
+          <button
+            mat-flat-button
+            type="button"
+            [disabled]="cargando() || descargando() || !alumnoElegido()"
+            (click)="descargarBoletaSeleccionada()"
+          >
+            <mat-icon>download</mat-icon>
+            Descargar boleta PDF
+          </button>
+        }
+      </mat-card-actions>
+    </mat-card>
+  </div>
+}

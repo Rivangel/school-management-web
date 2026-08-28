@@ -220,8 +220,8 @@ export const routes: Routes = [
         path: 'reportes',
         title: titulo('Reportes'),
         canActivate: [rolGuard(...rolesDe('/reportes'))],
-        data: { titulo: 'Reportes', dia: 25 },
-        loadComponent: proximamente,
+        loadComponent: () =>
+          import('./features/reportes/reportes').then((m) => m.Reportes),
       },
     ],
   },

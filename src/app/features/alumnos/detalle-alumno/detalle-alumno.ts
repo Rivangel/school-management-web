@@ -13,6 +13,7 @@ import { AlumnoService } from '../../../core/services/alumno-service';
 import { AuthService } from '../../../core/services/auth-service';
 import { Avisos } from '../../../core/services/avisos';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
+import { ReporteService } from '../../../core/services/reporte-service';
 import { Confirmar, DatosConfirmacion } from '../../../shared/components/confirmar/confirmar';
 import { idDeRuta } from '../../../shared/id-de-ruta';
 
@@ -34,12 +35,14 @@ import { idDeRuta } from '../../../shared/id-de-ruta';
 })
 export class DetalleAlumno {
   private readonly alumnos = inject(AlumnoService);
+  private readonly reportes = inject(ReporteService);
   private readonly auth = inject(AuthService);
   private readonly avisos = inject(Avisos);
   private readonly dialogo = inject(MatDialog);
   private readonly router = inject(Router);
 
   protected readonly id = idDeRuta().id;
+  protected readonly descargandoBoleta = signal(false);
 
   /**
    * `/alumnos/abc`: la dirección no apunta a ninguna ficha.
@@ -108,6 +111,23 @@ export class DetalleAlumno {
   /** Vuelve al listado tal y como estaba (`preserve` mantiene página y orden). */
   protected volver(): void {
     void this.router.navigate(['/alumnos'], { queryParamsHandling: 'preserve' });
+  }
+
+  protected descargarBoleta(alumnoId: number): void {
+    if (this.descargandoBoleta()) {
+      return;
+    }
+    this.descargandoBoleta.set(true);
+    this.reportes.descargarBoleta(alumnoId).subscribe({
+      next: (nombreArchivo) => {
+        this.descargandoBoleta.set(false);
+        this.avisos.exito(`Boleta descargada: ${nombreArchivo}`);
+      },
+      error: (err) => {
+        this.descargandoBoleta.set(false);
+        this.avisos.error(mensajeDeError(err, 'No se pudo descargar la boleta en PDF.'));
+      },
+    });
   }
 
   private borrar(alumno: Alumno): void {
