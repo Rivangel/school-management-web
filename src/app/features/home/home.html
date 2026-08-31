@@ -1,13 +1,111 @@
 <header class="portada__saludo">
   <h1>Hola, {{ nombre() }}</h1>
-  <p>Entraste como {{ rol() }}. Estas son las secciones a las que tienes acceso.</p>
+  <p>Entraste como {{ rol() }}. Aquí tienes un resumen de la información general.</p>
 </header>
 
-<nav class="portada__accesos" aria-label="Secciones disponibles">
-  @for (acceso of accesos(); track acceso.ruta) {
-    <a class="portada__acceso" [routerLink]="acceso.ruta">
-      <mat-icon>{{ acceso.icono }}</mat-icon>
-      <span>{{ acceso.etiqueta }}</span>
-    </a>
+@if (cargando()) {
+  <mat-progress-bar mode="indeterminate" class="dashboard__cargando"></mat-progress-bar>
+}
+
+@if (errorCarga(); as error) {
+  <div class="dashboard__error" role="alert">
+    <mat-icon>error_outline</mat-icon>
+    <span>{{ error }}</span>
+  </div>
+}
+
+<section class="dashboard__tarjetas" aria-label="Estadísticas generales">
+  @if (esMaestroOAdmin()) {
+    <mat-card class="dashboard__tarjeta" [routerLink]="'/alumnos'">
+      <mat-card-content class="dashboard__tarjeta-contenido">
+        <div class="dashboard__tarjeta-icono dashboard__tarjeta-icono--alumnos">
+          <mat-icon>groups</mat-icon>
+        </div>
+        <div class="dashboard__tarjeta-datos">
+          <span class="dashboard__tarjeta-titulo">Alumnos</span>
+          <span class="dashboard__tarjeta-valor">
+            {{ totalAlumnos() !== null ? totalAlumnos() : '—' }}
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="dashboard__tarjeta" [routerLink]="'/maestros'">
+      <mat-card-content class="dashboard__tarjeta-contenido">
+        <div class="dashboard__tarjeta-icono dashboard__tarjeta-icono--maestros">
+          <mat-icon>person_outline</mat-icon>
+        </div>
+        <div class="dashboard__tarjeta-datos">
+          <span class="dashboard__tarjeta-titulo">Maestros</span>
+          <span class="dashboard__tarjeta-valor">
+            {{ totalMaestros() !== null ? totalMaestros() : '—' }}
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="dashboard__tarjeta" [routerLink]="'/materias'">
+      <mat-card-content class="dashboard__tarjeta-contenido">
+        <div class="dashboard__tarjeta-icono dashboard__tarjeta-icono--materias">
+          <mat-icon>menu_book</mat-icon>
+        </div>
+        <div class="dashboard__tarjeta-datos">
+          <span class="dashboard__tarjeta-titulo">Materias</span>
+          <span class="dashboard__tarjeta-valor">
+            {{ totalMaterias() !== null ? totalMaterias() : '—' }}
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-card class="dashboard__tarjeta" [routerLink]="'/materias'">
+      <mat-card-content class="dashboard__tarjeta-contenido">
+        <div class="dashboard__tarjeta-icono dashboard__tarjeta-icono--materias">
+          <mat-icon>menu_book</mat-icon>
+        </div>
+        <div class="dashboard__tarjeta-datos">
+          <span class="dashboard__tarjeta-titulo">Materias</span>
+          <span class="dashboard__tarjeta-valor">
+            {{ totalMaterias() !== null ? totalMaterias() : '—' }}
+          </span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="dashboard__tarjeta" [routerLink]="'/calificaciones'">
+      <mat-card-content class="dashboard__tarjeta-contenido">
+        <div class="dashboard__tarjeta-icono dashboard__tarjeta-icono--calificaciones">
+          <mat-icon>grade</mat-icon>
+        </div>
+        <div class="dashboard__tarjeta-datos">
+          <span class="dashboard__tarjeta-titulo">Calificaciones</span>
+          <span class="dashboard__tarjeta-subtitulo">Mis notas</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="dashboard__tarjeta" [routerLink]="'/asistencia'">
+      <mat-card-content class="dashboard__tarjeta-contenido">
+        <div class="dashboard__tarjeta-icono dashboard__tarjeta-icono--asistencia">
+          <mat-icon>event_available</mat-icon>
+        </div>
+        <div class="dashboard__tarjeta-datos">
+          <span class="dashboard__tarjeta-titulo">Asistencia</span>
+          <span class="dashboard__tarjeta-subtitulo">Mi registro</span>
+        </div>
+      </mat-card-content>
+    </mat-card>
   }
-</nav>
+</section>
+
+<section class="dashboard__seccion">
+  <h2 class="dashboard__seccion-titulo">Accesos rápidos</h2>
+  <nav class="portada__accesos" aria-label="Secciones disponibles">
+    @for (acceso of accesos(); track acceso.ruta) {
+      <a class="portada__acceso" [routerLink]="acceso.ruta">
+        <mat-icon>{{ acceso.icono }}</mat-icon>
+        <span>{{ acceso.etiqueta }}</span>
+      </a>
+    }
+  </nav>
+</section>

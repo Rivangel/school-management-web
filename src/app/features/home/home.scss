@@ -13,6 +13,134 @@
   }
 }
 
+.dashboard__cargando {
+  margin-bottom: 1rem;
+  border-radius: var(--mat-sys-corner-full);
+}
+
+.dashboard__error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+
+  mat-icon {
+    font-size: 1.25rem;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+.dashboard__tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.dashboard__tarjeta {
+  cursor: pointer;
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-low);
+  transition:
+    transform 120ms ease,
+    background-color 120ms ease,
+    box-shadow 120ms ease;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--mat-sys-surface-container-high);
+    transform: translateY(-2px);
+    box-shadow: var(--mat-sys-level1);
+  }
+
+  .dashboard__tarjeta-contenido {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem !important;
+  }
+
+  .dashboard__tarjeta-icono {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: var(--mat-sys-corner-medium);
+    background: var(--mat-sys-secondary-container);
+    color: var(--mat-sys-on-secondary-container);
+
+    mat-icon {
+      font-size: 1.75rem;
+      width: 1.75rem;
+      height: 1.75rem;
+    }
+
+    &--alumnos {
+      background: var(--mat-sys-primary-container);
+      color: var(--mat-sys-on-primary-container);
+    }
+
+    &--maestros {
+      background: var(--mat-sys-tertiary-container);
+      color: var(--mat-sys-on-tertiary-container);
+    }
+
+    &--materias {
+      background: var(--mat-sys-secondary-container);
+      color: var(--mat-sys-on-secondary-container);
+    }
+
+    &--calificaciones {
+      background: var(--mat-sys-primary-container);
+      color: var(--mat-sys-on-primary-container);
+    }
+
+    &--asistencia {
+      background: var(--mat-sys-tertiary-container);
+      color: var(--mat-sys-on-tertiary-container);
+    }
+  }
+
+  .dashboard__tarjeta-datos {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .dashboard__tarjeta-titulo {
+    font: var(--mat-sys-title-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  .dashboard__tarjeta-valor {
+    font: var(--mat-sys-headline-medium);
+    font-weight: 700;
+    color: var(--mat-sys-on-surface);
+    line-height: 1.2;
+  }
+
+  .dashboard__tarjeta-subtitulo {
+    font: var(--mat-sys-body-medium);
+    color: var(--mat-sys-on-surface);
+    font-weight: 500;
+  }
+}
+
+.dashboard__seccion {
+  margin-top: 1.5rem;
+
+  .dashboard__seccion-titulo {
+    font: var(--mat-sys-title-medium);
+    color: var(--mat-sys-on-surface-variant);
+    margin: 0 0 0.75rem;
+  }
+}
+
 .portada__accesos {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
