@@ -1,0 +1,55 @@
+<figure class="grafica">
+  <figcaption class="grafica__titulo">{{ titulo() }}</figcaption>
+
+  @if (hayDatos()) {
+    <div class="grafica__filas">
+      @for (barra of dibujadas(); track barra.etiqueta) {
+        <div class="grafica__fila">
+          <span class="grafica__etiqueta" [title]="barra.etiqueta">{{ barra.etiqueta }}</span>
+          <svg
+            class="grafica__pista"
+            [attr.viewBox]="'0 0 ' + ancho + ' ' + altoFila"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <rect class="grafica__fondo" x="0" y="0" [attr.width]="ancho" [attr.height]="altoFila" />
+            <rect
+              class="grafica__barra"
+              x="0"
+              y="0"
+              [attr.width]="barra.ancho"
+              [attr.height]="altoFila"
+            />
+          </svg>
+          <span class="grafica__valor">{{ barra.texto }}</span>
+        </div>
+      }
+    </div>
+
+    <!--
+      La misma serie en tabla, sólo para lectores de pantalla: el SVG va con
+      `aria-hidden` porque un dibujo no se puede recorrer valor por valor.
+    -->
+    <table class="solo-lectores">
+      <caption>
+        {{ titulo() }}
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Concepto</th>
+          <th scope="col">{{ unidad() }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (barra of barras(); track barra.etiqueta) {
+          <tr>
+            <th scope="row">{{ barra.etiqueta }}</th>
+            <td>{{ barra.texto }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  } @else {
+    <p class="grafica__vacio">{{ vacio() }}</p>
+  }
+</figure>
