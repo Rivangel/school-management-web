@@ -17,8 +17,8 @@ import { AuthService } from '../../../core/services/auth-service';
 import { Avisos } from '../../../core/services/avisos';
 import { CalificacionService } from '../../../core/services/calificacion-service';
 import { PistaDeCampo, aplicarErroresDeApi } from '../../../core/services/errores-formulario';
-import { MaestroService } from '../../../core/services/maestro-service';
 import { MateriaService } from '../../../core/services/materia-service';
+import { MiMaestro } from '../../../core/services/mi-maestro';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
 import { Confirmar, DatosConfirmacion } from '../../../shared/components/confirmar/confirmar';
 
@@ -105,7 +105,7 @@ export class FormularioCalificacion {
   private readonly calificaciones = inject(CalificacionService);
   private readonly alumnos = inject(AlumnoService);
   private readonly materias = inject(MateriaService);
-  private readonly maestros = inject(MaestroService);
+  private readonly miMaestro = inject(MiMaestro);
   private readonly auth = inject(AuthService);
   private readonly avisos = inject(Avisos);
   private readonly dialogo = inject(MatDialog);
@@ -158,23 +158,12 @@ export class FormularioCalificacion {
 
   private readonly esMaestro = computed(() => this.auth.rol() === 'MAESTRO');
 
-  /**
-   * Quién es el maestro que ha entrado, cuando lo es.
-   *
-   * El ADMIN no lo pregunta: no tiene registro de maestro y la API le
-   * respondería 404. Con `params` en `undefined` el recurso no pide nada.
-   */
-  private readonly maestroActual = rxResource({
-    params: () => (this.esMaestro() ? true : undefined),
-    stream: () => this.maestros.obtenerActual(),
-  });
-
   private readonly paginaDeAlumnos = rxResource({
     stream: () => this.alumnos.listar({ size: EN_EL_SELECTOR, sort: 'apellido,asc' }),
   });
 
   /**
-   * Las materias del desplegable, **acotadas al maestro que ha entrado**.
+   * Las materias que se pueden calificar, acotadas al maestro que ha entrado.
    *
    * Un MAESTRO sólo puede calificar lo que imparte, y la API lo rechaza con un
    * 403; enseñarle las materias de los demás sería ofrecerle un error. Reutiliza
@@ -182,13 +171,17 @@ export class FormularioCalificacion {
    * aquí, que sólo alcanzaría a las cien de la primera página.
    *
    * Para el ADMIN no hay filtro: puede calificar cualquier materia.
+   *
+   * Quién es lo sabe `MiMaestro`, que lo pregunta una sola vez para toda la
+   * aplicación: antes cada pantalla que necesitaba el id abría su propia
+   * consulta a `/maestros/me`.
    */
   private readonly paginaDeMaterias = rxResource({
     params: () => {
       if (!this.esMaestro()) {
         return { size: EN_EL_SELECTOR };
       }
-      const yo = this.maestroActual.hasValue() ? this.maestroActual.value().id : undefined;
+      const yo = this.miMaestro.id();
       return yo === undefined ? undefined : { size: EN_EL_SELECTOR, maestroId: yo };
     },
     stream: ({ params }) => this.materias.listar(params),
@@ -218,7 +211,7 @@ export class FormularioCalificacion {
     () =>
       this.paginaDeAlumnos.isLoading() ||
       this.paginaDeMaterias.isLoading() ||
-      this.maestroActual.isLoading(),
+      this.miMaestro.cargando(),
   );
 
   protected readonly enviando = signal(false);
@@ -233,14 +226,14 @@ export class FormularioCalificacion {
    * desplegable vacío no explica nada por sí solo.
    */
   protected readonly errorDeCarga = computed(() => {
-    const fallo = this.maestroActual.error() ?? this.paginaDeMaterias.error();
+    const fallo = this.miMaestro.error() ?? this.paginaDeMaterias.error();
     return fallo === undefined
       ? null
       : mensajeDeError(fallo, 'No se pudieron cargar las materias que puedes calificar.');
   });
 
   protected reintentar(): void {
-    this.maestroActual.reload();
+    this.miMaestro.recargar();
     this.paginaDeMaterias.reload();
   }
 

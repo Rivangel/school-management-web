@@ -18,8 +18,8 @@ import { AlumnoService } from '../../../core/services/alumno-service';
 import { AsistenciaService } from '../../../core/services/asistencia-service';
 import { AuthService } from '../../../core/services/auth-service';
 import { Avisos } from '../../../core/services/avisos';
-import { MaestroService } from '../../../core/services/maestro-service';
 import { MateriaService } from '../../../core/services/materia-service';
+import { MiMaestro } from '../../../core/services/mi-maestro';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
 
 /** Cuántos alumnos y materias caben en los desplegables; el tope de la API. */
@@ -90,7 +90,7 @@ export class RegistroAsistencia {
   private readonly asistencia = inject(AsistenciaService);
   private readonly alumnos = inject(AlumnoService);
   private readonly materias = inject(MateriaService);
-  private readonly maestros = inject(MaestroService);
+  private readonly miMaestro = inject(MiMaestro);
   private readonly auth = inject(AuthService);
   private readonly avisos = inject(Avisos);
   private readonly ruta = inject(ActivatedRoute);
@@ -133,24 +133,22 @@ export class RegistroAsistencia {
 
   private readonly esMaestro = computed(() => this.auth.rol() === 'MAESTRO');
 
-  /** Quién ha entrado, cuando es maestro. El ADMIN no lo pregunta (404). */
-  private readonly maestroActual = rxResource({
-    params: () => (this.esMaestro() ? true : undefined),
-    stream: () => this.maestros.obtenerActual(),
-  });
-
   /**
    * Las materias que se pueden pasar lista, acotadas al maestro que ha entrado.
    *
    * Aquí sí se acota —a diferencia de la consulta del Día 22— porque esta
    * pantalla **escribe**, y la API rechaza con un 403 la materia que no es suya.
+   *
+   * Quién es lo sabe `MiMaestro`, que lo pregunta una sola vez para toda la
+   * aplicación: antes cada pantalla que necesitaba el id abría su propia
+   * consulta a `/maestros/me`.
    */
   private readonly paginaDeMaterias = rxResource({
     params: () => {
       if (!this.esMaestro()) {
         return { size: EN_EL_SELECTOR };
       }
-      const yo = this.maestroActual.hasValue() ? this.maestroActual.value().id : undefined;
+      const yo = this.miMaestro.id();
       return yo === undefined ? undefined : { size: EN_EL_SELECTOR, maestroId: yo };
     },
     stream: ({ params }) => this.materias.listar(params),
@@ -236,12 +234,12 @@ export class RegistroAsistencia {
       this.paginaDeMaterias.isLoading() ||
       this.paginaDeAlumnos.isLoading() ||
       this.registrada.isLoading() ||
-      this.maestroActual.isLoading(),
+      this.miMaestro.cargando(),
   );
 
   protected readonly error = computed(() => {
     const fallo =
-      this.maestroActual.error() ?? this.paginaDeMaterias.error() ?? this.registrada.error();
+      this.miMaestro.error() ?? this.paginaDeMaterias.error() ?? this.registrada.error();
     return fallo === undefined ? null : mensajeDeError(fallo, 'No se pudo cargar la lista.');
   });
 
@@ -273,7 +271,7 @@ export class RegistroAsistencia {
   }
 
   protected reintentar(): void {
-    this.maestroActual.reload();
+    this.miMaestro.recargar();
     this.paginaDeMaterias.reload();
     this.registrada.reload();
   }

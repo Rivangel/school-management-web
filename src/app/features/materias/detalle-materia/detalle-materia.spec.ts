@@ -9,6 +9,7 @@ import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { Materia, Rol } from '../../../core/models';
+import { MI_MAESTRO, atenderMiMaestro } from '../../../core/services/testing/mi-maestro-falso';
 import { sembrarSesion } from '../../../core/services/testing/sesion-falsa';
 import { DetalleMateria } from './detalle-materia';
 
@@ -53,6 +54,8 @@ describe('DetalleMateria', () => {
   async function montar(url = '/materias/7', rol: Rol = 'ADMIN'): Promise<void> {
     await abrir(url, rol);
     http.expectOne(`${URL}/7`).flush(MATERIA);
+    // Un MAESTRO además pregunta quién es, para saber si la materia es suya.
+    atenderMiMaestro(http);
     await harness.fixture.whenStable();
   }
 
@@ -270,5 +273,69 @@ describe('DetalleMateria', () => {
       'a[href^="/asistencia/registrar"]',
     ) as HTMLAnchorElement;
     expect(enlace.getAttribute('href')).toContain('materiaId=7');
+  });
+
+  describe('la regla de propiedad de la materia', () => {
+    /** Como `montar`, pero eligiendo de quién es la materia. */
+    async function montarMateriaDe(maestroId: number, rol: Rol = 'MAESTRO'): Promise<void> {
+      await abrir('/materias/7', rol);
+      http.expectOne(`${URL}/7`).flush({ ...MATERIA, maestroId });
+      atenderMiMaestro(http);
+      await harness.fixture.whenStable();
+    }
+
+    it('el MAESTRO puede pasar lista en la materia que imparte', async () => {
+      await montarMateriaDe(MI_MAESTRO.id);
+
+      expect(
+        harness.fixture.nativeElement.querySelector('a[href^="/asistencia/registrar"]'),
+      ).not.toBeNull();
+      expect(texto()).toContain('Impartes esta materia');
+    });
+
+    it('en la de otro maestro no: la API responde 403 y el botón sería un error', async () => {
+      await montarMateriaDe(MI_MAESTRO.id + 1);
+
+      expect(
+        harness.fixture.nativeElement.querySelector('a[href^="/asistencia/registrar"]'),
+      ).toBeNull();
+    });
+
+    it('y se dice por qué, para que la ausencia no parezca una avería', async () => {
+      await montarMateriaDe(MI_MAESTRO.id + 1);
+
+      expect(texto()).toContain('la imparte otro maestro');
+    });
+
+    it('sigue pudiendo consultar sus calificaciones: leer sí lo deja la API', async () => {
+      await montarMateriaDe(MI_MAESTRO.id + 1);
+
+      expect(
+        harness.fixture.nativeElement.querySelector('a[href^="/calificaciones/materia"]'),
+      ).not.toBeNull();
+    });
+
+    it('al ADMIN no se le pregunta quién es y pasa lista en cualquiera', async () => {
+      await abrir('/materias/7', 'ADMIN');
+      http.expectOne(`${URL}/7`).flush({ ...MATERIA, maestroId: 99 });
+      const preguntoQuienEs = atenderMiMaestro(http);
+      await harness.fixture.whenStable();
+
+      expect(preguntoQuienEs).toBe(false);
+      expect(
+        harness.fixture.nativeElement.querySelector('a[href^="/asistencia/registrar"]'),
+      ).not.toBeNull();
+      expect(texto()).not.toContain('la imparte otro maestro');
+    });
+
+    it('al ALUMNO no se le explica una regla que no es la suya', async () => {
+      await abrir('/materias/7', 'ALUMNO');
+      http.expectOne(`${URL}/7`).flush({ ...MATERIA, maestroId: 99 });
+      atenderMiMaestro(http);
+      await harness.fixture.whenStable();
+
+      expect(texto()).not.toContain('la imparte otro maestro');
+      expect(texto()).not.toContain('Impartes esta materia');
+    });
   });
 });

@@ -1,1 +1,23 @@
 @use '../../../shared/estilos/ficha';
+
+// Por qué se puede o no registrar en esta materia. Es una explicación, no un
+// error: va en tono neutro salvo cuando confirma que la materia es propia.
+.ficha__nota {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+
+  mat-icon {
+    flex-shrink: 0;
+    font-size: 1.125rem;
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+}
+
+.ficha__nota--propia {
+  color: var(--mat-sys-primary);
+}

@@ -75,6 +75,21 @@
               </a>
             }
           </p>
+
+          <!-- Por qué el botón de arriba está o no está. Un maestro que ve
+               "Pasar lista" en unas materias y no en otras necesita saber que es
+               la regla y no una avería. -->
+          @if (esMiMateria()) {
+            <p class="ficha__nota ficha__nota--propia">
+              <mat-icon>check_circle</mat-icon>
+              <span>Impartes esta materia.</span>
+            </p>
+          } @else if (esMaestro()) {
+            <p class="ficha__nota">
+              <mat-icon>info_outline</mat-icon>
+              <span>Esta materia la imparte otro maestro: puedes consultarla, pero no registrar en ella.</span>
+            </p>
+          }
         }
 
         <!-- El borrado de una materia falla por razones concretas y frecuentes

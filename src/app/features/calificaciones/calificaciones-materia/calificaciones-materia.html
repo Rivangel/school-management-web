@@ -52,6 +52,17 @@
     Elige una materia en la lista de arriba.
   </p>
 } @else {
+  <!-- Por qué no hay botón de corregir en las filas. Un maestro que lo tiene en
+       sus materias y no en esta necesita saber que es la regla y no una avería:
+       leer las notas de cualquier materia sí puede, corregirlas no. -->
+  @if (esMateriaAjena()) {
+    <p class="listado__aviso">
+      <mat-icon>info_outline</mat-icon>
+      Esta materia la imparte otro maestro: puedes consultar sus calificaciones, pero no
+      corregirlas.
+    </p>
+  }
+
   <div class="listado__tabla">
     <table mat-table [dataSource]="filas()" [trackBy]="idDe">
       <caption class="listado__caption">
@@ -81,7 +92,7 @@
           <!-- No hay pantalla de edición: la API sólo tiene el POST que hace
                *upsert*, así que corregir es registrar otra vez con los datos ya
                puestos. -->
-          @if (puedeRegistrar()) {
+          @if (puedeCorregir()) {
             <a
               mat-icon-button
               routerLink="/calificaciones/registrar"

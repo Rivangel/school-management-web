@@ -17,6 +17,7 @@ import {
 } from '../../../core/navegacion';
 import { AuthService } from '../../../core/services/auth-service';
 import { Avisos } from '../../../core/services/avisos';
+import { MiMaestro } from '../../../core/services/mi-maestro';
 import { MateriaService } from '../../../core/services/materia-service';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
 import { Confirmar, DatosConfirmacion } from '../../../shared/components/confirmar/confirmar';
@@ -43,6 +44,7 @@ import { idDeRuta } from '../../../shared/id-de-ruta';
 export class DetalleMateria {
   private readonly materias = inject(MateriaService);
   private readonly auth = inject(AuthService);
+  private readonly miMaestro = inject(MiMaestro);
   private readonly avisos = inject(Avisos);
   private readonly dialogo = inject(MatDialog);
   private readonly router = inject(Router);
@@ -85,8 +87,23 @@ export class DetalleMateria {
     this.auth.tieneAlgunRol(...ROLES_NOTAS_DE_MATERIA),
   );
 
-  /** Pasar lista de esta materia. Escribe, así que es `ROLES_REGISTRO`. */
-  protected readonly puedePasarLista = computed(() => this.auth.tieneAlgunRol(...ROLES_REGISTRO));
+  /**
+   * Pasar lista **de esta materia**, que no es lo mismo que poder pasar lista.
+   *
+   * `ROLES_REGISTRO` dice que un MAESTRO registra; no dice en cuál. La API sólo
+   * le deja hacerlo en las materias que imparte y responde 403 en las demás, así
+   * que enseñar el botón en la materia de un compañero es ofrecer un error con
+   * forma de botón. El ADMIN sí puede en cualquiera. Ver `MiMaestro`.
+   */
+  protected readonly puedePasarLista = computed(() =>
+    this.miMaestro.puedeRegistrarEn(this.materia()?.maestroId),
+  );
+
+  /** Si esta materia es de quien la está mirando. Sólo para decirlo en la ficha. */
+  protected readonly esMiMateria = computed(() => this.miMaestro.esMia(this.materia()?.maestroId));
+
+  /** Para explicar la ausencia del botón sólo a quien le aplica la regla. */
+  protected readonly esMaestro = computed(() => this.auth.rol() === 'MAESTRO');
 
   protected readonly error = computed(() => {
     const fallo = this.recurso.error();

@@ -6,6 +6,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 
 import { environment } from '../../../../environments/environment';
 import { Calificacion, Materia, Pagina, Rol } from '../../../core/models';
+import { MI_MAESTRO, atenderMiMaestro } from '../../../core/services/testing/mi-maestro-falso';
 import { sembrarSesion } from '../../../core/services/testing/sesion-falsa';
 import { CalificacionesMateria } from './calificaciones-materia';
 
@@ -61,6 +62,8 @@ describe('CalificacionesMateria', () => {
     http = TestBed.inject(HttpTestingController);
     harness = await RouterTestingHarness.create(url);
     http.expectOne((s) => s.url === URL_MATERIAS).flush(MATERIAS);
+    // Un MAESTRO además pregunta quién es, para saber qué materias son suyas.
+    atenderMiMaestro(http);
     await asentar();
   }
 
@@ -200,5 +203,52 @@ describe('CalificacionesMateria', () => {
     await asentar();
 
     expect(filas()).toHaveLength(1);
+  });
+
+  describe('corregir sólo en la materia propia', () => {
+    /** Bases de Datos (id 3) es de `MI_MAESTRO`; Álgebra (id 1) es de otro. */
+    async function verMateria(materiaId: number, rol: Rol): Promise<void> {
+      await abrir(`/calificaciones/materia?materiaId=${materiaId}`, rol);
+      http.expectOne(`${URL}/materia/${materiaId}`).flush([nota(1, 'Ana López', 9.5)]);
+      await asentar();
+    }
+
+    function botonDeCorregir(): Element | null {
+      return harness.fixture.nativeElement.querySelector('tbody a[href^="/calificaciones/registrar"]');
+    }
+
+    it('el MAESTRO corrige en la materia que imparte', async () => {
+      await verMateria(3, 'MAESTRO');
+
+      expect(botonDeCorregir()).not.toBeNull();
+    });
+
+    it('en la de otro no: el enlace llevaría a un formulario que la rechazaría', async () => {
+      await verMateria(1, 'MAESTRO');
+
+      expect(botonDeCorregir()).toBeNull();
+    });
+
+    it('y se dice por qué, sin esconder las notas que sí puede leer', async () => {
+      await verMateria(1, 'MAESTRO');
+
+      expect(texto()).toContain('la imparte otro maestro');
+      expect(texto()).toContain('Ana López');
+    });
+
+    it('el botón de la cabecera se queda: abre el formulario vacío, que ya filtra', async () => {
+      await verMateria(1, 'MAESTRO');
+
+      expect(
+        harness.fixture.nativeElement.querySelector('header a[href^="/calificaciones/registrar"]'),
+      ).not.toBeNull();
+    });
+
+    it('el ADMIN corrige en cualquiera y no ve la explicación', async () => {
+      await verMateria(1, 'ADMIN');
+
+      expect(botonDeCorregir()).not.toBeNull();
+      expect(texto()).not.toContain('la imparte otro maestro');
+    });
   });
 });

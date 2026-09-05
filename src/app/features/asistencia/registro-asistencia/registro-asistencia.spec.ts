@@ -298,6 +298,32 @@ describe('RegistroAsistencia', () => {
     await asentar();
   });
 
+  it('si no se sabe quién es el maestro, lo dice en vez de quedarse en blanco', async () => {
+    // Sin id no se piden materias —el filtro `?maestroId=` no se puede armar—, así
+    // que un fallo aquí no aparecería como error sino como un desplegable vacío
+    // para siempre, que se lee como "no impartes nada".
+    localStorage.clear();
+    sembrarSesion('MAESTRO');
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([{ path: 'asistencia/registrar', component: RegistroAsistencia }]),
+      ],
+    });
+    http = TestBed.inject(HttpTestingController);
+    harness = await RouterTestingHarness.create('/asistencia/registrar');
+
+    http
+      .expectOne(URL_MAESTRO_ME)
+      .flush({ message: 'Maestro no encontrado' }, { status: 404, statusText: 'Not Found' });
+    await asentar();
+
+    http.expectNone((s) => s.url === URL_MATERIAS);
+    expect(texto()).toContain('Reintentar');
+  });
+
   it('dice cuántos alumnos no caben en la lista', async () => {
     // Aquí importa más que en ningún otro sitio: es la lista de clase.
     await conLista([], pagina(ALUMNOS.content, 137));

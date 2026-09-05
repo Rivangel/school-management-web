@@ -14,6 +14,7 @@ import { ROLES_REGISTRO } from '../../../core/navegacion';
 import { AuthService } from '../../../core/services/auth-service';
 import { CalificacionService } from '../../../core/services/calificacion-service';
 import { MateriaService } from '../../../core/services/materia-service';
+import { MiMaestro } from '../../../core/services/mi-maestro';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
 
 /** Cuántas materias caben en el selector; es también el tope de la API. */
@@ -54,11 +55,17 @@ export class CalificacionesMateria {
   private readonly calificaciones = inject(CalificacionService);
   private readonly materias = inject(MateriaService);
   private readonly auth = inject(AuthService);
+  private readonly miMaestro = inject(MiMaestro);
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   protected readonly columnas: string[] = [...COLUMNAS, 'acciones'];
 
+  /**
+   * Abrir el formulario en blanco. Va por rol y no por materia a propósito: el
+   * formulario sólo ofrece al MAESTRO las suyas (Día 20), así que desde aquí no
+   * hay forma de llegar a una ajena.
+   */
   protected readonly puedeRegistrar = computed(() => this.auth.tieneAlgunRol(...ROLES_REGISTRO));
 
   private readonly query = toSignal(this.ruta.queryParamMap, {
@@ -88,6 +95,32 @@ export class CalificacionesMateria {
 
   protected readonly opcionesDeMateria = computed(() =>
     this.paginaDeMaterias.hasValue() ? this.paginaDeMaterias.value().content : [],
+  );
+
+  private readonly materiaVista = computed(() => {
+    const id = this.materiaId();
+    return this.opcionesDeMateria().find((candidata) => candidata.id === id);
+  });
+
+  /**
+   * Corregir una nota **de esta materia**, que es más estrecho que registrar.
+   *
+   * El botón de la cabecera abre el formulario vacío; este lo abre con la materia
+   * ya puesta, y si no es suya la API contestará 403 al guardar. Un MAESTRO puede
+   * leer las notas de cualquier materia —la API se lo permite— pero corregirlas
+   * sólo en las que imparte, así que aquí la pregunta no es qué rol tiene sino de
+   * quién es la materia. Ver `MiMaestro`.
+   */
+  protected readonly puedeCorregir = computed(() =>
+    this.miMaestro.puedeRegistrarEn(this.materiaVista()?.maestroId),
+  );
+
+  /** Para explicar la ausencia del botón sólo a quien le aplica la regla. */
+  protected readonly esMateriaAjena = computed(
+    () =>
+      this.auth.rol() === 'MAESTRO' &&
+      this.materiaVista() !== undefined &&
+      !this.miMaestro.esMia(this.materiaVista()?.maestroId),
   );
 
   protected readonly nombreDeLaMateria = computed(() => {
