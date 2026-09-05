@@ -174,3 +174,55 @@
     height: 2rem;
   }
 }
+
+.dashboard__resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.dashboard__cifra {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 10rem;
+  padding: 0.875rem 1.25rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.dashboard__cifra-titulo {
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.dashboard__cifra-valor {
+  font: var(--mat-sys-headline-small);
+  font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-primary);
+}
+
+.dashboard__cifra-nota {
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.dashboard__graficas {
+  display: grid;
+  // Dos columnas cuando caben; una sola en cuanto la gráfica baja de 22rem, que
+  // es donde las etiquetas de materia empiezan a recortarse.
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.dashboard__grafica {
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-low);
+
+  mat-card-content {
+    padding: 1.25rem !important;
+  }
+}

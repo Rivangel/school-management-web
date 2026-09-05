@@ -98,6 +98,92 @@
   }
 </section>
 
+<section class="dashboard__seccion" aria-labelledby="titulo-graficas">
+  <h2 class="dashboard__seccion-titulo" id="titulo-graficas">
+    {{ esAlumno() ? 'Mi rendimiento' : 'Rendimiento del centro' }}
+  </h2>
+
+  @if (cargandoGraficas()) {
+    <mat-progress-bar mode="indeterminate" class="dashboard__cargando"></mat-progress-bar>
+  }
+
+  @if (errorGraficas(); as error) {
+    <div class="dashboard__error" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <span>{{ error }}</span>
+    </div>
+  }
+
+  <div class="dashboard__resumen">
+    <div class="dashboard__cifra">
+      <span class="dashboard__cifra-titulo">
+        {{ esAlumno() ? 'Mi promedio general' : 'Promedio general' }}
+      </span>
+      <span class="dashboard__cifra-valor">
+        {{ promedioGeneral() !== null ? promedioGeneral() : '—' }}
+      </span>
+      <span class="dashboard__cifra-nota">
+        {{ notasContadas() }} {{ notasContadas() === 1 ? 'calificación' : 'calificaciones' }}
+      </span>
+    </div>
+
+    @if (esAlumno()) {
+      <div class="dashboard__cifra">
+        <span class="dashboard__cifra-titulo">Mi asistencia</span>
+        <span class="dashboard__cifra-valor">
+          {{ miAsistencia().porcentaje !== null ? miAsistencia().porcentaje + '%' : '—' }}
+        </span>
+        <span class="dashboard__cifra-nota">
+          {{ miAsistencia().presentes }} de {{ miAsistencia().total }} clases
+        </span>
+      </div>
+    }
+  </div>
+
+  <div class="dashboard__graficas">
+    <mat-card class="dashboard__grafica" appearance="outlined">
+      <mat-card-content>
+        <app-grafica-barras
+          [barras]="barrasDePromedio()"
+          [titulo]="esAlumno() ? 'Mi promedio por materia' : 'Promedio por materia'"
+          unidad="Promedio"
+          [maximo]="notaMaxima"
+          [vacio]="
+            esAlumno()
+              ? 'Todavía no tienes calificaciones registradas.'
+              : 'Todavía no hay calificaciones registradas.'
+          "
+        />
+      </mat-card-content>
+    </mat-card>
+
+    @if (esAlumno()) {
+      <mat-card class="dashboard__grafica" appearance="outlined">
+        <mat-card-content>
+          <app-grafica-barras
+            [barras]="barrasDeMiAsistencia()"
+            titulo="Mi asistencia por materia"
+            unidad="Asistencia"
+            [maximo]="100"
+            vacio="Todavía no tienes asistencia registrada."
+          />
+        </mat-card-content>
+      </mat-card>
+    } @else {
+      <mat-card class="dashboard__grafica" appearance="outlined">
+        <mat-card-content>
+          <app-grafica-barras
+            [barras]="barrasDeDistribucion()"
+            titulo="Distribución de calificaciones"
+            unidad="Calificaciones"
+            vacio="Todavía no hay calificaciones registradas."
+          />
+        </mat-card-content>
+      </mat-card>
+    }
+  </div>
+</section>
+
 <section class="dashboard__seccion">
   <h2 class="dashboard__seccion-titulo">Accesos rápidos</h2>
   <nav class="portada__accesos" aria-label="Secciones disponibles">

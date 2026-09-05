@@ -4,8 +4,11 @@ Piezas reutilizables **sin dominio propio**: se pueden usar desde cualquier feat
 sin arrastrar nada más.
 
 - `components/` — `confirmar/` (el diálogo de "esto no se puede deshacer", con el texto
-  del botón a cargo de quien lo abre), `proximamente/` (la pantalla que ocupa el lugar de
-  las secciones aún no construidas), estado vacío, spinner, etc.
+  del botón a cargo de quien lo abre) y `grafica-barras/` (barras horizontales en SVG,
+  con la serie repetida como tabla oculta para el lector de pantalla). La gráfica sabe de
+  barras y no de materias: quien la usa le pasa las etiquetas ya calculadas, y las cuentas
+  viven en `core/estadisticas.ts`. No hay librería de gráficas a propósito — ver el
+  comentario de cabecera del componente.
 - `pipes/` y `directives/` — utilidades de plantilla.
 - `paginador-en-espanol.ts` — textos del `mat-paginator`. Cada pantalla de listado lo
   provee en su propio `providers`, no la configuración raíz: importar el paginador desde
