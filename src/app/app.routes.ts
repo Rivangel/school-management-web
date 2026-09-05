@@ -28,10 +28,6 @@ const formularioDeMateria = () =>
     (m) => m.FormularioMateria,
   );
 
-/** Pantalla provisional de las secciones que aún no existen (ver `Proximamente`). */
-const proximamente = () =>
-  import('./shared/components/proximamente/proximamente').then((m) => m.Proximamente);
-
 export const routes: Routes = [
   {
     path: 'login',
