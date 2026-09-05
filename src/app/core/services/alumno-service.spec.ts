@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { environment } from '../../../environments/environment';
+import { avisaGlobalmente } from '../interceptors/error-interceptor';
 import { Alumno, AlumnoRequest, Pagina } from '../models';
 import { AlumnoService } from './alumno-service';
 
@@ -114,6 +115,30 @@ describe('AlumnoService', () => {
     peticion.flush(null, { status: 204, statusText: 'No Content' });
 
     expect(terminado).toBe(true);
+  });
+
+  it('las lecturas y los envíos dejan el fallo a la pantalla', () => {
+    // Cada uno tiene dónde enseñarlo: el listado su aviso con reintentar, el
+    // formulario el campo que la API objetó. Sin la marca saldría además el
+    // aviso flotante y el usuario leería el mismo error dos veces.
+    servicio.listar().subscribe({ error: () => undefined });
+    servicio.crear(DATOS).subscribe({ error: () => undefined });
+
+    for (const peticion of http.match((solicitud) => solicitud.url === URL)) {
+      expect(avisaGlobalmente(peticion.request.context)).toBe(false);
+      peticion.flush(null, { status: 500, statusText: 'Server Error' });
+    }
+  });
+
+  it('el borrado sí avisa, porque no tiene dónde pintar el fallo', () => {
+    // Es la excepción de la sección: se pulsa desde el listado o la ficha, que
+    // acto seguido navegan. Sin el aviso, un borrado que la API rechaza se
+    // vería exactamente igual que uno que funcionó.
+    servicio.eliminar(7).subscribe({ error: () => undefined });
+
+    const peticion = http.expectOne(`${URL}/7`);
+    expect(avisaGlobalmente(peticion.request.context)).toBe(true);
+    peticion.flush(null, { status: 409, statusText: 'Conflict' });
   });
 
   it('pregunta por el alumno de la sesión con /me', () => {
