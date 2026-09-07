@@ -1,13 +1,13 @@
 <header class="reportes__cabecera">
   <div>
-    <h1>Reportes</h1>
-    <p>Descarga de boletas oficiales de calificaciones en formato PDF.</p>
+    <h1>{{ t('reportes.titulo') }}</h1>
+    <p>{{ t('reportes.subtitulo') }}</p>
   </div>
 </header>
 
 <div class="reportes__barra">
   @if (cargando() || descargando()) {
-    <mat-progress-bar mode="indeterminate" aria-label="Procesando reporte" />
+    <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('reportes.procesando')" />
   }
 </div>
 
@@ -21,9 +21,9 @@
     <mat-card appearance="outlined" class="reportes__tarjeta">
       <mat-card-header>
         <mat-icon mat-card-avatar class="reportes__icono">description</mat-icon>
-        <mat-card-title>Boleta de Calificaciones</mat-card-title>
+        <mat-card-title>{{ t('reportes.tituloBoleta') }}</mat-card-title>
         <mat-card-subtitle>
-          Documento PDF con el desglose de asignaturas, calificaciones y promedio general.
+          {{ t('reportes.subtituloBoleta') }}
         </mat-card-subtitle>
       </mat-card-header>
 
@@ -31,14 +31,14 @@
         @if (esAlumno()) {
           @if (miAlumno(); as yo) {
             <div class="reportes__datos-alumno">
-              <p><strong>Alumno:</strong> {{ yo.nombre }} {{ yo.apellido }}</p>
-              <p><strong>Matrícula:</strong> {{ yo.matricula }}</p>
-              <p><strong>Grupo:</strong> {{ yo.grupo }}</p>
+              <p><strong>{{ t('reportes.alumno') }}:</strong> {{ yo.nombre }} {{ yo.apellido }}</p>
+              <p><strong>{{ t('reportes.matricula') }}:</strong> {{ yo.matricula }}</p>
+              <p><strong>{{ t('reportes.grupo') }}:</strong> {{ yo.grupo }}</p>
             </div>
           }
         } @else {
           <mat-form-field appearance="outline" class="reportes__selector">
-            <mat-label>Seleccionar Alumno</mat-label>
+            <mat-label>{{ t('reportes.seleccionarAlumno') }}</mat-label>
             <mat-select [ngModel]="alumnoElegido()" (ngModelChange)="alumnoElegido.set($event)">
               @for (alumno of opcionesDeAlumno(); track alumno.id) {
                 <mat-option [value]="alumno.id">
@@ -59,7 +59,7 @@
             (click)="descargarMiBoleta()"
           >
             <mat-icon>download</mat-icon>
-            Descargar boleta PDF
+            {{ t('reportes.descargarBoletaPdf') }}
           </button>
         } @else {
           <button
@@ -69,7 +69,7 @@
             (click)="descargarBoletaSeleccionada()"
           >
             <mat-icon>download</mat-icon>
-            Descargar boleta PDF
+            {{ t('reportes.descargarBoletaPdf') }}
           </button>
         }
       </mat-card-actions>

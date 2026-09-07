@@ -2,19 +2,20 @@
   <mat-card appearance="outlined" class="denegado__card">
     <mat-card-content class="denegado__contenido">
       <mat-icon class="denegado__icono">lock</mat-icon>
-      <h1>Acceso denegado</h1>
+      <h1>{{ t('accesoDenegado.titulo') }}</h1>
       <p>
         @if (rol(); as rolActual) {
-          Tu rol <strong>{{ rolActual }}</strong> no tiene permiso para ver esta sección.
+          {{ t('accesoDenegado.conRolAntes') }} <strong>{{ rolActual }}</strong>
+          {{ t('accesoDenegado.conRolDespues') }}
         } @else {
-          No tienes permiso para ver esta sección.
+          {{ t('accesoDenegado.sinRol') }}
         }
       </p>
-      <p>Si crees que es un error, pide a un administrador que revise tus permisos.</p>
+      <p>{{ t('accesoDenegado.pideAAdmin') }}</p>
     </mat-card-content>
     <mat-card-actions class="denegado__acciones">
-      <a mat-flat-button routerLink="/">Ir al inicio</a>
-      <button mat-button type="button" (click)="salir()">Cerrar sesión</button>
+      <a mat-flat-button routerLink="/">{{ t('accesoDenegado.irAlInicio') }}</a>
+      <button mat-button type="button" (click)="salir()">{{ t('shell.cerrarSesion') }}</button>
     </mat-card-actions>
   </mat-card>
 </main>

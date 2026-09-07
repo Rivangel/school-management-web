@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { Barra } from '../../../core/estadisticas';
+import { t } from '../../../core/i18n/traducir';
 
 /** Alto de una fila y hueco entre filas, en píxeles del `viewBox`. */
 const ALTO_FILA = 28;
@@ -43,13 +44,15 @@ interface BarraDibujada extends Barra {
   styleUrl: './grafica-barras.scss',
 })
 export class GraficaBarras {
+  protected readonly t = t;
+
   readonly barras = input.required<readonly Barra[]>();
 
   /** Título de la gráfica; encabeza también la tabla accesible. */
   readonly titulo = input.required<string>();
 
   /** Qué mide el eje, para la cabecera de la tabla accesible. */
-  readonly unidad = input('Valor');
+  readonly unidad = input(t('graficaBarras.valor'));
 
   /**
    * Tope del eje. Sin él manda el valor más alto de la serie.
@@ -61,7 +64,7 @@ export class GraficaBarras {
   readonly maximo = input<number | null>(null);
 
   /** Qué decir cuando no hay nada que dibujar. */
-  readonly vacio = input('Todavía no hay datos que graficar.');
+  readonly vacio = input(t('graficaBarras.vacio'));
 
   protected readonly hayDatos = computed(() => this.barras().length > 0);
 

@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 
+import { t } from '../../core/i18n/traducir';
 import { AlumnoService } from '../../core/services/alumno-service';
 import { AuthService } from '../../core/services/auth-service';
 import { Avisos } from '../../core/services/avisos';
@@ -42,6 +43,8 @@ export class Reportes {
   private readonly auth = inject(AuthService);
   private readonly avisos = inject(Avisos);
 
+  protected readonly t = t;
+
   protected readonly esAlumno = computed(() => this.auth.rol() === 'ALUMNO');
 
   protected readonly alumnoElegido = signal<number | null>(null);
@@ -73,9 +76,7 @@ export class Reportes {
 
   protected readonly errorCarga = computed(() => {
     const fallo = this.alumnoActual.error() ?? this.paginaDeAlumnos.error();
-    return fallo === undefined
-      ? null
-      : mensajeDeError(fallo, 'No se pudo cargar la información de reportes.');
+    return fallo === undefined ? null : mensajeDeError(fallo, t('reportes.noSePudoCargar'));
   });
 
   protected descargarBoleta(alumnoId: number): void {
@@ -86,11 +87,11 @@ export class Reportes {
     this.reportes.descargarBoleta(alumnoId).subscribe({
       next: (nombreArchivo) => {
         this.descargando.set(false);
-        this.avisos.exito(`Boleta descargada: ${nombreArchivo}`);
+        this.avisos.exito(t('reportes.boletaDescargada', { nombreArchivo }));
       },
       error: (err) => {
         this.descargando.set(false);
-        this.avisos.error(mensajeDeError(err, 'No se pudo descargar la boleta en PDF.'));
+        this.avisos.error(mensajeDeError(err, t('reportes.noSePudoDescargar')));
       },
     });
   }

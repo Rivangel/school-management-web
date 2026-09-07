@@ -14,6 +14,7 @@ import {
   promedioPorMateria,
   resumenDeAsistencia,
 } from '../../core/estadisticas';
+import { t } from '../../core/i18n/traducir';
 import { Calificacion } from '../../core/models';
 import { menuPara } from '../../core/navegacion';
 import { AlumnoService } from '../../core/services/alumno-service';
@@ -67,6 +68,8 @@ export class Home {
   private readonly materias = inject(MateriaService);
   private readonly calificaciones = inject(CalificacionService);
   private readonly asistencias = inject(AsistenciaService);
+
+  protected readonly t = t;
 
   protected readonly nombre = this.auth.nombre;
   protected readonly rol = this.auth.rol;
@@ -201,7 +204,7 @@ export class Home {
       : this.recursoNotasDelCentro.error();
     return fallo === undefined || fallo === null
       ? null
-      : mensajeDeError(fallo, 'No se pudieron cargar las gráficas.');
+      : mensajeDeError(fallo, t('home.noSePudieronCargarGraficas'));
   });
 
   protected readonly totalAlumnos = computed(() =>
@@ -230,6 +233,6 @@ export class Home {
         : null) ?? this.recursoMaterias.error();
     return fallo === undefined || fallo === null
       ? null
-      : mensajeDeError(fallo, 'No se pudieron cargar los conteos del sistema.');
+      : mensajeDeError(fallo, t('home.noSePudieronCargarConteos'));
   });
 }

@@ -4,6 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { Router, RouterLink } from '@angular/router';
 
+import { t } from '../../../core/i18n/traducir';
 import { AuthService } from '../../../core/services/auth-service';
 
 /**
@@ -23,6 +24,7 @@ export class AccesoDenegado {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
+  protected readonly t = t;
   protected readonly rol = this.auth.rol;
 
   protected salir(): void {

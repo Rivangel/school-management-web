@@ -2,6 +2,8 @@ import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 
+import { t } from '../../../core/i18n/traducir';
+
 /** Lo que hay que decirle al usuario antes de hacer algo que no se deshace. */
 export interface DatosConfirmacion {
   readonly titulo: string;
@@ -32,7 +34,7 @@ export interface DatosConfirmacion {
       <p>{{ datos.mensaje }}</p>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
-      <button mat-button type="button" (click)="dialogo.close(false)">Cancelar</button>
+      <button mat-button type="button" (click)="dialogo.close(false)">{{ t('confirmar.cancelar') }}</button>
       <button
         mat-flat-button
         type="button"
@@ -54,4 +56,5 @@ export interface DatosConfirmacion {
 export class Confirmar {
   protected readonly datos = inject<DatosConfirmacion>(MAT_DIALOG_DATA);
   protected readonly dialogo = inject<MatDialogRef<Confirmar, boolean>>(MatDialogRef);
+  protected readonly t = t;
 }

@@ -1,6 +1,6 @@
 <header class="portada__saludo">
-  <h1>Hola, {{ nombre() }}</h1>
-  <p>Entraste como {{ rol() }}. Aquí tienes un resumen de la información general.</p>
+  <h1>{{ t('home.saludo', { nombre: nombre() }) }}</h1>
+  <p>{{ t('home.resumen', { rol: rol() ?? '' }) }}</p>
 </header>
 
 @if (cargando()) {
@@ -14,7 +14,7 @@
   </div>
 }
 
-<section class="dashboard__tarjetas" aria-label="Estadísticas generales">
+<section class="dashboard__tarjetas" [attr.aria-label]="t('home.estadisticasGenerales')">
   @if (esMaestroOAdmin()) {
     <mat-card class="dashboard__tarjeta" [routerLink]="'/alumnos'">
       <mat-card-content class="dashboard__tarjeta-contenido">
@@ -22,7 +22,7 @@
           <mat-icon>groups</mat-icon>
         </div>
         <div class="dashboard__tarjeta-datos">
-          <span class="dashboard__tarjeta-titulo">Alumnos</span>
+          <span class="dashboard__tarjeta-titulo">{{ t('home.alumnos') }}</span>
           <span class="dashboard__tarjeta-valor">
             {{ totalAlumnos() !== null ? totalAlumnos() : '—' }}
           </span>
@@ -36,7 +36,7 @@
           <mat-icon>person_outline</mat-icon>
         </div>
         <div class="dashboard__tarjeta-datos">
-          <span class="dashboard__tarjeta-titulo">Maestros</span>
+          <span class="dashboard__tarjeta-titulo">{{ t('home.maestros') }}</span>
           <span class="dashboard__tarjeta-valor">
             {{ totalMaestros() !== null ? totalMaestros() : '—' }}
           </span>
@@ -50,7 +50,7 @@
           <mat-icon>menu_book</mat-icon>
         </div>
         <div class="dashboard__tarjeta-datos">
-          <span class="dashboard__tarjeta-titulo">Materias</span>
+          <span class="dashboard__tarjeta-titulo">{{ t('home.materias') }}</span>
           <span class="dashboard__tarjeta-valor">
             {{ totalMaterias() !== null ? totalMaterias() : '—' }}
           </span>
@@ -64,7 +64,7 @@
           <mat-icon>menu_book</mat-icon>
         </div>
         <div class="dashboard__tarjeta-datos">
-          <span class="dashboard__tarjeta-titulo">Materias</span>
+          <span class="dashboard__tarjeta-titulo">{{ t('home.materias') }}</span>
           <span class="dashboard__tarjeta-valor">
             {{ totalMaterias() !== null ? totalMaterias() : '—' }}
           </span>
@@ -78,8 +78,8 @@
           <mat-icon>grade</mat-icon>
         </div>
         <div class="dashboard__tarjeta-datos">
-          <span class="dashboard__tarjeta-titulo">Calificaciones</span>
-          <span class="dashboard__tarjeta-subtitulo">Mis notas</span>
+          <span class="dashboard__tarjeta-titulo">{{ t('home.calificaciones') }}</span>
+          <span class="dashboard__tarjeta-subtitulo">{{ t('home.misNotas') }}</span>
         </div>
       </mat-card-content>
     </mat-card>
@@ -90,8 +90,8 @@
           <mat-icon>event_available</mat-icon>
         </div>
         <div class="dashboard__tarjeta-datos">
-          <span class="dashboard__tarjeta-titulo">Asistencia</span>
-          <span class="dashboard__tarjeta-subtitulo">Mi registro</span>
+          <span class="dashboard__tarjeta-titulo">{{ t('home.asistencia') }}</span>
+          <span class="dashboard__tarjeta-subtitulo">{{ t('home.miRegistro') }}</span>
         </div>
       </mat-card-content>
     </mat-card>
@@ -100,7 +100,7 @@
 
 <section class="dashboard__seccion" aria-labelledby="titulo-graficas">
   <h2 class="dashboard__seccion-titulo" id="titulo-graficas">
-    {{ esAlumno() ? 'Mi rendimiento' : 'Rendimiento del centro' }}
+    {{ esAlumno() ? t('home.miRendimiento') : t('home.rendimientoDelCentro') }}
   </h2>
 
   @if (cargandoGraficas()) {
@@ -117,24 +117,25 @@
   <div class="dashboard__resumen">
     <div class="dashboard__cifra">
       <span class="dashboard__cifra-titulo">
-        {{ esAlumno() ? 'Mi promedio general' : 'Promedio general' }}
+        {{ esAlumno() ? t('home.miPromedioGeneral') : t('home.promedioGeneral') }}
       </span>
       <span class="dashboard__cifra-valor">
         {{ promedioGeneral() !== null ? promedioGeneral() : '—' }}
       </span>
       <span class="dashboard__cifra-nota">
-        {{ notasContadas() }} {{ notasContadas() === 1 ? 'calificación' : 'calificaciones' }}
+        {{ notasContadas() }}
+        {{ notasContadas() === 1 ? t('home.unaCalificacion') : t('home.variasCalificaciones') }}
       </span>
     </div>
 
     @if (esAlumno()) {
       <div class="dashboard__cifra">
-        <span class="dashboard__cifra-titulo">Mi asistencia</span>
+        <span class="dashboard__cifra-titulo">{{ t('home.miAsistencia') }}</span>
         <span class="dashboard__cifra-valor">
           {{ miAsistencia().porcentaje !== null ? miAsistencia().porcentaje + '%' : '—' }}
         </span>
         <span class="dashboard__cifra-nota">
-          {{ miAsistencia().presentes }} de {{ miAsistencia().total }} clases
+          {{ t('home.deClases', { presentes: miAsistencia().presentes, total: miAsistencia().total }) }}
         </span>
       </div>
     }
@@ -145,13 +146,11 @@
       <mat-card-content>
         <app-grafica-barras
           [barras]="barrasDePromedio()"
-          [titulo]="esAlumno() ? 'Mi promedio por materia' : 'Promedio por materia'"
-          unidad="Promedio"
+          [titulo]="esAlumno() ? t('home.miPromedioPorMateria') : t('home.promedioPorMateria')"
+          [unidad]="t('home.promedio')"
           [maximo]="notaMaxima"
           [vacio]="
-            esAlumno()
-              ? 'Todavía no tienes calificaciones registradas.'
-              : 'Todavía no hay calificaciones registradas.'
+            esAlumno() ? t('home.vacioMisCalificaciones') : t('home.vacioCalificaciones')
           "
         />
       </mat-card-content>
@@ -162,10 +161,10 @@
         <mat-card-content>
           <app-grafica-barras
             [barras]="barrasDeMiAsistencia()"
-            titulo="Mi asistencia por materia"
-            unidad="Asistencia"
+            [titulo]="t('home.miAsistenciaPorMateria')"
+            [unidad]="t('home.asistencia')"
             [maximo]="100"
-            vacio="Todavía no tienes asistencia registrada."
+            [vacio]="t('home.vacioMiAsistencia')"
           />
         </mat-card-content>
       </mat-card>
@@ -174,9 +173,9 @@
         <mat-card-content>
           <app-grafica-barras
             [barras]="barrasDeDistribucion()"
-            titulo="Distribución de calificaciones"
-            unidad="Calificaciones"
-            vacio="Todavía no hay calificaciones registradas."
+            [titulo]="t('home.distribucionDeCalificaciones')"
+            [unidad]="t('home.calificaciones')"
+            [vacio]="t('home.vacioCalificaciones')"
           />
         </mat-card-content>
       </mat-card>
@@ -185,12 +184,12 @@
 </section>
 
 <section class="dashboard__seccion">
-  <h2 class="dashboard__seccion-titulo">Accesos rápidos</h2>
-  <nav class="portada__accesos" aria-label="Secciones disponibles">
+  <h2 class="dashboard__seccion-titulo">{{ t('home.accesosRapidos') }}</h2>
+  <nav class="portada__accesos" [attr.aria-label]="t('home.seccionesDisponibles')">
     @for (acceso of accesos(); track acceso.ruta) {
       <a class="portada__acceso" [routerLink]="acceso.ruta">
         <mat-icon>{{ acceso.icono }}</mat-icon>
-        <span>{{ acceso.etiqueta }}</span>
+        <span>{{ t('shell.menu.' + acceso.etiqueta) }}</span>
       </a>
     }
   </nav>

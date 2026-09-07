@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth-guard';
 import { invitadoGuard } from './core/guards/invitado-guard';
 import { rolGuard } from './core/guards/rol-guard';
+import { t } from './core/i18n/traducir';
 import {
   ROLES_ESCRITURA,
   ROLES_NOTAS_DE_MATERIA,
@@ -10,7 +11,14 @@ import {
   rolesDe,
 } from './core/navegacion';
 
-const titulo = (seccion: string) => `${seccion} · School Management`;
+/**
+ * El título de la pestaña, en el idioma activo **al navegar**.
+ *
+ * Devuelve una función y no una cadena para que `t()` se lea de nuevo en cada
+ * navegación — una cadena calculada una sola vez al construir las rutas se
+ * quedaría fija en el idioma que estuviera activo entonces.
+ */
+const tituloDe = (clave: string) => () => `${t(clave)} · ${t('shell.marca')}`;
 
 /** Alta y edición comparten componente: el modo lo decide el `id` de la ruta. */
 const formularioDeAlumno = () =>
@@ -31,13 +39,13 @@ const formularioDeMateria = () =>
 export const routes: Routes = [
   {
     path: 'login',
-    title: titulo('Iniciar sesión'),
+    title: tituloDe('login.titulo'),
     canActivate: [invitadoGuard],
     loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
   },
   {
     path: 'acceso-denegado',
-    title: titulo('Acceso denegado'),
+    title: tituloDe('accesoDenegado.titulo'),
     loadComponent: () =>
       import('./features/errores/acceso-denegado/acceso-denegado').then((m) => m.AccesoDenegado),
   },
@@ -55,12 +63,12 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        title: titulo('Inicio'),
+        title: tituloDe('shell.menu.Inicio'),
         loadComponent: () => import('./features/home/home').then((m) => m.Home),
       },
       {
         path: 'alumnos',
-        title: titulo('Alumnos'),
+        title: tituloDe('alumnos.lista.titulo'),
         canActivate: [rolGuard(...rolesDe('/alumnos'))],
         loadComponent: () =>
           import('./features/alumnos/lista-alumnos/lista-alumnos').then((m) => m.ListaAlumnos),
@@ -70,7 +78,7 @@ export const routes: Routes = [
         // los roles de la sección: los toman de `ROLES_ESCRITURA`, la misma
         // lista que decide si el listado enseña los botones que traen aquí.
         path: 'alumnos/nuevo',
-        title: titulo('Nuevo alumno'),
+        title: tituloDe('alumnos.formulario.tituloNuevo'),
         canActivate: [rolGuard(...ROLES_ESCRITURA)],
         loadComponent: formularioDeAlumno,
       },
@@ -78,20 +86,20 @@ export const routes: Routes = [
         // Después de `alumnos/nuevo`: el router prueba en orden y `:id` se
         // tragaría "nuevo" como si fuera un identificador.
         path: 'alumnos/:id',
-        title: titulo('Ficha del alumno'),
+        title: tituloDe('alumnos.detalle.titulo'),
         canActivate: [rolGuard(...rolesDe('/alumnos'))],
         loadComponent: () =>
           import('./features/alumnos/detalle-alumno/detalle-alumno').then((m) => m.DetalleAlumno),
       },
       {
         path: 'alumnos/:id/editar',
-        title: titulo('Editar alumno'),
+        title: tituloDe('alumnos.formulario.tituloEditar'),
         canActivate: [rolGuard(...ROLES_ESCRITURA)],
         loadComponent: formularioDeAlumno,
       },
       {
         path: 'maestros',
-        title: titulo('Maestros'),
+        title: tituloDe('maestros.lista.titulo'),
         canActivate: [rolGuard(...rolesDe('/maestros'))],
         loadComponent: () =>
           import('./features/maestros/lista-maestros/lista-maestros').then((m) => m.ListaMaestros),
@@ -101,7 +109,7 @@ export const routes: Routes = [
         // MAESTRO: `ROLES_ESCRITURA` es la lista que leen a la vez el botón que
         // trae aquí y este guard.
         path: 'maestros/nuevo',
-        title: titulo('Nuevo maestro'),
+        title: tituloDe('maestros.formulario.tituloNuevo'),
         canActivate: [rolGuard(...ROLES_ESCRITURA)],
         loadComponent: formularioDeMaestro,
       },
@@ -109,7 +117,7 @@ export const routes: Routes = [
         // Después de `maestros/nuevo`: el router prueba en orden y `:id` se
         // tragaría "nuevo" como si fuera un identificador.
         path: 'maestros/:id',
-        title: titulo('Ficha del maestro'),
+        title: tituloDe('maestros.detalle.titulo'),
         canActivate: [rolGuard(...rolesDe('/maestros'))],
         loadComponent: () =>
           import('./features/maestros/detalle-maestro/detalle-maestro').then(
@@ -118,13 +126,13 @@ export const routes: Routes = [
       },
       {
         path: 'maestros/:id/editar',
-        title: titulo('Editar maestro'),
+        title: tituloDe('maestros.formulario.tituloEditar'),
         canActivate: [rolGuard(...ROLES_ESCRITURA)],
         loadComponent: formularioDeMaestro,
       },
       {
         path: 'materias',
-        title: titulo('Materias'),
+        title: tituloDe('materias.lista.titulo'),
         canActivate: [rolGuard(...rolesDe('/materias'))],
         loadComponent: () =>
           import('./features/materias/lista-materias/lista-materias').then((m) => m.ListaMaterias),
@@ -137,7 +145,7 @@ export const routes: Routes = [
         // lo mismo que en las otras dos secciones va **antes** que `:id`: el
         // router prueba en orden y se la tragaría como un identificador.
         path: 'materias/nueva',
-        title: titulo('Nueva materia'),
+        title: tituloDe('materias.formulario.tituloNuevo'),
         canActivate: [rolGuard(...ROLES_ESCRITURA)],
         loadComponent: formularioDeMateria,
       },
@@ -145,7 +153,7 @@ export const routes: Routes = [
         // Después de `materias/nueva`, por lo mismo de siempre: el router prueba
         // en orden y `:id` se la tragaría como un identificador.
         path: 'materias/:id',
-        title: titulo('Ficha de la materia'),
+        title: tituloDe('materias.detalle.titulo'),
         canActivate: [rolGuard(...rolesDe('/materias'))],
         loadComponent: () =>
           import('./features/materias/detalle-materia/detalle-materia').then(
@@ -154,13 +162,13 @@ export const routes: Routes = [
       },
       {
         path: 'materias/:id/editar',
-        title: titulo('Editar materia'),
+        title: tituloDe('materias.formulario.tituloEditar'),
         canActivate: [rolGuard(...ROLES_ESCRITURA)],
         loadComponent: formularioDeMateria,
       },
       {
         path: 'calificaciones',
-        title: titulo('Calificaciones'),
+        title: tituloDe('calificaciones.alumno.titulo'),
         canActivate: [rolGuard(...rolesDe('/calificaciones'))],
         loadComponent: () =>
           import('./features/calificaciones/calificaciones-alumno/calificaciones-alumno').then(
@@ -173,7 +181,7 @@ export const routes: Routes = [
         // compañeros. Va antes de `registrar` por costumbre, no por necesidad —
         // son dos rutas literales y ninguna es un comodín.
         path: 'calificaciones/materia',
-        title: titulo('Calificaciones por materia'),
+        title: tituloDe('calificaciones.materia.titulo'),
         canActivate: [rolGuard(...ROLES_NOTAS_DE_MATERIA)],
         loadComponent: () =>
           import('./features/calificaciones/calificaciones-materia/calificaciones-materia').then(
@@ -185,7 +193,7 @@ export const routes: Routes = [
         // MAESTRO, que es quien pone las notas. Que la materia sea suya lo
         // comprueba el servidor, materia a materia — un rol no puede decirlo.
         path: 'calificaciones/registrar',
-        title: titulo('Registrar calificación'),
+        title: tituloDe('calificaciones.formulario.tituloRegistrar'),
         canActivate: [rolGuard(...ROLES_REGISTRO)],
         loadComponent: () =>
           import('./features/calificaciones/formulario-calificacion/formulario-calificacion').then(
@@ -194,7 +202,7 @@ export const routes: Routes = [
       },
       {
         path: 'asistencia',
-        title: titulo('Asistencia'),
+        title: tituloDe('asistencia.alumno.titulo'),
         canActivate: [rolGuard(...rolesDe('/asistencia'))],
         loadComponent: () =>
           import('./features/asistencia/asistencia-alumno/asistencia-alumno').then(
@@ -205,7 +213,7 @@ export const routes: Routes = [
         // Pasar lista escribe, así que es `ROLES_REGISTRO` y no los roles de la
         // sección: la consulta la ve también el ALUMNO, esto no.
         path: 'asistencia/registrar',
-        title: titulo('Pasar lista'),
+        title: tituloDe('asistencia.registro.titulo'),
         canActivate: [rolGuard(...ROLES_REGISTRO)],
         loadComponent: () =>
           import('./features/asistencia/registro-asistencia/registro-asistencia').then(
@@ -214,7 +222,7 @@ export const routes: Routes = [
       },
       {
         path: 'reportes',
-        title: titulo('Reportes'),
+        title: tituloDe('reportes.titulo'),
         canActivate: [rolGuard(...rolesDe('/reportes'))],
         loadComponent: () =>
           import('./features/reportes/reportes').then((m) => m.Reportes),

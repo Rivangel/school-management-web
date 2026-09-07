@@ -10,6 +10,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { environment } from '../../../../environments/environment';
+import { t } from '../../../core/i18n/traducir';
 import { AuthService } from '../../../core/services/auth-service';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
 
@@ -37,6 +38,8 @@ export class Login {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly ruta = inject(ActivatedRoute);
+
+  protected readonly t = t;
 
   /** Los mínimos son los de `RegisterRequest` en la API: contraseña de 6 a 60. */
   protected readonly formulario = inject(FormBuilder).nonNullable.group({
@@ -81,8 +84,8 @@ export class Login {
    */
   private explicar(error: HttpErrorResponse): string {
     return error.status === 401
-      ? 'Correo o contraseña incorrectos.'
-      : mensajeDeError(error, 'No se pudo iniciar sesión. Vuelve a intentarlo.');
+      ? t('login.credencialesIncorrectas')
+      : mensajeDeError(error, t('login.noSePudoIniciar'));
   }
 
   /**
