@@ -1,52 +1,54 @@
 <header class="ficha__cabecera">
-  <h1>Ficha del alumno</h1>
+  <h1>{{ t('alumnos.detalle.titulo') }}</h1>
   <button mat-stroked-button type="button" (click)="volver()">
     <mat-icon>arrow_back</mat-icon>
-    Volver al listado
+    {{ t('common.volverAlListado') }}
   </button>
 </header>
 
 @if (idInvalido()) {
   <div class="ficha__aviso" role="alert">
     <mat-icon>link_off</mat-icon>
-    <p>La dirección no apunta a ningún alumno.</p>
+    <p>{{ t('alumnos.detalle.direccionInvalida') }}</p>
   </div>
 } @else if (error(); as mensaje) {
   <div class="ficha__aviso" role="alert">
     <mat-icon>error_outline</mat-icon>
     <p>{{ mensaje }}</p>
-    <button mat-flat-button type="button" (click)="reintentar()">Reintentar</button>
+    <button mat-flat-button type="button" (click)="reintentar()">{{ t('common.reintentar') }}</button>
   </div>
 } @else {
   <mat-card appearance="outlined" class="ficha__tarjeta">
     <!-- Altura fija para que la tarjeta no salte al aparecer la barra. -->
     <div class="ficha__barra">
       @if (cargando() || borrando()) {
-        <mat-progress-bar mode="indeterminate" aria-label="Cargando la ficha" />
+        <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('alumnos.detalle.cargandoFicha')" />
       }
     </div>
 
     @if (alumno(); as alumno) {
       <mat-card-header>
         <mat-card-title>{{ alumno.nombre }} {{ alumno.apellido }}</mat-card-title>
-        <mat-card-subtitle>Matrícula {{ alumno.matricula }}</mat-card-subtitle>
+        <mat-card-subtitle>
+          {{ t('alumnos.detalle.matriculaPrefijo', { matricula: alumno.matricula }) }}
+        </mat-card-subtitle>
       </mat-card-header>
 
       <mat-card-content>
         <dl class="ficha__datos">
-          <dt>Nombre</dt>
+          <dt>{{ t('alumnos.detalle.nombre') }}</dt>
           <dd>{{ alumno.nombre }}</dd>
 
-          <dt>Apellido</dt>
+          <dt>{{ t('alumnos.detalle.apellido') }}</dt>
           <dd>{{ alumno.apellido }}</dd>
 
-          <dt>Matrícula</dt>
+          <dt>{{ t('alumnos.detalle.matricula') }}</dt>
           <dd>{{ alumno.matricula }}</dd>
 
-          <dt>Grupo</dt>
+          <dt>{{ t('alumnos.detalle.grupo') }}</dt>
           <dd>{{ alumno.grupo }}</dd>
 
-          <dt>Correo</dt>
+          <dt>{{ t('alumnos.detalle.correo') }}</dt>
           <dd>
             <a href="mailto:{{ alumno.email }}">{{ alumno.email }}</a>
           </dd>
@@ -61,7 +63,7 @@
             [queryParams]="{ alumnoId: alumno.id }"
           >
             <mat-icon>grade</mat-icon>
-            Ver calificaciones
+            {{ t('alumnos.detalle.verCalificaciones') }}
           </a>
           <a
             mat-stroked-button
@@ -69,7 +71,7 @@
             [queryParams]="{ alumnoId: alumno.id }"
           >
             <mat-icon>event_available</mat-icon>
-            Ver asistencia
+            {{ t('alumnos.detalle.verAsistencia') }}
           </a>
           <button
             mat-stroked-button
@@ -78,7 +80,7 @@
             (click)="descargarBoleta(alumno.id)"
           >
             <mat-icon>download</mat-icon>
-            Descargar boleta
+            {{ t('alumnos.detalle.descargarBoleta') }}
           </button>
         </p>
       </mat-card-content>
@@ -93,7 +95,7 @@
             (click)="eliminar()"
           >
             <mat-icon>delete</mat-icon>
-            Eliminar
+            {{ t('common.eliminar') }}
           </button>
           <a
             mat-flat-button
@@ -101,7 +103,7 @@
             queryParamsHandling="preserve"
           >
             <mat-icon>edit</mat-icon>
-            Editar
+            {{ t('common.editar') }}
           </a>
         </mat-card-actions>
       }

@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Router, RouterLink } from '@angular/router';
 
+import { t } from '../../../core/i18n/traducir';
 import { Alumno } from '../../../core/models';
 import { ROLES_ESCRITURA } from '../../../core/navegacion';
 import { AlumnoService } from '../../../core/services/alumno-service';
@@ -41,6 +42,8 @@ export class DetalleAlumno {
   private readonly dialogo = inject(MatDialog);
   private readonly router = inject(Router);
 
+  protected readonly t = t;
+
   protected readonly id = idDeRuta().id;
   protected readonly descargandoBoleta = signal(false);
 
@@ -72,7 +75,7 @@ export class DetalleAlumno {
 
   protected readonly error = computed(() => {
     const fallo = this.recurso.error();
-    return fallo === undefined ? null : mensajeDeError(fallo, 'No se pudo cargar la ficha.');
+    return fallo === undefined ? null : mensajeDeError(fallo, t('alumnos.detalle.noSePudoCargar'));
   });
 
   protected reintentar(): void {
@@ -92,9 +95,12 @@ export class DetalleAlumno {
     }
 
     const datos: DatosConfirmacion = {
-      titulo: 'Eliminar alumno',
-      mensaje: `Se va a eliminar a ${nombreCompleto(alumno)} (${alumno.matricula}). Esta acción no se puede deshacer.`,
-      confirmar: 'Eliminar',
+      titulo: t('alumnos.detalle.tituloEliminar'),
+      mensaje: t('alumnos.detalle.mensajeEliminar', {
+        nombre: nombreCompleto(alumno),
+        matricula: alumno.matricula,
+      }),
+      confirmar: t('common.eliminar'),
       peligro: true,
     };
 
@@ -121,11 +127,11 @@ export class DetalleAlumno {
     this.reportes.descargarBoleta(alumnoId).subscribe({
       next: (nombreArchivo) => {
         this.descargandoBoleta.set(false);
-        this.avisos.exito(`Boleta descargada: ${nombreArchivo}`);
+        this.avisos.exito(t('alumnos.detalle.boletaDescargada', { nombreArchivo }));
       },
       error: (err) => {
         this.descargandoBoleta.set(false);
-        this.avisos.error(mensajeDeError(err, 'No se pudo descargar la boleta en PDF.'));
+        this.avisos.error(mensajeDeError(err, t('alumnos.detalle.noSePudoDescargarBoleta')));
       },
     });
   }
@@ -134,7 +140,7 @@ export class DetalleAlumno {
     this.borrando.set(true);
     this.alumnos.eliminar(alumno.id).subscribe({
       next: () => {
-        this.avisos.exito(`Se eliminó a ${nombreCompleto(alumno)}.`);
+        this.avisos.exito(t('alumnos.detalle.eliminado', { nombre: nombreCompleto(alumno) }));
         this.volver();
       },
       // El fallo lo cuenta el interceptor global; aquí sólo se reabre el botón.

@@ -1,10 +1,10 @@
 <header class="formulario__cabecera">
-  <h1>{{ editando() ? 'Editar maestro' : 'Nuevo maestro' }}</h1>
+  <h1>
+    {{ editando() ? t('maestros.formulario.tituloEditar') : t('maestros.formulario.tituloNuevo') }}
+  </h1>
   <p>
     {{
-      editando()
-        ? 'Cambia los datos y guarda para actualizar la ficha.'
-        : 'Completa los datos para registrar al maestro.'
+      editando() ? t('maestros.formulario.subtituloEditar') : t('maestros.formulario.subtituloNuevo')
     }}
   </p>
 </header>
@@ -13,22 +13,26 @@
   <!-- `/maestros/abc/editar`: ni es un alta ni hay ficha que cargar. -->
   <div class="formulario__aviso" role="alert">
     <mat-icon>link_off</mat-icon>
-    <p>La dirección no apunta a ningún maestro.</p>
-    <button mat-flat-button type="button" (click)="volver()">Volver al listado</button>
+    <p>{{ t('maestros.formulario.direccionInvalida') }}</p>
+    <button mat-flat-button type="button" (click)="volver()">
+      {{ t('common.volverAlListado') }}
+    </button>
   </div>
 } @else if (errorDeCarga(); as mensaje) {
   <div class="formulario__aviso" role="alert">
     <mat-icon>error_outline</mat-icon>
     <p>{{ mensaje }}</p>
-    <button mat-stroked-button type="button" (click)="volver()">Volver al listado</button>
-    <button mat-flat-button type="button" (click)="reintentar()">Reintentar</button>
+    <button mat-stroked-button type="button" (click)="volver()">
+      {{ t('common.volverAlListado') }}
+    </button>
+    <button mat-flat-button type="button" (click)="reintentar()">{{ t('common.reintentar') }}</button>
   </div>
 } @else {
   <mat-card appearance="outlined" class="formulario__tarjeta">
     <!-- Altura fija para que el formulario no salte al aparecer la barra. -->
     <div class="formulario__barra">
       @if (cargando() || enviando()) {
-        <mat-progress-bar mode="indeterminate" aria-label="Guardando" />
+        <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('common.guardando')" />
       }
     </div>
 
@@ -39,52 +43,52 @@
         <fieldset class="formulario__campos" [disabled]="cargando()">
           <!-- El título de la pantalla ya lo dice, pero un `fieldset` sin
                `legend` deja el grupo de campos sin nombre accesible. -->
-          <legend class="formulario__legend">Datos del maestro</legend>
+          <legend class="formulario__legend">{{ t('maestros.formulario.legend') }}</legend>
 
           <mat-form-field appearance="outline">
-            <mat-label>Nombre</mat-label>
+            <mat-label>{{ t('maestros.formulario.nombre') }}</mat-label>
             <input matInput formControlName="nombre" autocomplete="given-name" maxlength="100" />
             @if (formulario.controls.nombre.hasError('required')) {
-              <mat-error>El nombre es obligatorio.</mat-error>
+              <mat-error>{{ t('maestros.formulario.nombreObligatorio') }}</mat-error>
             } @else if (formulario.controls.nombre.hasError('maxlength')) {
-              <mat-error>El nombre no puede pasar de 100 caracteres.</mat-error>
+              <mat-error>{{ t('maestros.formulario.nombreMaxLength') }}</mat-error>
             } @else if (formulario.controls.nombre.hasError('servidor')) {
               <mat-error>{{ formulario.controls.nombre.getError('servidor') }}</mat-error>
             }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Apellido</mat-label>
+            <mat-label>{{ t('maestros.formulario.apellido') }}</mat-label>
             <input matInput formControlName="apellido" autocomplete="family-name" maxlength="100" />
             @if (formulario.controls.apellido.hasError('required')) {
-              <mat-error>El apellido es obligatorio.</mat-error>
+              <mat-error>{{ t('maestros.formulario.apellidoObligatorio') }}</mat-error>
             } @else if (formulario.controls.apellido.hasError('maxlength')) {
-              <mat-error>El apellido no puede pasar de 100 caracteres.</mat-error>
+              <mat-error>{{ t('maestros.formulario.apellidoMaxLength') }}</mat-error>
             } @else if (formulario.controls.apellido.hasError('servidor')) {
               <mat-error>{{ formulario.controls.apellido.getError('servidor') }}</mat-error>
             }
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="formulario__ancho-completo">
-            <mat-label>Especialidad</mat-label>
+            <mat-label>{{ t('maestros.formulario.especialidad') }}</mat-label>
             <input
               matInput
               formControlName="especialidad"
               maxlength="100"
               placeholder="Matemáticas"
             />
-            <mat-hint>La materia o área que imparte.</mat-hint>
+            <mat-hint>{{ t('maestros.formulario.especialidadHint') }}</mat-hint>
             @if (formulario.controls.especialidad.hasError('required')) {
-              <mat-error>La especialidad es obligatoria.</mat-error>
+              <mat-error>{{ t('maestros.formulario.especialidadObligatoria') }}</mat-error>
             } @else if (formulario.controls.especialidad.hasError('maxlength')) {
-              <mat-error>La especialidad no puede pasar de 100 caracteres.</mat-error>
+              <mat-error>{{ t('maestros.formulario.especialidadMaxLength') }}</mat-error>
             } @else if (formulario.controls.especialidad.hasError('servidor')) {
               <mat-error>{{ formulario.controls.especialidad.getError('servidor') }}</mat-error>
             }
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="formulario__ancho-completo">
-            <mat-label>Correo electrónico</mat-label>
+            <mat-label>{{ t('common.correoElectronico') }}</mat-label>
             <input
               matInput
               type="email"
@@ -95,11 +99,11 @@
             />
             <mat-icon matSuffix>alternate_email</mat-icon>
             @if (formulario.controls.email.hasError('required')) {
-              <mat-error>El correo es obligatorio.</mat-error>
+              <mat-error>{{ t('common.correoObligatorio') }}</mat-error>
             } @else if (formulario.controls.email.hasError('email')) {
-              <mat-error>Escribe un correo con formato válido.</mat-error>
+              <mat-error>{{ t('common.correoFormato') }}</mat-error>
             } @else if (formulario.controls.email.hasError('maxlength')) {
-              <mat-error>El correo no puede pasar de 120 caracteres.</mat-error>
+              <mat-error>{{ t('common.correoMaxLength') }}</mat-error>
             } @else if (formulario.controls.email.hasError('servidor')) {
               <mat-error>{{ formulario.controls.email.getError('servidor') }}</mat-error>
             }
@@ -114,9 +118,17 @@
         }
 
         <div class="formulario__acciones">
-          <button mat-stroked-button type="button" (click)="volver()">Cancelar</button>
+          <button mat-stroked-button type="button" (click)="volver()">
+            {{ t('common.cancelar') }}
+          </button>
           <button mat-flat-button type="submit" [disabled]="enviando() || cargando()">
-            {{ enviando() ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Registrar maestro' }}
+            {{
+              enviando()
+                ? t('common.guardando') + '…'
+                : editando()
+                  ? t('maestros.formulario.guardarCambios')
+                  : t('maestros.formulario.registrar')
+            }}
           </button>
         </div>
       </form>

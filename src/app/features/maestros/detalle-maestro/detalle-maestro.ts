@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Router, RouterLink } from '@angular/router';
 
+import { t } from '../../../core/i18n/traducir';
 import { Maestro } from '../../../core/models';
 import { ROLES_ESCRITURA } from '../../../core/navegacion';
 import { AuthService } from '../../../core/services/auth-service';
@@ -39,6 +40,8 @@ export class DetalleMaestro {
   private readonly dialogo = inject(MatDialog);
   private readonly router = inject(Router);
 
+  protected readonly t = t;
+
   protected readonly id = idDeRuta().id;
 
   /** `/maestros/abc`: la dirección no apunta a ninguna ficha. */
@@ -60,7 +63,7 @@ export class DetalleMaestro {
 
   protected readonly error = computed(() => {
     const fallo = this.recurso.error();
-    return fallo === undefined ? null : mensajeDeError(fallo, 'No se pudo cargar la ficha.');
+    return fallo === undefined ? null : mensajeDeError(fallo, t('maestros.detalle.noSePudoCargar'));
   });
 
   /** Por qué no se pudo borrar. Se queda en la tarjeta, junto al botón. */
@@ -78,9 +81,12 @@ export class DetalleMaestro {
     }
 
     const datos: DatosConfirmacion = {
-      titulo: 'Eliminar maestro',
-      mensaje: `Se va a eliminar a ${nombreCompleto(maestro)} (${maestro.especialidad}). Esta acción no se puede deshacer.`,
-      confirmar: 'Eliminar',
+      titulo: t('maestros.detalle.tituloEliminar'),
+      mensaje: t('maestros.detalle.mensajeEliminar', {
+        nombre: nombreCompleto(maestro),
+        especialidad: maestro.especialidad,
+      }),
+      confirmar: t('common.eliminar'),
       peligro: true,
     };
 
@@ -104,7 +110,7 @@ export class DetalleMaestro {
     this.errorAlBorrar.set(null);
     this.maestros.eliminar(maestro.id).subscribe({
       next: () => {
-        this.avisos.exito(`Se eliminó a ${nombreCompleto(maestro)}.`);
+        this.avisos.exito(t('maestros.detalle.eliminado', { nombre: nombreCompleto(maestro) }));
         this.volver();
       },
       error: (fallo: unknown) => {
@@ -131,7 +137,7 @@ function nombreCompleto(maestro: Maestro): string {
  */
 function motivoDelFallo(fallo: unknown, maestro: Maestro): string {
   if (fallo instanceof HttpErrorResponse && fallo.status === 409) {
-    return `No se puede eliminar a ${nombreCompleto(maestro)}: tiene materias a su cargo. Asígnalas a otro maestro o elimínalas primero.`;
+    return t('maestros.detalle.noSePudoEliminarTieneMaterias', { nombre: nombreCompleto(maestro) });
   }
-  return mensajeDeError(fallo, 'No se pudo eliminar al maestro.');
+  return mensajeDeError(fallo, t('maestros.detalle.noSePudoEliminar'));
 }

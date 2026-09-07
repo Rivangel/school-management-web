@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Router } from '@angular/router';
 
+import { t } from '../../../core/i18n/traducir';
 import { AlumnoRequest } from '../../../core/models';
 import { AlumnoService } from '../../../core/services/alumno-service';
 import { Avisos } from '../../../core/services/avisos';
@@ -61,6 +62,8 @@ export class FormularioAlumno {
   private readonly router = inject(Router);
   private readonly avisos = inject(Avisos);
 
+  protected readonly t = t;
+
   /** Los máximos son los `@Size` de `AlumnoRequest`; el mínimo, su `@NotBlank`. */
   protected readonly formulario = inject(FormBuilder).nonNullable.group({
     nombre: ['', [textoRequerido, Validators.maxLength(100)]],
@@ -100,7 +103,7 @@ export class FormularioAlumno {
 
   protected readonly errorDeCarga = computed(() => {
     const fallo = this.alumno.error();
-    return fallo === undefined ? null : mensajeDeError(fallo, 'No se pudo cargar el alumno.');
+    return fallo === undefined ? null : mensajeDeError(fallo, t('alumnos.formulario.noSePudoCargar'));
   });
 
   constructor() {
@@ -137,15 +140,23 @@ export class FormularioAlumno {
         this.enviando.set(false);
         this.avisos.exito(
           id === undefined
-            ? `Alumno ${alumno.nombre} ${alumno.apellido} registrado.`
-            : `Se guardaron los cambios de ${alumno.nombre} ${alumno.apellido}.`,
+            ? t('alumnos.formulario.registrado', { nombre: alumno.nombre, apellido: alumno.apellido })
+            : t('alumnos.formulario.cambiosGuardados', {
+                nombre: alumno.nombre,
+                apellido: alumno.apellido,
+              }),
         );
         this.volver();
       },
       error: (fallo: unknown) => {
         this.enviando.set(false);
         this.error.set(
-          aplicarErroresDeApi(this.formulario, fallo, DUPLICADOS, 'No se pudo guardar el alumno.'),
+          aplicarErroresDeApi(
+            this.formulario,
+            fallo,
+            DUPLICADOS,
+            t('alumnos.formulario.noSePudoGuardar'),
+          ),
         );
       },
     });

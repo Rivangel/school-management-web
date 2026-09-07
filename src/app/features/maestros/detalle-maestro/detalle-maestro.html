@@ -1,28 +1,28 @@
 <header class="ficha__cabecera">
-  <h1>Ficha del maestro</h1>
+  <h1>{{ t('maestros.detalle.titulo') }}</h1>
   <button mat-stroked-button type="button" (click)="volver()">
     <mat-icon>arrow_back</mat-icon>
-    Volver al listado
+    {{ t('common.volverAlListado') }}
   </button>
 </header>
 
 @if (idInvalido()) {
   <div class="ficha__aviso" role="alert">
     <mat-icon>link_off</mat-icon>
-    <p>La dirección no apunta a ningún maestro.</p>
+    <p>{{ t('maestros.detalle.direccionInvalida') }}</p>
   </div>
 } @else if (error(); as mensaje) {
   <div class="ficha__aviso" role="alert">
     <mat-icon>error_outline</mat-icon>
     <p>{{ mensaje }}</p>
-    <button mat-flat-button type="button" (click)="reintentar()">Reintentar</button>
+    <button mat-flat-button type="button" (click)="reintentar()">{{ t('common.reintentar') }}</button>
   </div>
 } @else {
   <mat-card appearance="outlined" class="ficha__tarjeta">
     <!-- Altura fija para que la tarjeta no salte al aparecer la barra. -->
     <div class="ficha__barra">
       @if (cargando() || borrando()) {
-        <mat-progress-bar mode="indeterminate" aria-label="Cargando la ficha" />
+        <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('maestros.detalle.cargandoFicha')" />
       }
     </div>
 
@@ -34,16 +34,16 @@
 
       <mat-card-content>
         <dl class="ficha__datos">
-          <dt>Nombre</dt>
+          <dt>{{ t('maestros.detalle.nombre') }}</dt>
           <dd>{{ maestro.nombre }}</dd>
 
-          <dt>Apellido</dt>
+          <dt>{{ t('maestros.detalle.apellido') }}</dt>
           <dd>{{ maestro.apellido }}</dd>
 
-          <dt>Especialidad</dt>
+          <dt>{{ t('maestros.detalle.especialidad') }}</dt>
           <dd>{{ maestro.especialidad }}</dd>
 
-          <dt>Correo</dt>
+          <dt>{{ t('maestros.detalle.correo') }}</dt>
           <dd>
             <a href="mailto:{{ maestro.email }}">{{ maestro.email }}</a>
           </dd>
@@ -70,7 +70,7 @@
             (click)="eliminar()"
           >
             <mat-icon>delete</mat-icon>
-            Eliminar
+            {{ t('common.eliminar') }}
           </button>
           <a
             mat-flat-button
@@ -78,7 +78,7 @@
             queryParamsHandling="preserve"
           >
             <mat-icon>edit</mat-icon>
-            Editar
+            {{ t('common.editar') }}
           </a>
         </mat-card-actions>
       }

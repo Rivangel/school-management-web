@@ -9,6 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Router } from '@angular/router';
 
+import { t } from '../../../core/i18n/traducir';
 import { MaestroRequest } from '../../../core/models';
 import { Avisos } from '../../../core/services/avisos';
 import { PistaDeCampo, aplicarErroresDeApi } from '../../../core/services/errores-formulario';
@@ -53,6 +54,8 @@ export class FormularioMaestro {
   private readonly router = inject(Router);
   private readonly avisos = inject(Avisos);
 
+  protected readonly t = t;
+
   /** Los máximos son los `@Size` de `MaestroRequest`; el mínimo, su `@NotBlank`. */
   protected readonly formulario = inject(FormBuilder).nonNullable.group({
     nombre: ['', [textoRequerido, Validators.maxLength(100)]],
@@ -85,7 +88,7 @@ export class FormularioMaestro {
 
   protected readonly errorDeCarga = computed(() => {
     const fallo = this.maestro.error();
-    return fallo === undefined ? null : mensajeDeError(fallo, 'No se pudo cargar el maestro.');
+    return fallo === undefined ? null : mensajeDeError(fallo, t('maestros.formulario.noSePudoCargar'));
   });
 
   constructor() {
@@ -121,15 +124,26 @@ export class FormularioMaestro {
         this.enviando.set(false);
         this.avisos.exito(
           id === undefined
-            ? `Maestro ${maestro.nombre} ${maestro.apellido} registrado.`
-            : `Se guardaron los cambios de ${maestro.nombre} ${maestro.apellido}.`,
+            ? t('maestros.formulario.registrado', {
+                nombre: maestro.nombre,
+                apellido: maestro.apellido,
+              })
+            : t('maestros.formulario.cambiosGuardados', {
+                nombre: maestro.nombre,
+                apellido: maestro.apellido,
+              }),
         );
         this.volver();
       },
       error: (fallo: unknown) => {
         this.enviando.set(false);
         this.error.set(
-          aplicarErroresDeApi(this.formulario, fallo, DUPLICADOS, 'No se pudo guardar el maestro.'),
+          aplicarErroresDeApi(
+            this.formulario,
+            fallo,
+            DUPLICADOS,
+            t('maestros.formulario.noSePudoGuardar'),
+          ),
         );
       },
     });

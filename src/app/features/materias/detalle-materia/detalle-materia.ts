@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { Router, RouterLink } from '@angular/router';
 
+import { t } from '../../../core/i18n/traducir';
 import { Materia } from '../../../core/models';
 import {
   ROLES_ESCRITURA,
@@ -48,6 +49,8 @@ export class DetalleMateria {
   private readonly avisos = inject(Avisos);
   private readonly dialogo = inject(MatDialog);
   private readonly router = inject(Router);
+
+  protected readonly t = t;
 
   protected readonly id = idDeRuta().id;
 
@@ -107,7 +110,7 @@ export class DetalleMateria {
 
   protected readonly error = computed(() => {
     const fallo = this.recurso.error();
-    return fallo === undefined ? null : mensajeDeError(fallo, 'No se pudo cargar la materia.');
+    return fallo === undefined ? null : mensajeDeError(fallo, t('materias.detalle.noSePudoCargar'));
   });
 
   /** Por qué no se pudo borrar. Se queda en la tarjeta, junto al botón. */
@@ -125,11 +128,14 @@ export class DetalleMateria {
     }
 
     const datos: DatosConfirmacion = {
-      titulo: 'Eliminar materia',
+      titulo: t('materias.detalle.tituloEliminar'),
       // El maestro es lo que distingue dos "Álgebra" en una lista: una materia
       // no tiene matrícula ni ningún otro identificador humano.
-      mensaje: `Se va a eliminar ${materia.nombre} (${materia.maestroNombre}). Esta acción no se puede deshacer.`,
-      confirmar: 'Eliminar',
+      mensaje: t('materias.detalle.mensajeEliminar', {
+        nombre: materia.nombre,
+        maestroNombre: materia.maestroNombre,
+      }),
+      confirmar: t('common.eliminar'),
       peligro: true,
     };
 
@@ -153,7 +159,7 @@ export class DetalleMateria {
     this.errorAlBorrar.set(null);
     this.materias.eliminar(materia.id).subscribe({
       next: () => {
-        this.avisos.exito(`Se eliminó ${materia.nombre}.`);
+        this.avisos.exito(t('materias.detalle.eliminada', { nombre: materia.nombre }));
         this.volver();
       },
       error: (fallo: unknown) => {
@@ -176,7 +182,7 @@ export class DetalleMateria {
  */
 function motivoDelFallo(fallo: unknown, materia: Materia): string {
   if (fallo instanceof HttpErrorResponse && fallo.status === 409) {
-    return `No se puede eliminar ${materia.nombre}: tiene calificaciones o asistencias registradas. Elimínalas primero.`;
+    return t('materias.detalle.noSePudoEliminarTieneRegistros', { nombre: materia.nombre });
   }
-  return mensajeDeError(fallo, 'No se pudo eliminar la materia.');
+  return mensajeDeError(fallo, t('materias.detalle.noSePudoEliminar'));
 }

@@ -10,6 +10,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { Router } from '@angular/router';
 
+import { t } from '../../../core/i18n/traducir';
 import { MateriaRequest } from '../../../core/models';
 import { Avisos } from '../../../core/services/avisos';
 import {
@@ -40,14 +41,19 @@ const CREDITOS_MAXIMO = 20;
  * no con un 400, y su frase —"Maestro con id 3 no encontrado"— habla de un id
  * que quien rellena el formulario nunca vio, porque eligió un nombre en una
  * lista. Se cuelga del desplegable con palabras propias.
+ *
+ * Es una función y no una constante para que el mensaje se lea en el idioma
+ * activo **al guardar**, no en el que estuviera cuando se cargó el módulo.
  */
-const PISTAS: readonly PistaDeCampo[] = [
-  {
-    patron: /maestro/i,
-    campo: 'maestroId',
-    mensaje: 'Ese maestro ya no existe. Elige otro en la lista, que se acaba de actualizar.',
-  },
-];
+function pistas(): readonly PistaDeCampo[] {
+  return [
+    {
+      patron: /maestro/i,
+      campo: 'maestroId',
+      mensaje: t('materias.formulario.maestroYaNoExiste'),
+    },
+  ];
+}
 
 /** Una opción del desplegable de maestros. */
 interface OpcionDeMaestro {
@@ -87,6 +93,8 @@ export class FormularioMateria {
   private readonly maestros = inject(MaestroService);
   private readonly router = inject(Router);
   private readonly avisos = inject(Avisos);
+
+  protected readonly t = t;
 
   protected readonly creditosMinimo = CREDITOS_MINIMO;
   protected readonly creditosMaximo = CREDITOS_MAXIMO;
@@ -146,7 +154,7 @@ export class FormularioMateria {
 
   protected readonly errorDeCarga = computed(() => {
     const fallo = this.materia.error();
-    return fallo === undefined ? null : mensajeDeError(fallo, 'No se pudo cargar la materia.');
+    return fallo === undefined ? null : mensajeDeError(fallo, t('materias.formulario.noSePudoCargar'));
   });
 
   /**
@@ -213,15 +221,20 @@ export class FormularioMateria {
         this.enviando.set(false);
         this.avisos.exito(
           id === undefined
-            ? `Materia ${materia.nombre} registrada.`
-            : `Se guardaron los cambios de ${materia.nombre}.`,
+            ? t('materias.formulario.registrada', { nombre: materia.nombre })
+            : t('materias.formulario.cambiosGuardados', { nombre: materia.nombre }),
         );
         this.volver();
       },
       error: (fallo: unknown) => {
         this.enviando.set(false);
         this.error.set(
-          aplicarErroresDeApi(this.formulario, fallo, PISTAS, 'No se pudo guardar la materia.'),
+          aplicarErroresDeApi(
+            this.formulario,
+            fallo,
+            pistas(),
+            t('materias.formulario.noSePudoGuardar'),
+          ),
         );
 
         // Si el fallo acabó en el desplegable, es que su lista se quedó vieja:

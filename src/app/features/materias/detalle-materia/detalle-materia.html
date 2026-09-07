@@ -1,28 +1,28 @@
 <header class="ficha__cabecera">
-  <h1>Ficha de la materia</h1>
+  <h1>{{ t('materias.detalle.titulo') }}</h1>
   <button mat-stroked-button type="button" (click)="volver()">
     <mat-icon>arrow_back</mat-icon>
-    Volver al listado
+    {{ t('common.volverAlListado') }}
   </button>
 </header>
 
 @if (idInvalido()) {
   <div class="ficha__aviso" role="alert">
     <mat-icon>link_off</mat-icon>
-    <p>La dirección no apunta a ninguna materia.</p>
+    <p>{{ t('materias.detalle.direccionInvalida') }}</p>
   </div>
 } @else if (error(); as mensaje) {
   <div class="ficha__aviso" role="alert">
     <mat-icon>error_outline</mat-icon>
     <p>{{ mensaje }}</p>
-    <button mat-flat-button type="button" (click)="reintentar()">Reintentar</button>
+    <button mat-flat-button type="button" (click)="reintentar()">{{ t('common.reintentar') }}</button>
   </div>
 } @else {
   <mat-card appearance="outlined" class="ficha__tarjeta">
     <!-- Altura fija para que la tarjeta no salte al aparecer la barra. -->
     <div class="ficha__barra">
       @if (cargando() || borrando()) {
-        <mat-progress-bar mode="indeterminate" aria-label="Cargando la ficha" />
+        <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('materias.detalle.cargandoFicha')" />
       }
     </div>
 
@@ -34,13 +34,13 @@
 
       <mat-card-content>
         <dl class="ficha__datos">
-          <dt>Nombre</dt>
+          <dt>{{ t('materias.detalle.nombre') }}</dt>
           <dd>{{ materia.nombre }}</dd>
 
-          <dt>Créditos</dt>
+          <dt>{{ t('materias.detalle.creditos') }}</dt>
           <dd>{{ materia.creditos }}</dd>
 
-          <dt>Maestro</dt>
+          <dt>{{ t('materias.detalle.maestro') }}</dt>
           <dd>
             <!-- Enlace sólo para quien puede abrir la sección de maestros: al
                  ALUMNO lo llevaría a "acceso denegado". -->
@@ -62,7 +62,7 @@
               [queryParams]="{ materiaId: materia.id }"
             >
               <mat-icon>grade</mat-icon>
-              Ver calificaciones
+              {{ t('materias.detalle.verCalificaciones') }}
             </a>
             @if (puedePasarLista()) {
               <a
@@ -71,7 +71,7 @@
                 [queryParams]="{ materiaId: materia.id }"
               >
                 <mat-icon>event_available</mat-icon>
-                Pasar lista
+                {{ t('materias.detalle.pasarLista') }}
               </a>
             }
           </p>
@@ -82,12 +82,12 @@
           @if (esMiMateria()) {
             <p class="ficha__nota ficha__nota--propia">
               <mat-icon>check_circle</mat-icon>
-              <span>Impartes esta materia.</span>
+              <span>{{ t('materias.detalle.impartesEstaMateria') }}</span>
             </p>
           } @else if (esMaestro()) {
             <p class="ficha__nota">
               <mat-icon>info_outline</mat-icon>
-              <span>Esta materia la imparte otro maestro: puedes consultarla, pero no registrar en ella.</span>
+              <span>{{ t('materias.detalle.materiaAjena') }}</span>
             </p>
           }
         }
@@ -113,7 +113,7 @@
             (click)="eliminar()"
           >
             <mat-icon>delete</mat-icon>
-            Eliminar
+            {{ t('common.eliminar') }}
           </button>
           <a
             mat-flat-button
@@ -121,7 +121,7 @@
             queryParamsHandling="preserve"
           >
             <mat-icon>edit</mat-icon>
-            Editar
+            {{ t('common.editar') }}
           </a>
         </mat-card-actions>
       }

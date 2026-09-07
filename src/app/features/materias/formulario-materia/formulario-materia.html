@@ -1,10 +1,10 @@
 <header class="formulario__cabecera">
-  <h1>{{ editando() ? 'Editar materia' : 'Nueva materia' }}</h1>
+  <h1>
+    {{ editando() ? t('materias.formulario.tituloEditar') : t('materias.formulario.tituloNuevo') }}
+  </h1>
   <p>
     {{
-      editando()
-        ? 'Cambia los datos y guarda para actualizar la materia.'
-        : 'Completa los datos para registrar la materia.'
+      editando() ? t('materias.formulario.subtituloEditar') : t('materias.formulario.subtituloNuevo')
     }}
   </p>
 </header>
@@ -13,22 +13,26 @@
   <!-- `/materias/abc/editar`: ni es un alta ni hay materia que cargar. -->
   <div class="formulario__aviso" role="alert">
     <mat-icon>link_off</mat-icon>
-    <p>La dirección no apunta a ninguna materia.</p>
-    <button mat-flat-button type="button" (click)="volver()">Volver al listado</button>
+    <p>{{ t('materias.formulario.direccionInvalida') }}</p>
+    <button mat-flat-button type="button" (click)="volver()">
+      {{ t('common.volverAlListado') }}
+    </button>
   </div>
 } @else if (errorDeCarga(); as mensaje) {
   <div class="formulario__aviso" role="alert">
     <mat-icon>error_outline</mat-icon>
     <p>{{ mensaje }}</p>
-    <button mat-stroked-button type="button" (click)="volver()">Volver al listado</button>
-    <button mat-flat-button type="button" (click)="reintentar()">Reintentar</button>
+    <button mat-stroked-button type="button" (click)="volver()">
+      {{ t('common.volverAlListado') }}
+    </button>
+    <button mat-flat-button type="button" (click)="reintentar()">{{ t('common.reintentar') }}</button>
   </div>
 } @else {
   <mat-card appearance="outlined" class="formulario__tarjeta">
     <!-- Altura fija para que el formulario no salte al aparecer la barra. -->
     <div class="formulario__barra">
       @if (cargando() || enviando()) {
-        <mat-progress-bar mode="indeterminate" aria-label="Guardando" />
+        <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('common.guardando')" />
       }
     </div>
 
@@ -39,22 +43,22 @@
         <fieldset class="formulario__campos" [disabled]="cargando()">
           <!-- El título de la pantalla ya lo dice, pero un `fieldset` sin
                `legend` deja el grupo de campos sin nombre accesible. -->
-          <legend class="formulario__legend">Datos de la materia</legend>
+          <legend class="formulario__legend">{{ t('materias.formulario.legend') }}</legend>
 
           <mat-form-field appearance="outline" class="formulario__ancho-completo">
-            <mat-label>Nombre</mat-label>
+            <mat-label>{{ t('materias.formulario.nombre') }}</mat-label>
             <input matInput formControlName="nombre" maxlength="100" placeholder="Álgebra" />
             @if (formulario.controls.nombre.hasError('required')) {
-              <mat-error>El nombre es obligatorio.</mat-error>
+              <mat-error>{{ t('materias.formulario.nombreObligatorio') }}</mat-error>
             } @else if (formulario.controls.nombre.hasError('maxlength')) {
-              <mat-error>El nombre no puede pasar de 100 caracteres.</mat-error>
+              <mat-error>{{ t('materias.formulario.nombreMaxLength') }}</mat-error>
             } @else if (formulario.controls.nombre.hasError('servidor')) {
               <mat-error>{{ formulario.controls.nombre.getError('servidor') }}</mat-error>
             }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Créditos</mat-label>
+            <mat-label>{{ t('materias.formulario.creditos') }}</mat-label>
             <input
               matInput
               type="number"
@@ -63,20 +67,22 @@
               [min]="creditosMinimo"
               [max]="creditosMaximo"
             />
-            <mat-hint>Entre {{ creditosMinimo }} y {{ creditosMaximo }}.</mat-hint>
+            <mat-hint>
+              {{ t('materias.formulario.creditosHint', { minimo: creditosMinimo, maximo: creditosMaximo }) }}
+            </mat-hint>
             @if (formulario.controls.creditos.hasError('required')) {
-              <mat-error>Los créditos son obligatorios.</mat-error>
+              <mat-error>{{ t('materias.formulario.creditosObligatorios') }}</mat-error>
             } @else if (formulario.controls.creditos.hasError('min')) {
-              <mat-error>Los créditos deben ser al menos {{ creditosMinimo }}.</mat-error>
+              <mat-error>{{ t('materias.formulario.creditosMinimo', { minimo: creditosMinimo }) }}</mat-error>
             } @else if (formulario.controls.creditos.hasError('max')) {
-              <mat-error>Los créditos no pueden pasar de {{ creditosMaximo }}.</mat-error>
+              <mat-error>{{ t('materias.formulario.creditosMaximo', { maximo: creditosMaximo }) }}</mat-error>
             } @else if (formulario.controls.creditos.hasError('servidor')) {
               <mat-error>{{ formulario.controls.creditos.getError('servidor') }}</mat-error>
             }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Maestro</mat-label>
+            <mat-label>{{ t('materias.formulario.maestro') }}</mat-label>
             <!-- La materia guarda el id; el nombre lo pone la lista. Las
                  opciones incluyen siempre la del maestro que ya tenía asignado,
                  aunque no venga en la página que devolvió la API. -->
@@ -85,9 +91,9 @@
                 <mat-option [value]="opcion.id">{{ opcion.etiqueta }}</mat-option>
               }
             </mat-select>
-            <mat-hint>Quien imparte la materia.</mat-hint>
+            <mat-hint>{{ t('materias.formulario.maestroHint') }}</mat-hint>
             @if (formulario.controls.maestroId.hasError('required')) {
-              <mat-error>Elige el maestro que la imparte.</mat-error>
+              <mat-error>{{ t('materias.formulario.maestroObligatorio') }}</mat-error>
             } @else if (formulario.controls.maestroId.hasError('servidor')) {
               <mat-error>{{ formulario.controls.maestroId.getError('servidor') }}</mat-error>
             }
@@ -102,9 +108,17 @@
         }
 
         <div class="formulario__acciones">
-          <button mat-stroked-button type="button" (click)="volver()">Cancelar</button>
+          <button mat-stroked-button type="button" (click)="volver()">
+            {{ t('common.cancelar') }}
+          </button>
           <button mat-flat-button type="submit" [disabled]="enviando() || cargando()">
-            {{ enviando() ? 'Guardando…' : editando() ? 'Guardar cambios' : 'Registrar materia' }}
+            {{
+              enviando()
+                ? t('common.guardando') + '…'
+                : editando()
+                  ? t('materias.formulario.guardarCambios')
+                  : t('materias.formulario.registrar')
+            }}
           </button>
         </div>
       </form>
