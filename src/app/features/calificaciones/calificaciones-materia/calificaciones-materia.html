@@ -1,23 +1,30 @@
 <header class="listado__cabecera">
   <div>
-    <h1>Calificaciones por materia</h1>
+    <h1>{{ t('calificaciones.materia.titulo') }}</h1>
     <p>
       @if (nombreDeLaMateria(); as nombre) {
-        Calificaciones de {{ nombre }}.
+        {{ t('calificaciones.materia.calificacionesDe', { nombre }) }}
       } @else {
-        Elige una materia para ver las calificaciones de su grupo.
+        {{ t('calificaciones.materia.eligeMateria') }}
       }
       @if (promedio(); as media) {
         <span class="calificaciones__resumen">
-          {{ filas().length }}
-          {{ filas().length === 1 ? 'calificación' : 'calificaciones' }} · promedio {{ media }}.
+          {{
+            t('calificaciones.materia.resumenPromedio', {
+              n: filas().length,
+              calificacionPalabra: filas().length === 1
+                ? t('calificaciones.materia.unaCalificacion')
+                : t('calificaciones.materia.variasCalificaciones'),
+              media,
+            })
+          }}
         </span>
       }
     </p>
   </div>
 
   <mat-form-field appearance="outline" subscriptSizing="dynamic" class="calificaciones__materia">
-    <mat-label>Materia</mat-label>
+    <mat-label>{{ t('calificaciones.materia.materia') }}</mat-label>
     <mat-select [ngModel]="materiaElegida()" (ngModelChange)="elegirMateria($event)">
       @for (materia of opcionesDeMateria(); track materia.id) {
         <mat-option [value]="materia.id">{{ materia.nombre }}</mat-option>
@@ -28,7 +35,7 @@
   @if (puedeRegistrar()) {
     <a mat-flat-button routerLink="/calificaciones/registrar">
       <mat-icon>add</mat-icon>
-      Registrar calificación
+      {{ t('calificaciones.materia.registrarCalificacion') }}
     </a>
   }
 </header>
@@ -36,7 +43,7 @@
 <!-- Altura fija para que la tabla no salte al aparecer y desaparecer la barra. -->
 <div class="listado__barra">
   @if (cargando()) {
-    <mat-progress-bar mode="indeterminate" aria-label="Cargando calificaciones" />
+    <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('calificaciones.materia.cargando')" />
   }
 </div>
 
@@ -44,12 +51,14 @@
   <div class="listado__aviso listado__aviso--error" role="alert">
     <mat-icon>error_outline</mat-icon>
     <p>{{ mensaje }}</p>
-    <button mat-flat-button type="button" (click)="reintentar()">Reintentar</button>
+    <button mat-flat-button type="button" (click)="reintentar()">
+      {{ t('calificaciones.materia.reintentar') }}
+    </button>
   </div>
 } @else if (sinElegir()) {
   <p class="listado__aviso">
     <mat-icon>menu_book</mat-icon>
-    Elige una materia en la lista de arriba.
+    {{ t('calificaciones.materia.eligeMateriaArriba') }}
   </p>
 } @else {
   <!-- Por qué no hay botón de corregir en las filas. Un maestro que lo tiene en
@@ -58,36 +67,37 @@
   @if (esMateriaAjena()) {
     <p class="listado__aviso">
       <mat-icon>info_outline</mat-icon>
-      Esta materia la imparte otro maestro: puedes consultar sus calificaciones, pero no
-      corregirlas.
+      {{ t('calificaciones.materia.materiaAjena') }}
     </p>
   }
 
   <div class="listado__tabla">
     <table mat-table [dataSource]="filas()" [trackBy]="idDe">
       <caption class="listado__caption">
-        Calificaciones de la materia, de lo más reciente a lo más antiguo.
+        {{ t('calificaciones.materia.caption') }}
       </caption>
 
       <ng-container matColumnDef="alumno">
-        <th mat-header-cell *matHeaderCellDef scope="col">Alumno</th>
+        <th mat-header-cell *matHeaderCellDef scope="col">{{ t('calificaciones.materia.colAlumno') }}</th>
         <td mat-cell *matCellDef="let fila">{{ fila.alumnoNombre }}</td>
       </ng-container>
 
       <ng-container matColumnDef="periodo">
-        <th mat-header-cell *matHeaderCellDef scope="col">Periodo</th>
+        <th mat-header-cell *matHeaderCellDef scope="col">{{ t('calificaciones.materia.colPeriodo') }}</th>
         <td mat-cell *matCellDef="let fila">{{ fila.periodo }}</td>
       </ng-container>
 
       <ng-container matColumnDef="calificacion">
-        <th mat-header-cell *matHeaderCellDef scope="col">Calificación</th>
+        <th mat-header-cell *matHeaderCellDef scope="col">
+          {{ t('calificaciones.materia.colCalificacion') }}
+        </th>
         <td mat-cell *matCellDef="let fila" class="calificaciones__nota">
           {{ fila.calificacion }}
         </td>
       </ng-container>
 
       <ng-container matColumnDef="acciones">
-        <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+        <th mat-header-cell *matHeaderCellDef scope="col">{{ t('calificaciones.materia.colAcciones') }}</th>
         <td mat-cell *matCellDef="let fila">
           <!-- No hay pantalla de edición: la API sólo tiene el POST que hace
                *upsert*, así que corregir es registrar otra vez con los datos ya
@@ -97,7 +107,7 @@
               mat-icon-button
               routerLink="/calificaciones/registrar"
               [queryParams]="parametrosDeEdicion(fila)"
-              [attr.aria-label]="'Corregir la calificación de ' + fila.alumnoNombre"
+              [attr.aria-label]="t('calificaciones.materia.corregirDe', { nombre: fila.alumnoNombre })"
             >
               <mat-icon>edit</mat-icon>
             </a>
@@ -112,7 +122,7 @@
     @if (vacio()) {
       <p class="listado__aviso">
         <mat-icon>grade</mat-icon>
-        Esta materia todavía no tiene calificaciones registradas.
+        {{ t('calificaciones.materia.vacio') }}
       </p>
     }
   </div>

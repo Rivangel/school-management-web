@@ -11,6 +11,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute, ParamMap, Router } from '@angular/router';
 
+import { t } from '../../../core/i18n/traducir';
 import { Calificacion, CalificacionRequest, PATRON_PERIODO } from '../../../core/models';
 import { AlumnoService } from '../../../core/services/alumno-service';
 import { AuthService } from '../../../core/services/auth-service';
@@ -40,16 +41,21 @@ const DECIMALES = 2;
  * materia a materia. Aunque el desplegable ya venga filtrado, el 403 sigue
  * siendo posible —la materia pudo cambiar de maestro entre que se cargó la
  * lista y se pulsó guardar—, así que se cuelga del campo que lo provocó.
+ *
+ * Es una función y no una constante para que el mensaje se lea en el idioma
+ * activo al guardar, no en el que estuviera cuando se cargó el módulo.
  */
-const PISTAS: readonly PistaDeCampo[] = [
-  {
-    patron: /materia/i,
-    campo: 'materiaId',
-    mensaje: 'No puedes registrar calificaciones de esta materia: no es tuya.',
-  },
-  { patron: /alumno/i, campo: 'alumnoId' },
-  { patron: /periodo/i, campo: 'periodo' },
-];
+function pistas(): readonly PistaDeCampo[] {
+  return [
+    {
+      patron: /materia/i,
+      campo: 'materiaId',
+      mensaje: t('calificaciones.formulario.materiaNoTuya'),
+    },
+    { patron: /alumno/i, campo: 'alumnoId' },
+    { patron: /periodo/i, campo: 'periodo' },
+  ];
+}
 
 /**
  * Más de dos decimales no caben en la columna y se redondearían **en silencio**.
@@ -110,6 +116,8 @@ export class FormularioCalificacion {
   private readonly avisos = inject(Avisos);
   private readonly dialogo = inject(MatDialog);
   private readonly router = inject(Router);
+
+  protected readonly t = t;
 
   protected readonly notaMinima = NOTA_MINIMA;
   protected readonly notaMaxima = NOTA_MAXIMA;
@@ -229,7 +237,7 @@ export class FormularioCalificacion {
     const fallo = this.miMaestro.error() ?? this.paginaDeMaterias.error();
     return fallo === undefined
       ? null
-      : mensajeDeError(fallo, 'No se pudieron cargar las materias que puedes calificar.');
+      : mensajeDeError(fallo, t('calificaciones.formulario.noSePuedenCargarMaterias'));
   });
 
   protected reintentar(): void {
@@ -289,9 +297,15 @@ export class FormularioCalificacion {
     }
 
     const confirmacion: DatosConfirmacion = {
-      titulo: 'Ya hay una calificación',
-      mensaje: `${previa.alumnoNombre} ya tiene ${previa.calificacion} en ${previa.materiaNombre} (${previa.periodo}). Se reemplazará por ${datos.calificacion}.`,
-      confirmar: 'Reemplazar',
+      titulo: t('calificaciones.formulario.tituloYaHayCalificacion'),
+      mensaje: t('calificaciones.formulario.mensajeYaHayCalificacion', {
+        alumnoNombre: previa.alumnoNombre,
+        calificacionAnterior: previa.calificacion,
+        materiaNombre: previa.materiaNombre,
+        periodo: previa.periodo,
+        calificacionNueva: datos.calificacion,
+      }),
+      confirmar: t('calificaciones.formulario.reemplazar'),
     };
 
     this.dialogo
@@ -311,7 +325,12 @@ export class FormularioCalificacion {
       next: (calificacion) => {
         this.enviando.set(false);
         this.avisos.exito(
-          `${calificacion.calificacion} para ${calificacion.alumnoNombre} en ${calificacion.materiaNombre} (${calificacion.periodo}).`,
+          t('calificaciones.formulario.guardada', {
+            calificacion: calificacion.calificacion,
+            alumnoNombre: calificacion.alumnoNombre,
+            materiaNombre: calificacion.materiaNombre,
+            periodo: calificacion.periodo,
+          }),
         );
         if (this.corrigiendo()) {
           // Quien viene a corregir una nota concreta viene de una tabla y quiere
@@ -334,8 +353,8 @@ export class FormularioCalificacion {
           aplicarErroresDeApi(
             this.formulario,
             fallo,
-            PISTAS,
-            'No se pudo registrar la calificación.',
+            pistas(),
+            t('calificaciones.formulario.noSePudoRegistrar'),
           ),
         );
       },

@@ -1,21 +1,29 @@
 <header class="formulario__cabecera">
-  <h1>{{ corrigiendo() ? 'Corregir calificación' : 'Registrar calificación' }}</h1>
-  <p>La nota sustituye a la que ya hubiera de ese alumno en esa materia y periodo.</p>
+  <h1>
+    {{
+      corrigiendo()
+        ? t('calificaciones.formulario.tituloCorregir')
+        : t('calificaciones.formulario.tituloRegistrar')
+    }}
+  </h1>
+  <p>{{ t('calificaciones.formulario.subtitulo') }}</p>
 </header>
 
 @if (errorDeCarga(); as mensaje) {
   <div class="formulario__aviso" role="alert">
     <mat-icon>error_outline</mat-icon>
     <p>{{ mensaje }}</p>
-    <button mat-stroked-button type="button" (click)="volver()">Volver</button>
-    <button mat-flat-button type="button" (click)="reintentar()">Reintentar</button>
+    <button mat-stroked-button type="button" (click)="volver()">
+      {{ t('calificaciones.formulario.volver') }}
+    </button>
+    <button mat-flat-button type="button" (click)="reintentar()">{{ t('common.reintentar') }}</button>
   </div>
 } @else {
   <mat-card appearance="outlined" class="formulario__tarjeta">
     <!-- Altura fija para que el formulario no salte al aparecer la barra. -->
     <div class="formulario__barra">
       @if (cargando() || enviando()) {
-        <mat-progress-bar mode="indeterminate" aria-label="Guardando" />
+        <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('common.guardando')" />
       }
     </div>
 
@@ -24,10 +32,10 @@
         <!-- Mientras llegan alumnos y materias los desplegables están vacíos:
              abrirlos no ofrece nada. -->
         <fieldset class="formulario__campos" [disabled]="cargando()">
-          <legend class="formulario__legend">Datos de la calificación</legend>
+          <legend class="formulario__legend">{{ t('calificaciones.formulario.legend') }}</legend>
 
           <mat-form-field appearance="outline">
-            <mat-label>Alumno</mat-label>
+            <mat-label>{{ t('calificaciones.formulario.alumno') }}</mat-label>
             <mat-select formControlName="alumnoId">
               @for (alumno of opcionesDeAlumno(); track alumno.id) {
                 <mat-option [value]="alumno.id">
@@ -38,31 +46,33 @@
             <!-- La API recorta en cien: callarlo dejaría creer que la lista está
                  completa cuando no lo está. -->
             @if (alumnosNoListados() > 0) {
-              <mat-hint>Sólo los primeros 100; faltan {{ alumnosNoListados() }}.</mat-hint>
+              <mat-hint>
+                {{ t('calificaciones.formulario.soloPrimeros100Faltan', { n: alumnosNoListados() }) }}
+              </mat-hint>
             }
             @if (formulario.controls.alumnoId.hasError('required')) {
-              <mat-error>Elige al alumno.</mat-error>
+              <mat-error>{{ t('calificaciones.formulario.eligeAlumno') }}</mat-error>
             } @else if (formulario.controls.alumnoId.hasError('servidor')) {
               <mat-error>{{ formulario.controls.alumnoId.getError('servidor') }}</mat-error>
             }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Materia</mat-label>
+            <mat-label>{{ t('calificaciones.formulario.materia') }}</mat-label>
             <mat-select formControlName="materiaId">
               @for (materia of opcionesDeMateria(); track materia.id) {
                 <mat-option [value]="materia.id">{{ materia.nombre }}</mat-option>
               }
             </mat-select>
             @if (formulario.controls.materiaId.hasError('required')) {
-              <mat-error>Elige la materia.</mat-error>
+              <mat-error>{{ t('calificaciones.formulario.eligeMateria') }}</mat-error>
             } @else if (formulario.controls.materiaId.hasError('servidor')) {
               <mat-error>{{ formulario.controls.materiaId.getError('servidor') }}</mat-error>
             }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Calificación</mat-label>
+            <mat-label>{{ t('calificaciones.formulario.calificacion') }}</mat-label>
             <input
               matInput
               type="number"
@@ -72,30 +82,30 @@
               [min]="notaMinima"
               [max]="notaMaxima"
             />
-            <mat-hint>De {{ notaMinima }} a {{ notaMaxima }}, con dos decimales.</mat-hint>
+            <mat-hint>
+              {{ t('calificaciones.formulario.calificacionHint', { minimo: notaMinima, maximo: notaMaxima }) }}
+            </mat-hint>
             @if (formulario.controls.calificacion.hasError('required')) {
-              <mat-error>La calificación es obligatoria.</mat-error>
+              <mat-error>{{ t('calificaciones.formulario.calificacionObligatoria') }}</mat-error>
             } @else if (formulario.controls.calificacion.hasError('min')) {
-              <mat-error>La calificación mínima es {{ notaMinima }}.</mat-error>
+              <mat-error>{{ t('calificaciones.formulario.calificacionMinima', { minimo: notaMinima }) }}</mat-error>
             } @else if (formulario.controls.calificacion.hasError('max')) {
-              <mat-error>La calificación máxima es {{ notaMaxima }}.</mat-error>
+              <mat-error>{{ t('calificaciones.formulario.calificacionMaxima', { maximo: notaMaxima }) }}</mat-error>
             } @else if (formulario.controls.calificacion.hasError('decimales')) {
-              <mat-error>Como mucho dos decimales: lo demás se redondearía.</mat-error>
+              <mat-error>{{ t('calificaciones.formulario.calificacionDecimales') }}</mat-error>
             } @else if (formulario.controls.calificacion.hasError('servidor')) {
               <mat-error>{{ formulario.controls.calificacion.getError('servidor') }}</mat-error>
             }
           </mat-form-field>
 
           <mat-form-field appearance="outline">
-            <mat-label>Periodo</mat-label>
+            <mat-label>{{ t('calificaciones.formulario.periodo') }}</mat-label>
             <input matInput formControlName="periodo" maxlength="20" placeholder="2026-1" />
-            <mat-hint>Año y semestre, como 2026-1.</mat-hint>
+            <mat-hint>{{ t('calificaciones.formulario.periodoHint') }}</mat-hint>
             @if (formulario.controls.periodo.hasError('required')) {
-              <mat-error>El periodo es obligatorio.</mat-error>
+              <mat-error>{{ t('calificaciones.formulario.periodoObligatorio') }}</mat-error>
             } @else if (formulario.controls.periodo.hasError('pattern')) {
-              <mat-error
-                >Escríbelo como AAAA-S, con S igual a 1 o 2 (por ejemplo 2026-1).</mat-error
-              >
+              <mat-error>{{ t('calificaciones.formulario.periodoFormato') }}</mat-error>
             } @else if (formulario.controls.periodo.hasError('servidor')) {
               <mat-error>{{ formulario.controls.periodo.getError('servidor') }}</mat-error>
             }
@@ -110,12 +120,18 @@
         }
 
         <div class="formulario__acciones">
-          <button mat-stroked-button type="button" (click)="volver()">Volver</button>
+          <button mat-stroked-button type="button" (click)="volver()">
+            {{ t('calificaciones.formulario.volver') }}
+          </button>
           <button mat-flat-button type="submit" [disabled]="enviando() || cargando()">
             @if (enviando()) {
-              Guardando…
+              {{ t('calificaciones.formulario.guardandoBoton') }}
             } @else {
-              {{ corrigiendo() ? 'Guardar calificación' : 'Registrar calificación' }}
+              {{
+                corrigiendo()
+                  ? t('calificaciones.formulario.guardarCalificacion')
+                  : t('calificaciones.formulario.registrarCalificacion')
+              }}
             }
           </button>
         </div>

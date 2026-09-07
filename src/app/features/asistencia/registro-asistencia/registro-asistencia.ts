@@ -13,6 +13,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
+import { t } from '../../../core/i18n/traducir';
 import { Alumno, AsistenciaRequest } from '../../../core/models';
 import { AlumnoService } from '../../../core/services/alumno-service';
 import { AsistenciaService } from '../../../core/services/asistencia-service';
@@ -95,6 +96,8 @@ export class RegistroAsistencia {
   private readonly avisos = inject(Avisos);
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
+
+  protected readonly t = t;
 
   protected readonly columnas: string[] = [...COLUMNAS];
 
@@ -240,7 +243,7 @@ export class RegistroAsistencia {
   protected readonly error = computed(() => {
     const fallo =
       this.miMaestro.error() ?? this.paginaDeMaterias.error() ?? this.registrada.error();
-    return fallo === undefined ? null : mensajeDeError(fallo, 'No se pudo cargar la lista.');
+    return fallo === undefined ? null : mensajeDeError(fallo, t('asistencia.registro.noSePudoCargar'));
   });
 
   /** Lo que no se pudo guardar, para que se vea a quién hay que repetirle. */
@@ -303,12 +306,18 @@ export class RegistroAsistencia {
     forkJoin(peticiones).subscribe((resultados) => {
       this.guardando.set(false);
       const fallidos = resultados.filter((resultado) => !resultado.guardado);
-      this.fallidos.set(fallidos.map((fallido) => nombres.get(fallido.alumnoId) ?? 'Alumno'));
+      this.fallidos.set(
+        fallidos.map(
+          (fallido) => nombres.get(fallido.alumnoId) ?? t('asistencia.registro.alumnoRespaldo'),
+        ),
+      );
 
       const guardados = resultados.length - fallidos.length;
       if (guardados > 0) {
         this.avisos.exito(
-          guardados === 1 ? 'Se guardó 1 registro.' : `Se guardaron ${guardados} registros.`,
+          guardados === 1
+            ? t('asistencia.registro.unRegistroGuardado')
+            : t('asistencia.registro.registrosGuardados', { n: guardados }),
         );
       }
       // Recargar deja la pantalla contando la verdad del servidor: lo que falló

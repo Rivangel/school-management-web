@@ -1,18 +1,25 @@
 <header class="listado__cabecera">
   <div>
-    <h1>Calificaciones</h1>
+    <h1>{{ t('calificaciones.alumno.titulo') }}</h1>
     <p>
       @if (esAlumno()) {
-        Tus calificaciones registradas.
+        {{ t('calificaciones.alumno.tusCalificaciones') }}
       } @else if (nombreConsultado(); as nombre) {
-        Calificaciones de {{ nombre }}.
+        {{ t('calificaciones.alumno.calificacionesDe', { nombre }) }}
       } @else {
-        Elige un alumno para ver sus calificaciones.
+        {{ t('calificaciones.alumno.eligeAlumno') }}
       }
       @if (promedio(); as media) {
         <span class="calificaciones__resumen">
-          {{ filas().length }}
-          {{ filas().length === 1 ? 'materia' : 'materias' }} · promedio {{ media }}.
+          {{
+            t('calificaciones.alumno.resumenPromedio', {
+              n: filas().length,
+              materiaPalabra: filas().length === 1
+                ? t('calificaciones.alumno.unaMateria')
+                : t('calificaciones.alumno.variasMaterias'),
+              media,
+            })
+          }}
         </span>
       }
     </p>
@@ -22,7 +29,7 @@
        elegir y el desplegable sólo prometería algo que no puede hacer. -->
   @if (!esAlumno()) {
     <mat-form-field appearance="outline" subscriptSizing="dynamic" class="calificaciones__alumno">
-      <mat-label>Alumno</mat-label>
+      <mat-label>{{ t('calificaciones.alumno.alumno') }}</mat-label>
       <mat-select [ngModel]="alumnoElegido()" (ngModelChange)="elegirAlumno($event)">
         @for (alumno of opcionesDeAlumno(); track alumno.id) {
           <mat-option [value]="alumno.id">
@@ -31,7 +38,9 @@
         }
       </mat-select>
       @if (alumnosNoListados() > 0) {
-        <mat-hint>Sólo los primeros 100; faltan {{ alumnosNoListados() }}.</mat-hint>
+        <mat-hint>
+          {{ t('calificaciones.alumno.soloPrimeros100Faltan', { n: alumnosNoListados() }) }}
+        </mat-hint>
       }
     </mat-form-field>
   }
@@ -39,14 +48,14 @@
   @if (puedeVerPorMateria()) {
     <a mat-stroked-button routerLink="/calificaciones/materia">
       <mat-icon>menu_book</mat-icon>
-      Por materia
+      {{ t('calificaciones.alumno.porMateria') }}
     </a>
   }
 
   @if (puedeRegistrar()) {
     <a mat-flat-button routerLink="/calificaciones/registrar">
       <mat-icon>add</mat-icon>
-      Registrar calificación
+      {{ t('calificaciones.alumno.registrarCalificacion') }}
     </a>
   }
 </header>
@@ -54,7 +63,7 @@
 <!-- Altura fija para que la tabla no salte al aparecer y desaparecer la barra. -->
 <div class="listado__barra">
   @if (cargando()) {
-    <mat-progress-bar mode="indeterminate" aria-label="Cargando calificaciones" />
+    <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('calificaciones.alumno.cargando')" />
   }
 </div>
 
@@ -62,32 +71,36 @@
   <div class="listado__aviso listado__aviso--error" role="alert">
     <mat-icon>error_outline</mat-icon>
     <p>{{ mensaje }}</p>
-    <button mat-flat-button type="button" (click)="reintentar()">Reintentar</button>
+    <button mat-flat-button type="button" (click)="reintentar()">
+      {{ t('calificaciones.alumno.reintentar') }}
+    </button>
   </div>
 } @else if (sinElegir()) {
   <p class="listado__aviso">
     <mat-icon>grade</mat-icon>
-    Elige un alumno en la lista de arriba.
+    {{ t('calificaciones.alumno.eligeAlumnoArriba') }}
   </p>
 } @else {
   <div class="listado__tabla">
     <table mat-table [dataSource]="filas()" [trackBy]="idDe">
       <caption class="listado__caption">
-        Calificaciones registradas, de lo más reciente a lo más antiguo.
+        {{ t('calificaciones.alumno.caption') }}
       </caption>
 
       <ng-container matColumnDef="materia">
-        <th mat-header-cell *matHeaderCellDef scope="col">Materia</th>
+        <th mat-header-cell *matHeaderCellDef scope="col">{{ t('calificaciones.alumno.colMateria') }}</th>
         <td mat-cell *matCellDef="let fila">{{ fila.materiaNombre }}</td>
       </ng-container>
 
       <ng-container matColumnDef="periodo">
-        <th mat-header-cell *matHeaderCellDef scope="col">Periodo</th>
+        <th mat-header-cell *matHeaderCellDef scope="col">{{ t('calificaciones.alumno.colPeriodo') }}</th>
         <td mat-cell *matCellDef="let fila">{{ fila.periodo }}</td>
       </ng-container>
 
       <ng-container matColumnDef="calificacion">
-        <th mat-header-cell *matHeaderCellDef scope="col">Calificación</th>
+        <th mat-header-cell *matHeaderCellDef scope="col">
+          {{ t('calificaciones.alumno.colCalificacion') }}
+        </th>
         <td mat-cell *matCellDef="let fila" class="calificaciones__nota">
           {{ fila.calificacion }}
         </td>
@@ -101,9 +114,9 @@
       <p class="listado__aviso">
         <mat-icon>grade</mat-icon>
         @if (esAlumno()) {
-          Todavía no tienes calificaciones registradas.
+          {{ t('calificaciones.alumno.vacioAlumno') }}
         } @else {
-          Este alumno no tiene calificaciones registradas.
+          {{ t('calificaciones.alumno.vacioOtro') }}
         }
       </p>
     }

@@ -9,6 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { t } from '../../../core/i18n/traducir';
 import { Calificacion } from '../../../core/models';
 import { ROLES_REGISTRO } from '../../../core/navegacion';
 import { AuthService } from '../../../core/services/auth-service';
@@ -58,6 +59,8 @@ export class CalificacionesMateria {
   private readonly miMaestro = inject(MiMaestro);
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
+
+  protected readonly t = t;
 
   protected readonly columnas: string[] = [...COLUMNAS, 'acciones'];
 
@@ -171,7 +174,7 @@ export class CalificacionesMateria {
     const fallo = this.recurso.error();
     return fallo === undefined
       ? null
-      : mensajeDeError(fallo, 'No se pudieron cargar las calificaciones de la materia.');
+      : mensajeDeError(fallo, t('calificaciones.materia.noSePudieronCargar'));
   });
 
   protected elegirMateria(materiaId: number | null): void {

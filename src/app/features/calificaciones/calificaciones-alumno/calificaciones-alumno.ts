@@ -9,6 +9,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
+import { t } from '../../../core/i18n/traducir';
 import { Calificacion } from '../../../core/models';
 import { ROLES_NOTAS_DE_MATERIA, ROLES_REGISTRO } from '../../../core/navegacion';
 import { AlumnoService } from '../../../core/services/alumno-service';
@@ -54,6 +55,8 @@ export class CalificacionesAlumno {
   private readonly auth = inject(AuthService);
   private readonly ruta = inject(ActivatedRoute);
   private readonly router = inject(Router);
+
+  protected readonly t = t;
 
   protected readonly columnas: string[] = [...COLUMNAS];
 
@@ -198,7 +201,7 @@ export class CalificacionesAlumno {
     const fallo = this.recurso.error() ?? this.alumnoActual.error();
     return fallo === undefined
       ? null
-      : mensajeDeError(fallo, 'No se pudieron cargar las calificaciones.');
+      : mensajeDeError(fallo, t('calificaciones.alumno.noSePudieronCargar'));
   });
 
   protected elegirAlumno(alumnoId: number | null): void {
