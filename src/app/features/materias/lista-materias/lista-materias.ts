@@ -11,13 +11,14 @@ import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { ParamMap, RouterLink } from '@angular/router';
 
+import { t } from '../../../core/i18n/traducir';
 import { ROLES_ESCRITURA, rolesDe } from '../../../core/navegacion';
 import { TAMANOS_PAGINA } from '../../../core/paginacion';
 import { AuthService } from '../../../core/services/auth-service';
 import { MaestroService } from '../../../core/services/maestro-service';
 import { MateriaService } from '../../../core/services/materia-service';
 import { listadoPaginado } from '../../../shared/listado-paginado';
-import { paginadorEnEspanol } from '../../../shared/paginador-en-espanol';
+import { PaginadorIntl } from '../../../shared/paginador-intl';
 
 /**
  * Columnas con datos, en orden, que son también los `sort` que acepta la API.
@@ -80,7 +81,7 @@ function leerFiltro(query: ParamMap): FiltroDeMaterias {
   ],
   // Se provee aquí y no en `app.config.ts` para no meter el paginador de
   // Material en el bundle inicial, que es el que carga el login.
-  providers: [{ provide: MatPaginatorIntl, useFactory: paginadorEnEspanol }],
+  providers: [{ provide: MatPaginatorIntl, useClass: PaginadorIntl }],
   templateUrl: './lista-materias.html',
   styleUrl: './lista-materias.scss',
 })
@@ -89,12 +90,14 @@ export class ListaMaterias {
   private readonly maestros = inject(MaestroService);
   private readonly auth = inject(AuthService);
 
+  protected readonly t = t;
+
   protected readonly listado = listadoPaginado({
     ordenables: ORDENABLES,
     ordenPorDefecto: 'nombre,asc',
     leerFiltros: leerFiltro,
     cargar: (consulta) => this.materias.listar(consulta),
-    mensajeDeFallo: 'No se pudo cargar el listado de materias.',
+    mensajeDeFallo: () => t('materias.lista.noSePudoCargar'),
   });
 
   /**

@@ -3,6 +3,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 
+import { cambiarIdioma } from '../../core/i18n/estado';
 import { Rol } from '../../core/models';
 import { AuthService } from '../../core/services/auth-service';
 import { CLAVE_SESION, sembrarSesion } from '../../core/services/testing/sesion-falsa';
@@ -36,6 +37,7 @@ describe('Shell', () => {
 
   afterEach(() => {
     localStorage.clear();
+    cambiarIdioma('es');
     vi.restoreAllMocks();
   });
 
@@ -91,5 +93,34 @@ describe('Shell', () => {
     expect(fixture.nativeElement.querySelector('mat-sidenav').classList).toContain(
       'mat-drawer-opened',
     );
+  });
+
+  it('cambia el menú a inglés al pulsar el selector de idioma', async () => {
+    await montar('ADMIN');
+
+    (fixture.nativeElement.querySelector('.shell__idioma') as HTMLButtonElement).click();
+    await fixture.whenStable();
+
+    expect(enlacesDelMenu()).toEqual([
+      'Home',
+      'Students',
+      'Teachers',
+      'Subjects',
+      'Grades',
+      'Attendance',
+      'Reports',
+    ]);
+  });
+
+  it('el botón de idioma dice a qué idioma cambia, no en cuál está', async () => {
+    await montar('ADMIN');
+    const boton = () => fixture.nativeElement.querySelector('.shell__idioma') as HTMLButtonElement;
+
+    expect(boton().getAttribute('aria-label')).toBe('Cambiar a inglés');
+
+    boton().click();
+    await fixture.whenStable();
+
+    expect(boton().getAttribute('aria-label')).toBe('Switch to Spanish');
   });
 });

@@ -1,5 +1,7 @@
 import { Injectable, Injector, inject } from '@angular/core';
 
+import { t } from '../i18n/traducir';
+
 /** Un acierto se lee de un vistazo; un fallo hay que leerlo entero. */
 const DURACION_EXITO = 5000;
 const DURACION_ERROR = 8000;
@@ -35,7 +37,7 @@ export class Avisos {
   private async abrir(mensaje: string, duration: number, panelClass: string): Promise<void> {
     try {
       const { MatSnackBar } = await import('@angular/material/snack-bar');
-      this.inyector.get(MatSnackBar).open(mensaje, 'Cerrar', { duration, panelClass });
+      this.inyector.get(MatSnackBar).open(mensaje, t('common.cerrar'), { duration, panelClass });
     } catch {
       // Ignorar si el inyector fue destruido en un test antes de resolver el import efímero
     }

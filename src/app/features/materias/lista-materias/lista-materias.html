@@ -1,26 +1,26 @@
 <header class="listado__cabecera">
   <div>
-    <h1>Materias</h1>
+    <h1>{{ t('materias.lista.titulo') }}</h1>
     <p>
       @if (listado.total() === 1) {
-        1 materia registrada.
+        {{ t('materias.lista.unaRegistrada') }}
       } @else {
-        {{ listado.total() }} materias registradas.
+        {{ t('materias.lista.registradas', { n: listado.total() }) }}
       }
       @if (filtrando()) {
-        <span class="materias__filtrado">Filtrando por maestro.</span>
+        <span class="materias__filtrado">{{ t('materias.lista.filtrandoPorMaestro') }}</span>
       }
     </p>
   </div>
 
   @if (puedeFiltrar()) {
     <mat-form-field appearance="outline" subscriptSizing="dynamic" class="materias__filtro">
-      <mat-label>Maestro</mat-label>
+      <mat-label>{{ t('materias.lista.maestro') }}</mat-label>
       <!-- El valor sale de la URL y vuelve a ella: el desplegable no guarda
            estado propio, así que recargar o compartir el enlace conserva el
            filtro. -->
       <mat-select [ngModel]="maestroElegido()" (ngModelChange)="filtrarPorMaestro($event)">
-        <mat-option [value]="null">Todos los maestros</mat-option>
+        <mat-option [value]="null">{{ t('materias.lista.todosLosMaestros') }}</mat-option>
         @for (maestro of maestrosDelSelector(); track maestro.id) {
           <mat-option [value]="maestro.id">{{ maestro.apellido }}, {{ maestro.nombre }}</mat-option>
         }
@@ -29,7 +29,9 @@
   } @else if (filtrando()) {
     <!-- Sin selector, un enlace con `?maestroId=` dejaría la pantalla filtrada
          para siempre y sin forma de volver al listado completo. -->
-    <button mat-stroked-button type="button" (click)="quitarFiltro()">Ver todas</button>
+    <button mat-stroked-button type="button" (click)="quitarFiltro()">
+      {{ t('materias.lista.verTodas') }}
+    </button>
   }
 
   @if (puedeEditar()) {
@@ -37,7 +39,7 @@
          mismo, con el filtro puesto incluido. -->
     <a mat-flat-button routerLink="/materias/nueva" queryParamsHandling="preserve">
       <mat-icon>add</mat-icon>
-      Nueva materia
+      {{ t('materias.lista.nueva') }}
     </a>
   }
 </header>
@@ -45,7 +47,7 @@
 <!-- Altura fija para que la tabla no salte al aparecer y desaparecer la barra. -->
 <div class="listado__barra">
   @if (listado.cargando()) {
-    <mat-progress-bar mode="indeterminate" aria-label="Cargando materias" />
+    <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('materias.lista.cargando')" />
   }
 </div>
 
@@ -53,7 +55,9 @@
   <div class="listado__aviso listado__aviso--error" role="alert">
     <mat-icon>error_outline</mat-icon>
     <p>{{ mensaje }}</p>
-    <button mat-flat-button type="button" (click)="listado.reintentar()">Reintentar</button>
+    <button mat-flat-button type="button" (click)="listado.reintentar()">
+      {{ t('common.reintentar') }}
+    </button>
   </div>
 } @else {
   <div class="listado__tabla">
@@ -66,16 +70,20 @@
       (matSortChange)="listado.ordenar($event)"
     >
       <caption class="listado__caption">
-        Listado de materias, ordenado por la columna que se elija en el encabezado.
+        {{ t('materias.lista.caption') }}
       </caption>
 
       <ng-container matColumnDef="nombre">
-        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">Materia</th>
+        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">
+          {{ t('materias.lista.colMateria') }}
+        </th>
         <td mat-cell *matCellDef="let materia">{{ materia.nombre }}</td>
       </ng-container>
 
       <ng-container matColumnDef="creditos">
-        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">Créditos</th>
+        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">
+          {{ t('materias.lista.colCreditos') }}
+        </th>
         <td mat-cell *matCellDef="let materia">{{ materia.creditos }}</td>
       </ng-container>
 
@@ -83,18 +91,20 @@
            por `maestro.apellido`: `maestroNombre` no existe en la entidad y la
            API lo rechazaría con un 400. -->
       <ng-container matColumnDef="maestro.apellido">
-        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">Maestro</th>
+        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">
+          {{ t('materias.lista.colMaestro') }}
+        </th>
         <td mat-cell *matCellDef="let materia">{{ materia.maestroNombre }}</td>
       </ng-container>
 
       <ng-container matColumnDef="acciones">
-        <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+        <th mat-header-cell *matHeaderCellDef scope="col">{{ t('materias.lista.colAcciones') }}</th>
         <td mat-cell *matCellDef="let materia">
           <a
             mat-icon-button
             [routerLink]="['/materias', materia.id]"
             queryParamsHandling="preserve"
-            [attr.aria-label]="'Ver la ficha de ' + materia.nombre"
+            [attr.aria-label]="t('materias.lista.verFichaDe', { nombre: materia.nombre })"
           >
             <mat-icon>visibility</mat-icon>
           </a>
@@ -103,7 +113,7 @@
               mat-icon-button
               [routerLink]="['/materias', materia.id, 'editar']"
               queryParamsHandling="preserve"
-              [attr.aria-label]="'Editar ' + materia.nombre"
+              [attr.aria-label]="t('materias.lista.editar', { nombre: materia.nombre })"
             >
               <mat-icon>edit</mat-icon>
             </a>
@@ -119,10 +129,12 @@
       <p class="listado__aviso">
         <mat-icon>menu_book</mat-icon>
         @if (filtrando()) {
-          Este maestro no tiene materias asignadas.
-          <button mat-button type="button" (click)="quitarFiltro()">Ver todas</button>
+          {{ t('materias.lista.vacioFiltrado') }}
+          <button mat-button type="button" (click)="quitarFiltro()">
+            {{ t('materias.lista.verTodas') }}
+          </button>
         } @else {
-          Todavía no hay materias registradas.
+          {{ t('materias.lista.vacio') }}
         }
       </p>
     }

@@ -34,8 +34,15 @@ export interface OpcionesListado<T, F extends object = Record<never, never>> {
   readonly leerFiltros?: (query: ParamMap) => F;
   /** La llamada al servicio del dominio. */
   readonly cargar: (consulta: ConsultaPagina & F) => Observable<Pagina<T>>;
-  /** Qué decir si la petición falla sin explicación propia. */
-  readonly mensajeDeFallo: string;
+  /**
+   * Qué decir si la petición falla sin explicación propia.
+   *
+   * Es una función y no una cadena para que se lea en el idioma que esté
+   * activo **cuando el error se muestra**, no en el que estaba al montar la
+   * pantalla: una cadena capturada una sola vez en el constructor se quedaría
+   * congelada en ese idioma aunque alguien cambiara de selector después.
+   */
+  readonly mensajeDeFallo: () => string;
 }
 
 /** El estado que necesita una pantalla de listado, ya resuelto. */
@@ -138,7 +145,7 @@ export function listadoPaginado<T, F extends object = Record<never, never>>(
     vacio: computed(() => resultado()?.totalElements === 0),
     error: computed(() => {
       const fallo = pagina.error();
-      return fallo === undefined ? null : mensajeDeError(fallo, opciones.mensajeDeFallo);
+      return fallo === undefined ? null : mensajeDeError(fallo, opciones.mensajeDeFallo());
     }),
     // Sin `sort` en la URL se enseña el de la API, que es el que realmente se
     // está viendo: dejar la tabla sin marcar sugeriría un orden arbitrario.

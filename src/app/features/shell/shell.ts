@@ -11,6 +11,8 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
 
+import { alternarIdioma, idiomaActual } from '../../core/i18n/estado';
+import { t } from '../../core/i18n/traducir';
 import { menuPara } from '../../core/navegacion';
 import { AuthService } from '../../core/services/auth-service';
 
@@ -52,11 +54,23 @@ export class Shell {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
 
+  protected readonly t = t;
+  protected readonly idioma = idiomaActual;
+
   protected readonly nombre = this.auth.nombre;
   protected readonly rol = this.auth.rol;
   protected readonly email = computed(() => this.auth.sesion()?.email ?? '');
   protected readonly iniciales = computed(() => iniciarDe(this.nombre()));
   protected readonly menu = computed(() => menuPara(this.rol()));
+
+  /** Etiqueta del botón: dice a qué idioma cambia, no en cuál está. */
+  protected readonly etiquetaCambiarIdioma = computed(() =>
+    this.idioma() === 'es' ? t('shell.cambiarAIngles') : t('shell.cambiarAEspanol'),
+  );
+
+  protected alternarIdioma(): void {
+    alternarIdioma();
+  }
 
   private readonly esAngosta = toSignal(
     inject(BreakpointObserver)

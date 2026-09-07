@@ -8,6 +8,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 
+import { t } from '../i18n/traducir';
 import { Avisos } from '../services/avisos';
 import { AuthService } from '../services/auth-service';
 import { mensajeDeError } from '../services/mensaje-error';
@@ -70,7 +71,7 @@ export const errorInterceptor: HttpInterceptorFn = (peticion, siguiente) => {
         // en vuelo: el aviso y la redirección salieron con la primera.
         if (auth.estaAutenticado()) {
           auth.logout();
-          avisos.error('Tu sesión caducó. Vuelve a iniciar sesión.');
+          avisos.error(t('errores.sesionCaducada'));
           void router.navigate(['/login'], { queryParams: { returnUrl: router.url } });
         }
         return throwError(() => fallo);

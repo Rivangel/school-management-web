@@ -1,8 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
+import { t } from '../i18n/traducir';
 import { ApiError } from '../models';
-
-const MENSAJE_GENERICO = 'Ocurrió un error inesperado. Vuelve a intentarlo.';
 
 /**
  * Traduce un error de `HttpClient` a una frase que se pueda enseñar en pantalla.
@@ -14,13 +13,13 @@ const MENSAJE_GENERICO = 'Ocurrió un error inesperado. Vuelve a intentarlo.';
  * hecho que hay un `message` es la forma más fácil de acabar mostrando
  * "undefined" al usuario.
  */
-export function mensajeDeError(error: unknown, respaldo = MENSAJE_GENERICO): string {
+export function mensajeDeError(error: unknown, respaldo = t('errores.generico')): string {
   if (!(error instanceof HttpErrorResponse)) {
     return respaldo;
   }
 
   if (error.status === 0) {
-    return 'No se pudo contactar con el servidor. Revisa que la API esté encendida.';
+    return t('errores.sinServidor');
   }
 
   const cuerpo = error.error as Partial<ApiError> | null;
@@ -29,7 +28,7 @@ export function mensajeDeError(error: unknown, respaldo = MENSAJE_GENERICO): str
   }
 
   if (error.status === 403) {
-    return 'No tienes permiso para hacer esto.';
+    return t('errores.sinPermiso');
   }
 
   return respaldo;

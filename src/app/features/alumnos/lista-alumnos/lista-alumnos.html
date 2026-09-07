@@ -1,11 +1,11 @@
 <header class="listado__cabecera">
   <div>
-    <h1>Alumnos</h1>
+    <h1>{{ t('alumnos.lista.titulo') }}</h1>
     <p>
       @if (listado.total() === 1) {
-        1 alumno registrado.
+        {{ t('alumnos.lista.unRegistrado') }}
       } @else {
-        {{ listado.total() }} alumnos registrados.
+        {{ t('alumnos.lista.registrados', { n: listado.total() }) }}
       }
     </p>
   </div>
@@ -14,7 +14,7 @@
     <!-- `preserve` arrastra el `?page=&size=&sort=` para poder volver aquí mismo. -->
     <a mat-flat-button routerLink="/alumnos/nuevo" queryParamsHandling="preserve">
       <mat-icon>add</mat-icon>
-      Nuevo alumno
+      {{ t('alumnos.lista.nuevo') }}
     </a>
   }
 </header>
@@ -22,7 +22,7 @@
 <!-- Altura fija para que la tabla no salte al aparecer y desaparecer la barra. -->
 <div class="listado__barra">
   @if (listado.cargando()) {
-    <mat-progress-bar mode="indeterminate" aria-label="Cargando alumnos" />
+    <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('alumnos.lista.cargando')" />
   }
 </div>
 
@@ -30,7 +30,9 @@
   <div class="listado__aviso listado__aviso--error" role="alert">
     <mat-icon>error_outline</mat-icon>
     <p>{{ mensaje }}</p>
-    <button mat-flat-button type="button" (click)="listado.reintentar()">Reintentar</button>
+    <button mat-flat-button type="button" (click)="listado.reintentar()">
+      {{ t('common.reintentar') }}
+    </button>
   </div>
 } @else {
   <div class="listado__tabla">
@@ -43,44 +45,52 @@
       (matSortChange)="listado.ordenar($event)"
     >
       <caption class="listado__caption">
-        Listado de alumnos, ordenado por la columna que se elija en el encabezado.
+        {{ t('alumnos.lista.caption') }}
       </caption>
 
       <ng-container matColumnDef="matricula">
-        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">Matrícula</th>
+        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">
+          {{ t('alumnos.lista.colMatricula') }}
+        </th>
         <td mat-cell *matCellDef="let alumno">{{ alumno.matricula }}</td>
       </ng-container>
 
       <ng-container matColumnDef="apellido">
-        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">Apellido</th>
+        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">
+          {{ t('alumnos.lista.colApellido') }}
+        </th>
         <td mat-cell *matCellDef="let alumno">{{ alumno.apellido }}</td>
       </ng-container>
 
       <ng-container matColumnDef="nombre">
-        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">Nombre</th>
+        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">
+          {{ t('alumnos.lista.colNombre') }}
+        </th>
         <td mat-cell *matCellDef="let alumno">{{ alumno.nombre }}</td>
       </ng-container>
 
       <ng-container matColumnDef="grupo">
-        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">Grupo</th>
+        <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">
+          {{ t('alumnos.lista.colGrupo') }}
+        </th>
         <td mat-cell *matCellDef="let alumno">{{ alumno.grupo }}</td>
       </ng-container>
 
       <ng-container matColumnDef="email">
         <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col" class="alumnos__email">
-          Correo
+          {{ t('alumnos.lista.colCorreo') }}
         </th>
         <td mat-cell *matCellDef="let alumno" class="alumnos__email">{{ alumno.email }}</td>
       </ng-container>
 
       <ng-container matColumnDef="acciones">
-        <th mat-header-cell *matHeaderCellDef scope="col">Acciones</th>
+        <th mat-header-cell *matHeaderCellDef scope="col">{{ t('alumnos.lista.colAcciones') }}</th>
         <td mat-cell *matCellDef="let alumno">
           <a
             mat-icon-button
             [routerLink]="['/alumnos', alumno.id]"
             queryParamsHandling="preserve"
-            [attr.aria-label]="'Ver la ficha de ' + alumno.nombre + ' ' + alumno.apellido"
+            [attr.aria-label]="t('alumnos.lista.verFichaDe', { nombre: alumno.nombre, apellido: alumno.apellido })"
           >
             <mat-icon>visibility</mat-icon>
           </a>
@@ -89,7 +99,7 @@
               mat-icon-button
               [routerLink]="['/alumnos', alumno.id, 'editar']"
               queryParamsHandling="preserve"
-              [attr.aria-label]="'Editar a ' + alumno.nombre + ' ' + alumno.apellido"
+              [attr.aria-label]="t('alumnos.lista.editarA', { nombre: alumno.nombre, apellido: alumno.apellido })"
             >
               <mat-icon>edit</mat-icon>
             </a>
@@ -104,7 +114,7 @@
     @if (listado.vacio()) {
       <p class="listado__aviso">
         <mat-icon>groups</mat-icon>
-        Todavía no hay alumnos registrados.
+        {{ t('alumnos.lista.vacio') }}
       </p>
     }
 

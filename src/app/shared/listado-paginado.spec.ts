@@ -62,7 +62,7 @@ class Anfitrion {
         params: maestroId === undefined ? params : params.set('maestroId', maestroId),
       });
     },
-    mensajeDeFallo: 'No se pudo cargar el listado.',
+    mensajeDeFallo: () => 'No se pudo cargar el listado.',
   });
 }
 

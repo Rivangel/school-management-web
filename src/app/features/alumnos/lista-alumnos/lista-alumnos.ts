@@ -7,12 +7,13 @@ import { MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { RouterLink } from '@angular/router';
 
+import { t } from '../../../core/i18n/traducir';
 import { ROLES_ESCRITURA } from '../../../core/navegacion';
 import { TAMANOS_PAGINA } from '../../../core/paginacion';
 import { AlumnoService } from '../../../core/services/alumno-service';
 import { AuthService } from '../../../core/services/auth-service';
 import { listadoPaginado } from '../../../shared/listado-paginado';
-import { paginadorEnEspanol } from '../../../shared/paginador-en-espanol';
+import { PaginadorIntl } from '../../../shared/paginador-intl';
 
 /**
  * Columnas con datos, en orden. Los identificadores son los nombres de las
@@ -50,7 +51,7 @@ const ORDENABLES = ['matricula', 'apellido', 'nombre', 'grupo', 'email'] as cons
   ],
   // Se provee aquí y no en `app.config.ts` para no meter el paginador de
   // Material en el bundle inicial, que es el que carga el login.
-  providers: [{ provide: MatPaginatorIntl, useFactory: paginadorEnEspanol }],
+  providers: [{ provide: MatPaginatorIntl, useClass: PaginadorIntl }],
   templateUrl: './lista-alumnos.html',
   styleUrl: './lista-alumnos.scss',
 })
@@ -58,11 +59,13 @@ export class ListaAlumnos {
   private readonly alumnos = inject(AlumnoService);
   private readonly auth = inject(AuthService);
 
+  protected readonly t = t;
+
   protected readonly listado = listadoPaginado({
     ordenables: ORDENABLES,
     ordenPorDefecto: 'apellido,asc',
     cargar: (consulta) => this.alumnos.listar(consulta),
-    mensajeDeFallo: 'No se pudo cargar el listado de alumnos.',
+    mensajeDeFallo: () => t('alumnos.lista.noSePudoCargar'),
   });
 
   // Copia mutable: `pageSizeOptions` pide `number[]` y la constante es una tupla

@@ -7,7 +7,7 @@
   >
     <div class="shell__marca">
       <mat-icon>school</mat-icon>
-      <span>School Management</span>
+      <span>{{ t('shell.marca') }}</span>
     </div>
 
     <mat-nav-list>
@@ -22,7 +22,7 @@
           (click)="alNavegar()"
         >
           <mat-icon matListItemIcon>{{ elemento.icono }}</mat-icon>
-          <span matListItemTitle>{{ elemento.etiqueta }}</span>
+          <span matListItemTitle>{{ t('shell.menu.' + elemento.etiqueta) }}</span>
         </a>
       }
     </mat-nav-list>
@@ -35,20 +35,31 @@
         type="button"
         (click)="alternarMenu()"
         [attr.aria-expanded]="abierto()"
-        aria-label="Mostrar u ocultar el menú"
+        [attr.aria-label]="t('shell.mostrarOcultarMenu')"
       >
         <mat-icon>menu</mat-icon>
       </button>
 
-      <span class="shell__titulo">School Management</span>
+      <span class="shell__titulo">{{ t('shell.marca') }}</span>
       <span class="shell__separador"></span>
+
+      <button
+        mat-stroked-button
+        type="button"
+        class="shell__idioma"
+        (click)="alternarIdioma()"
+        [attr.aria-label]="etiquetaCambiarIdioma()"
+      >
+        <mat-icon>translate</mat-icon>
+        {{ idioma() === 'es' ? 'ES' : 'EN' }}
+      </button>
 
       <button
         mat-button
         type="button"
         [matMenuTriggerFor]="menuUsuario"
         class="shell__usuario"
-        aria-label="Abrir el menú de la cuenta"
+        [attr.aria-label]="t('shell.abrirMenuCuenta')"
       >
         <span class="shell__avatar" aria-hidden="true">{{ iniciales() }}</span>
         <span class="shell__nombre">{{ nombre() }}</span>
@@ -64,7 +75,7 @@
         <mat-divider />
         <button mat-menu-item type="button" (click)="salir()">
           <mat-icon>logout</mat-icon>
-          <span>Cerrar sesión</span>
+          <span>{{ t('shell.cerrarSesion') }}</span>
         </button>
       </mat-menu>
     </mat-toolbar>
