@@ -36,12 +36,14 @@
   height: 1.25rem;
   // `preserveAspectRatio="none"` estira el trazo, así que el redondeo se hace
   // aquí y no con `rx` en el `rect`: allí saldría deformado.
-  border-radius: var(--mat-sys-corner-extra-small);
+  border-radius: var(--radius-sm);
   overflow: hidden;
+  // La pista es una ranura hundida en la que la barra de color se "asienta".
+  box-shadow: var(--shadow-inset);
 }
 
 .grafica__fondo {
-  fill: var(--mat-sys-surface-container-highest);
+  fill: var(--surface);
 }
 
 .grafica__barra {
