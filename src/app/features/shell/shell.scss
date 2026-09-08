@@ -1,11 +1,14 @@
 .shell {
   height: 100dvh;
+  background: var(--surface);
 }
 
 .shell__menu {
   width: 15rem;
-  border-right: 1px solid var(--mat-sys-outline-variant);
-  background: var(--mat-sys-surface-container-low);
+  border-right: none;
+  background: var(--surface);
+  // Separación del contenido por sombra, no por línea dura.
+  box-shadow: 4px 0 12px rgba(163, 177, 198, 0.35);
 }
 
 .shell__marca {
@@ -22,8 +25,9 @@
   top: 0;
   z-index: 2;
   gap: 0.5rem;
-  background: var(--mat-sys-surface);
-  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  background: var(--surface);
+  border-bottom: none;
+  box-shadow: 0 4px 12px rgba(163, 177, 198, 0.25);
 }
 
 .shell__titulo {
@@ -46,9 +50,11 @@
   width: 2rem;
   height: 2rem;
   border-radius: 50%;
-  background: var(--mat-sys-primary-container);
-  color: var(--mat-sys-on-primary-container);
+  background: var(--surface);
+  color: var(--mat-sys-primary);
   font: var(--mat-sys-label-medium);
+  font-weight: 700;
+  box-shadow: var(--shadow-raised);
 }
 
 // En móvil sobra el nombre completo: basta el avatar para saber de quién es la
