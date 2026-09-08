@@ -17,6 +17,57 @@ html {
       density: 0,
     )
   );
+
+  // --- Design system neumórfico (soft UI) ---------------------------------
+  // Un solo tono de fondo del que todo "emerge" o se "hunde": nada de blancos
+  // puros ni bordes duros. Estas variables son la fuente de verdad; el resto
+  // del archivo remapea los tokens `--mat-sys-*` para que los componentes de
+  // Material las hereden sin tocarlos uno por uno.
+  --surface: #e6e9ef;
+  --on-surface-strong: #3a4756; // ~7.8:1 sobre --surface
+  --on-surface-muted: #56657a; // ~4.6:1 sobre --surface (mínimo AA en texto normal)
+
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  --shadow-light: -6px -6px 12px rgba(255, 255, 255, 0.8);
+  --shadow-dark: 6px 6px 12px rgba(163, 177, 198, 0.6);
+  --shadow-raised: var(--shadow-light), var(--shadow-dark);
+
+  --shadow-light-inset: inset -4px -4px 8px rgba(255, 255, 255, 0.7);
+  --shadow-dark-inset: inset 4px 4px 8px rgba(163, 177, 198, 0.5);
+  --shadow-inset: var(--shadow-light-inset), var(--shadow-dark-inset);
+
+  // Sombra de las superficies "flotantes" (menús, diálogos, snackbar): estas
+  // no se funden con el fondo, necesitan una sombra real para leerse por
+  // encima del contenido.
+  --shadow-overlay: 0 12px 28px rgba(58, 71, 86, 0.28);
+
+  --neu-transition: box-shadow 220ms ease, transform 220ms ease, background-color 220ms ease;
+
+  // Acentos de color: solo para badges, íconos de tendencia y el CTA
+  // principal — nunca como fondo de una superficie grande.
+  --accent-positive: #2f9e63;
+  --accent-negative: #d9534f;
+  --accent-primary: var(--mat-sys-primary);
+
+  // --- Remapeo de tokens del sistema M3 --------------------------------
+  // Deja que Material genere su paleta (para mantener primary/tertiary) y le
+  // pisa encima los tokens de superficie, contorno y esquina para que cards,
+  // botones, inputs y tablas hereden el look neumórfico automáticamente.
+  --mat-sys-surface: var(--surface);
+  --mat-sys-surface-container-low: var(--surface);
+  --mat-sys-surface-container: var(--surface);
+  --mat-sys-surface-container-high: var(--surface);
+  --mat-sys-surface-container-highest: var(--surface);
+  --mat-sys-on-surface: var(--on-surface-strong);
+  --mat-sys-on-surface-variant: var(--on-surface-muted);
+  --mat-sys-outline-variant: transparent;
+  --mat-sys-corner-small: var(--radius-sm);
+  --mat-sys-corner-medium: var(--radius-md);
+  --mat-sys-corner-large: var(--radius-lg);
+  --mat-sys-corner-extra-large: var(--radius-lg);
 }
 
 body {
@@ -49,4 +100,132 @@ body {
   --mat-snack-bar-container-color: var(--mat-sys-error-container);
   --mat-snack-bar-supporting-text-color: var(--mat-sys-on-error-container);
   --mat-snack-bar-button-color: var(--mat-sys-on-error-container);
+}
+
+// --- Neumorphism: componentes de Material ---------------------------------
+//
+// Dos familias de superficie: las "encastradas" (cards, botones, inputs,
+// tabla, lista de navegación, toggles) se funden con `--surface` y usan
+// sombra dual; las "flotantes" (menú, diálogo, snackbar, panel de
+// autocomplete/select) se quedan con una sombra real de una sola dirección
+// para leerse por encima del contenido — fundirlas también las volvería
+// invisibles contra el fondo.
+
+// Cards (todas las pantallas usan `appearance="outlined"` o la elevada por
+// defecto): ambas pasan a la sombra dual, sin borde duro.
+.mat-mdc-card-outlined {
+  --mat-card-outlined-outline-width: 0px;
+  --mat-card-outlined-container-elevation: var(--shadow-raised);
+}
+
+.mat-mdc-card {
+  --mat-card-elevated-container-elevation: var(--shadow-raised);
+}
+
+// Botones: radio generoso y sombra dual en el elevado ("protected"); el
+// contorno del "stroked" se sustituye por la misma sombra suave.
+.mat-mdc-outlined-button,
+.mat-mdc-unelevated-button,
+.mat-mdc-raised-button,
+.mat-mdc-icon-button {
+  --mat-button-outlined-container-shape: var(--radius-sm);
+  --mat-button-filled-container-shape: var(--radius-sm);
+  --mat-button-protected-container-shape: var(--radius-sm);
+}
+
+.mat-mdc-outlined-button {
+  --mat-button-outlined-outline-color: transparent;
+  box-shadow: var(--shadow-raised);
+  transition: var(--neu-transition);
+
+  &:active {
+    box-shadow: var(--shadow-inset);
+  }
+}
+
+.mat-mdc-raised-button {
+  --mat-button-protected-container-elevation-shadow: var(--shadow-raised);
+
+  &:hover,
+  &:focus {
+    --mat-button-protected-container-elevation-shadow: var(--shadow-raised);
+  }
+
+  &:active {
+    --mat-button-protected-container-elevation-shadow: var(--shadow-inset);
+  }
+}
+
+// Inputs y selects: se apaga el contorno MDC y la caja pasa a hundida — el
+// foco la hunde un poco más y añade un anillo de color, que es el indicador
+// de estado real (no solo la sombra).
+.mat-mdc-form-field {
+  --mat-form-field-outlined-outline-color: transparent;
+  --mat-form-field-outlined-hover-outline-color: transparent;
+  --mat-form-field-outlined-focus-outline-color: transparent;
+  --mat-form-field-outlined-container-shape: var(--radius-sm);
+  --mat-select-panel-background-color: var(--surface);
+}
+
+.mat-mdc-text-field-wrapper {
+  box-shadow: var(--shadow-inset);
+  transition: var(--neu-transition);
+}
+
+.mat-mdc-form-field.mat-focused .mat-mdc-text-field-wrapper {
+  box-shadow: var(--shadow-inset);
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 1px;
+}
+
+.mat-mdc-form-field.mat-form-field-invalid .mat-mdc-text-field-wrapper {
+  outline: 2px solid var(--mat-sys-error);
+  outline-offset: 1px;
+}
+
+// Toggle de dos estados (asistencia, filtros): seleccionado = hundido, nunca
+// solo un cambio de color de fondo.
+.mat-button-toggle-group {
+  --mat-standard-button-toggle-shape: var(--radius-sm);
+  box-shadow: var(--shadow-raised);
+  border-radius: var(--radius-sm);
+}
+
+.mat-button-toggle-checked {
+  --mat-button-toggle-selected-state-background-color: transparent;
+  box-shadow: var(--shadow-inset);
+}
+
+// Lista de navegación (sidebar): el elemento activo se hunde en vez de
+// pintarse con un color de fondo plano.
+.mdc-list-item--activated {
+  --mat-list-active-indicator-color: transparent;
+  box-shadow: var(--shadow-inset);
+}
+
+// Tabla: sin líneas divisorias duras entre filas, el espaciado hace ese
+// trabajo; una sombra sutil marca la fila bajo el puntero.
+.mat-mdc-table {
+  --mat-table-row-item-outline-width: 0px;
+  background: transparent;
+}
+
+.mat-mdc-row:hover {
+  background: rgba(163, 177, 198, 0.15);
+}
+
+// Superficies flotantes: mismo tono de fondo, pero sombra real (no dual) para
+// que se perciban por encima del plano.
+.mat-mdc-menu-panel {
+  --mat-menu-container-color: var(--surface);
+  --mat-menu-container-elevation-shadow: var(--shadow-overlay);
+}
+
+.mat-mdc-dialog-container .mdc-dialog__surface {
+  --mat-dialog-container-color: var(--surface);
+  --mat-dialog-container-elevation-shadow: var(--shadow-overlay);
+}
+
+.mat-mdc-snack-bar-container {
+  --mat-snack-bar-container-shape: var(--radius-sm);
 }

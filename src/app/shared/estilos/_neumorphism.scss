@@ -1,0 +1,48 @@
+// Mixins del design system neumórfico (soft UI).
+//
+// Las variables (`--surface`, `--shadow-*`, `--radius-*`) viven en
+// `styles.scss` porque las necesita también el remapeo de tokens `--mat-sys-*`
+// que hereda toda la app. Estos mixins son el segundo piso: los usan los
+// componentes hechos a mano (shell, dashboard, listados, formularios, fichas)
+// para "emerger" o "hundirse" de ese mismo fondo con las variables ya puestas.
+
+// Superficie en reposo: emerge del fondo con sombra dual.
+@mixin neu-flat($radius: var(--radius-md)) {
+  background: var(--surface);
+  border-radius: $radius;
+  box-shadow: var(--shadow-raised);
+}
+
+// Superficie hundida: inputs con foco, toggles/tabs activos.
+@mixin neu-inset($radius: var(--radius-md)) {
+  background: var(--surface);
+  border-radius: $radius;
+  box-shadow: var(--shadow-inset);
+}
+
+// Tarjeta o botón clicable: transición suave entre los dos estados.
+// El estado nunca depende solo de la sombra — quien use este mixin debe
+// acompañarlo de un cambio de color o ícono (ver `--accent-*`).
+@mixin neu-interactive($radius: var(--radius-md)) {
+  @include neu-flat($radius);
+  cursor: pointer;
+  transition: var(--neu-transition);
+
+  &:hover {
+    box-shadow: var(--shadow-light), 8px 8px 16px rgba(163, 177, 198, 0.7);
+    transform: translateY(-2px);
+  }
+
+  &:active,
+  &.is-pressed,
+  &[aria-pressed='true'],
+  &[aria-current='page'] {
+    @include neu-inset($radius);
+    transform: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+  }
+}
