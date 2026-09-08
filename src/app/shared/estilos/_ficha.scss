@@ -84,7 +84,7 @@
   gap: 0.5rem;
   margin: 1.5rem 0 0;
   padding: 0.75rem 1rem;
-  border-radius: var(--mat-sys-corner-medium);
+  border-radius: var(--radius-md);
   background: var(--mat-sys-error-container);
   color: var(--mat-sys-on-error-container);
   font: var(--mat-sys-body-medium);
@@ -104,8 +104,7 @@
   max-width: 46rem;
   margin-top: 1rem;
   padding: 2rem 1rem;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: var(--mat-sys-corner-medium);
+  border-radius: var(--radius-md);
   background: var(--mat-sys-error-container);
   color: var(--mat-sys-on-error-container);
   font: var(--mat-sys-body-medium);

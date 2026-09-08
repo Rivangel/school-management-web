@@ -5,6 +5,8 @@
 // dibuja ninguna tabla. Lo que cada listado tiene de propio —qué columna se
 // esconde en móvil, por ejemplo— se queda en su componente.
 
+@use 'neumorphism' as neu;
+
 .listado__cabecera {
   display: flex;
   align-items: flex-start;
@@ -32,10 +34,10 @@
 }
 
 .listado__tabla {
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: var(--mat-sys-corner-medium);
-  background: var(--mat-sys-surface-container-low);
+  @include neu.neu-flat;
   overflow: hidden;
+  padding: 0.25rem;
+  box-sizing: border-box;
 
   // La tabla se desplaza dentro de su caja en pantallas angostas; el resto de la
   // página no se mueve.
@@ -44,6 +46,7 @@
     display: block;
     overflow-x: auto;
     white-space: nowrap;
+    background: transparent;
   }
 }
 
@@ -78,8 +81,7 @@
 .listado__aviso--error {
   flex-wrap: wrap;
   margin-top: 1rem;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: var(--mat-sys-corner-medium);
+  border-radius: var(--radius-md);
   background: var(--mat-sys-error-container);
   color: var(--mat-sys-on-error-container);
 
