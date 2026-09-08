@@ -20,10 +20,6 @@ import {
  */
 const tituloDe = (clave: string) => () => `${t(clave)} · ${t('shell.marca')}`;
 
-/** Alta y edición comparten componente: el modo lo decide el `id` de la ruta. */
-const formularioDeAlumno = () =>
-  import('./features/alumnos/formulario-alumno/formulario-alumno').then((m) => m.FormularioAlumno);
-
 /** Igual que el de alumnos: el modo lo decide el `id` de la ruta. */
 const formularioDeMaestro = () =>
   import('./features/maestros/formulario-maestro/formulario-maestro').then(
@@ -67,35 +63,13 @@ export const routes: Routes = [
         loadComponent: () => import('./features/home/home').then((m) => m.Home),
       },
       {
+        // Alta, ficha y edición se abren como diálogo desde aquí mismo: ya no
+        // son rutas propias.
         path: 'alumnos',
         title: tituloDe('alumnos.lista.titulo'),
         canActivate: [rolGuard(...rolesDe('/alumnos'))],
         loadComponent: () =>
           import('./features/alumnos/lista-alumnos/lista-alumnos').then((m) => m.ListaAlumnos),
-      },
-      {
-        // Las escrituras son sólo del ADMIN, así que estas dos rutas no heredan
-        // los roles de la sección: los toman de `ROLES_ESCRITURA`, la misma
-        // lista que decide si el listado enseña los botones que traen aquí.
-        path: 'alumnos/nuevo',
-        title: tituloDe('alumnos.formulario.tituloNuevo'),
-        canActivate: [rolGuard(...ROLES_ESCRITURA)],
-        loadComponent: formularioDeAlumno,
-      },
-      {
-        // Después de `alumnos/nuevo`: el router prueba en orden y `:id` se
-        // tragaría "nuevo" como si fuera un identificador.
-        path: 'alumnos/:id',
-        title: tituloDe('alumnos.detalle.titulo'),
-        canActivate: [rolGuard(...rolesDe('/alumnos'))],
-        loadComponent: () =>
-          import('./features/alumnos/detalle-alumno/detalle-alumno').then((m) => m.DetalleAlumno),
-      },
-      {
-        path: 'alumnos/:id/editar',
-        title: tituloDe('alumnos.formulario.tituloEditar'),
-        canActivate: [rolGuard(...ROLES_ESCRITURA)],
-        loadComponent: formularioDeAlumno,
       },
       {
         path: 'maestros',

@@ -5,8 +5,10 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { Alumno, Pagina, Rol } from '../../../core/models';
@@ -94,6 +96,25 @@ describe('ListaAlumnos', () => {
   async function asentar(): Promise<void> {
     await new Promise((listo) => setTimeout(listo));
     harness.detectChanges();
+    TestBed.tick();
+  }
+
+  /**
+   * Espera a que se abra el diálogo pedido, que llega tras un `import()`
+   * dinámico. **Sondea** en vez de esperar un tiempo fijo: cuánto tarda el
+   * `import()` no es constante, varía con la carga de la máquina, y un tiempo
+   * fijo que alcanza en solitario se queda corto corriendo la batería entera.
+   */
+  async function asentarDialogo(): Promise<void> {
+    const limite = Date.now() + 2000;
+    while (document.querySelector('mat-dialog-container') === null) {
+      if (Date.now() > limite) {
+        throw new Error('El diálogo no llegó a abrirse a tiempo.');
+      }
+      await new Promise((listo) => setTimeout(listo, 15));
+      harness.detectChanges();
+      TestBed.tick();
+    }
   }
 
   function texto(): string {
@@ -104,12 +125,37 @@ describe('ListaAlumnos', () => {
     return [...harness.fixture.nativeElement.querySelectorAll('tbody tr')];
   }
 
+  function boton(etiqueta: string, raiz: ParentNode = harness.fixture.nativeElement): HTMLButtonElement {
+    return [...raiz.querySelectorAll('button')].find((candidato) =>
+      (candidato as HTMLElement).textContent!.includes(etiqueta),
+    ) as HTMLButtonElement;
+  }
+
+  /** La casilla de una fila, por posición (0 = la primera fila de la tabla). */
+  function casilla(indice: number): HTMLElement {
+    return filas()[indice].querySelectorAll('mat-checkbox input')[0] as HTMLElement;
+  }
+
+  /** El diálogo se dibuja en un overlay colgado del `body`, no en el fixture. */
+  function contenedorDeDialogo(): HTMLElement {
+    return document.querySelector('mat-dialog-container') as HTMLElement;
+  }
+
   beforeEach(() => {
     localStorage.clear();
     TestBed.resetTestingModule();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    // Espera a que el DOM del diálogo se retire de verdad: sin esto, el
+    // contenedor de este test puede seguir siendo el primero que encuentra
+    // `document.querySelector` en el siguiente.
+    const dialogo = TestBed.inject(MatDialog);
+    if (dialogo.openDialogs.length > 0) {
+      const cerradoDelTodo = firstValueFrom(dialogo.afterAllClosed);
+      dialogo.closeAll();
+      await cerradoDelTodo;
+    }
     http.verify();
   });
 
@@ -201,40 +247,11 @@ describe('ListaAlumnos', () => {
 
     expect(texto()).toContain('La base de datos no responde');
 
-    const reintentar = [...harness.fixture.nativeElement.querySelectorAll('button')].find((boton) =>
-      (boton as HTMLElement).textContent!.includes('Reintentar'),
-    ) as HTMLButtonElement;
-    reintentar.click();
+    boton('Reintentar').click();
     await asentar();
 
     await responder(pagina([alumno(1, 'López')]));
     expect(filas()).toHaveLength(1);
-  });
-
-  it('el ADMIN puede dar de alta y editar desde el listado', async () => {
-    await montar('/alumnos?page=2', pagina([alumno(1, 'López')], 137, 2));
-
-    const alta = harness.fixture.nativeElement.querySelector(
-      'a[href^="/alumnos/nuevo"]',
-    ) as HTMLAnchorElement;
-    const editar = harness.fixture.nativeElement.querySelector(
-      'a[aria-label^="Editar"]',
-    ) as HTMLAnchorElement;
-
-    // `preserve` mantiene la página en el enlace: al guardar se vuelve aquí.
-    expect(alta.getAttribute('href')).toBe('/alumnos/nuevo?page=2');
-    expect(editar.getAttribute('href')).toBe('/alumnos/1/editar?page=2');
-  });
-
-  it('cualquiera que vea el listado puede abrir la ficha', async () => {
-    await abrir('/alumnos', 'MAESTRO');
-    await responder(pagina([alumno(1, 'López')]));
-
-    const ficha = harness.fixture.nativeElement.querySelector(
-      'a[aria-label^="Ver la ficha"]',
-    ) as HTMLAnchorElement;
-
-    expect(ficha.getAttribute('href')).toBe('/alumnos/1');
   });
 
   it('una página que se quedó fuera de rango cae en la última con datos', async () => {
@@ -260,23 +277,151 @@ describe('ListaAlumnos', () => {
     expect(texto()).toContain('Todavía no hay alumnos registrados');
   });
 
-  it('el MAESTRO no ve las acciones de escritura', async () => {
+  it('el MAESTRO no ve las acciones de escritura ni la columna de selección', async () => {
     // Ocultar no protege —la API le devuelve 403 igual—, pero un botón que sólo
     // lleva a "acceso denegado" sobra.
     await abrir('/alumnos', 'MAESTRO');
     await responder(pagina([alumno(1, 'López')]));
 
     expect(texto()).not.toContain('Nuevo alumno');
-    expect(harness.fixture.nativeElement.querySelector('a[aria-label^="Editar"]')).toBeNull();
+    expect(harness.fixture.nativeElement.querySelector('mat-checkbox')).toBeNull();
   });
 
-  it('ignora un orden por la columna de acciones', async () => {
-    // La columna existe en la tabla pero no en la entidad: mandarla como `sort`
+  it('ignora un orden por una columna que no existe', async () => {
+    // La columna de selección no entra en `ORDENABLES`: mandarla como `sort`
     // haría que la API respondiera 400 y la pantalla enseñara un error.
-    await abrir('/alumnos?sort=acciones,asc');
+    await abrir('/alumnos?sort=seleccion,asc');
 
     const pendiente = peticion();
     expect(pendiente.request.params.has('sort')).toBe(false);
     await responder(pagina([alumno(1, 'López')]), pendiente);
+  });
+
+  it('el ADMIN abre el alta en un diálogo y recarga el listado al guardar', async () => {
+    await montar();
+
+    boton('Nuevo alumno').click();
+    await asentarDialogo();
+
+    const dialogo = contenedorDeDialogo();
+    expect(dialogo.textContent).toContain('Nuevo alumno');
+    // Se captura aquí y no después de guardar: `afterClosed()` sólo emite lo
+    // que pasa **desde este momento**, y esperar exactamente esto (en vez de
+    // adivinar cuántas vueltas tarda la animación de cierre) es lo único que
+    // garantiza no comprobar la recarga antes de que se haya pedido.
+    const cerrado = firstValueFrom(TestBed.inject(MatDialog).openDialogs.at(-1)!.afterClosed());
+
+    const nombre = dialogo.querySelector('input[formControlName="nombre"]') as HTMLInputElement;
+    nombre.value = 'Beatriz';
+    nombre.dispatchEvent(new Event('input'));
+
+    // El resto de campos no importa para este test: sólo interesa que guardar
+    // recarga el listado, no la validación del formulario (ver su propio spec).
+    for (const [campo, valor] of Object.entries({
+      apellido: 'Núñez',
+      matricula: 'A-099',
+      email: 'beatriz@escuela.com',
+      grupo: '3C',
+    })) {
+      const input = dialogo.querySelector(`input[formControlName="${campo}"]`) as HTMLInputElement;
+      input.value = valor;
+      input.dispatchEvent(new Event('input'));
+    }
+
+    dialogo.querySelector('form')!.dispatchEvent(new Event('submit'));
+    await asentar();
+
+    http
+      .expectOne(URL)
+      .flush({ ...alumno(2, 'Núñez'), nombre: 'Beatriz' }, { status: 201, statusText: 'Created' });
+    await cerrado;
+    await asentar();
+
+    // El listado recarga tras cerrarse el diálogo.
+    await responder(pagina([alumno(1, 'López'), alumno(2, 'Núñez')]));
+    expect(filas()).toHaveLength(2);
+  });
+
+  it('marcar una fila activa "editar" y "eliminar"; marcar otra más desactiva "editar"', async () => {
+    await montar('/alumnos', pagina([alumno(1, 'López'), alumno(2, 'Ramírez')]));
+
+    expect(texto()).not.toContain('1 seleccionado');
+
+    (casilla(0) as HTMLInputElement).click();
+    await asentar();
+
+    expect(texto()).toContain('1 seleccionado');
+    expect(boton('Editar').disabled).toBe(false);
+    expect(boton('Eliminar').disabled).toBe(false);
+
+    (casilla(1) as HTMLInputElement).click();
+    await asentar();
+
+    expect(texto()).toContain('2 seleccionados');
+    expect(boton('Editar').disabled).toBe(true);
+    expect(boton('Eliminar').disabled).toBe(false);
+  });
+
+  it('cambiar de página limpia la selección', async () => {
+    await montar('/alumnos', pagina([alumno(1, 'López')], 137));
+
+    (casilla(0) as HTMLInputElement).click();
+    await asentar();
+    expect(texto()).toContain('1 seleccionado');
+
+    const siguiente = harness.fixture.nativeElement.querySelector(
+      'button[aria-label="Página siguiente"]',
+    ) as HTMLButtonElement;
+    siguiente.click();
+    await asentar();
+    await responder(pagina([alumno(2, 'Ramírez')], 137, 1));
+
+    expect(texto()).not.toContain('seleccionad');
+  });
+
+  it('eliminar una fila marcada pregunta, borra y recarga', async () => {
+    await montar('/alumnos', pagina([alumno(1, 'López')]));
+
+    (casilla(0) as HTMLInputElement).click();
+    await asentar();
+    boton('Eliminar').click();
+    await asentar();
+
+    // Se captura antes de confirmar: `afterClosed()` sólo emite lo que pasa
+    // desde este momento, y es lo único que garantiza esperar exactamente lo
+    // que tarda cerrarse (animación incluida) sin adivinar cuántas vueltas.
+    const confirmarCerrado = firstValueFrom(TestBed.inject(MatDialog).openDialogs.at(-1)!.afterClosed());
+    const confirmar = boton('Eliminar', document.querySelector('mat-dialog-container')!);
+    confirmar.click();
+    await confirmarCerrado;
+    await asentar();
+
+    const borrado = http.expectOne(`${URL}/1`);
+    expect(borrado.request.method).toBe('DELETE');
+    borrado.flush(null, { status: 204, statusText: 'No Content' });
+    await asentar();
+
+    await responder(pagina([]));
+    expect(texto()).not.toContain('seleccionad');
+  });
+
+  it('toda la fila abre la ficha del alumno', async () => {
+    await montar();
+
+    filas()[0].dispatchEvent(new Event('click', { bubbles: true }));
+    await asentarDialogo();
+    http.expectOne(`${URL}/1`).flush(alumno(1, 'López'));
+    await asentar();
+
+    const dialogo = contenedorDeDialogo();
+    expect(dialogo.textContent).toContain('López');
+    const fichaCerrada = firstValueFrom(TestBed.inject(MatDialog).openDialogs.at(-1)!.afterClosed());
+
+    const cerrar = dialogo.querySelector('button[aria-label="Cerrar"]') as HTMLButtonElement;
+    cerrar.click();
+    await fichaCerrada;
+    await asentar();
+
+    await responder(pagina([alumno(1, 'López')]));
   });
 });

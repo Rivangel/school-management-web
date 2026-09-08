@@ -1,0 +1,14 @@
+// Cabecera de un diálogo con título y botón de cerrar, compartida por las
+// fichas y formularios que ahora se abren como modal en vez de navegar a una
+// página nueva.
+.dialogo__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-right: 0.5rem;
+
+  h2 {
+    margin: 0;
+  }
+}

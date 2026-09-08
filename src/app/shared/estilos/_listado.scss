@@ -26,6 +26,38 @@
   }
 }
 
+// Barra de acciones de la selección: sólo aparece con algo marcado, así que no
+// reserva espacio propio como la de progreso.
+.listado__seleccion {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+  padding: 0.625rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-inset);
+}
+
+.listado__seleccion-cuenta {
+  margin-right: auto;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-label-large);
+}
+
+// Toda la fila abre la ficha: el puntero lo dice, y el foco visible es lo que
+// se lo dice a quien navega con teclado — el estado no depende sólo de un
+// cambio de fondo al pasar el ratón.
+.listado__fila {
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: -2px;
+  }
+}
+
 // Reserva el alto de la barra de progreso: sin esto la tabla sube y baja 4px
 // cada vez que se pide una página.
 .listado__barra {

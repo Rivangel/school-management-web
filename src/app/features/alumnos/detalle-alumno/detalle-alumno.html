@@ -1,112 +1,100 @@
-<header class="ficha__cabecera">
-  <h1>{{ t('alumnos.detalle.titulo') }}</h1>
-  <button mat-stroked-button type="button" (click)="volver()">
-    <mat-icon>arrow_back</mat-icon>
-    {{ t('common.volverAlListado') }}
+<div class="dialogo__cabecera">
+  <h2 mat-dialog-title>{{ t('alumnos.detalle.titulo') }}</h2>
+  <button mat-icon-button type="button" (click)="cerrar()" [attr.aria-label]="t('common.cerrar')">
+    <mat-icon>close</mat-icon>
   </button>
-</header>
+</div>
 
-@if (idInvalido()) {
-  <div class="ficha__aviso" role="alert">
-    <mat-icon>link_off</mat-icon>
-    <p>{{ t('alumnos.detalle.direccionInvalida') }}</p>
-  </div>
-} @else if (error(); as mensaje) {
-  <div class="ficha__aviso" role="alert">
-    <mat-icon>error_outline</mat-icon>
-    <p>{{ mensaje }}</p>
-    <button mat-flat-button type="button" (click)="reintentar()">{{ t('common.reintentar') }}</button>
-  </div>
-} @else {
-  <mat-card appearance="outlined" class="ficha__tarjeta">
-    <!-- Altura fija para que la tarjeta no salte al aparecer la barra. -->
-    <div class="ficha__barra">
-      @if (cargando() || borrando()) {
-        <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('alumnos.detalle.cargandoFicha')" />
-      }
+<!-- Altura fija para que el diálogo no salte al aparecer la barra. -->
+<div class="ficha__barra">
+  @if (cargando() || borrando()) {
+    <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('alumnos.detalle.cargandoFicha')" />
+  }
+</div>
+
+@if (error(); as mensaje) {
+  <mat-dialog-content>
+    <div class="ficha__aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ mensaje }}</p>
     </div>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-flat-button type="button" (click)="reintentar()">{{ t('common.reintentar') }}</button>
+  </mat-dialog-actions>
+} @else if (alumno(); as alumno) {
+  <mat-dialog-content>
+    <h3>{{ alumno.nombre }} {{ alumno.apellido }}</h3>
+    <p>{{ t('alumnos.detalle.matriculaPrefijo', { matricula: alumno.matricula }) }}</p>
 
-    @if (alumno(); as alumno) {
-      <mat-card-header>
-        <mat-card-title>{{ alumno.nombre }} {{ alumno.apellido }}</mat-card-title>
-        <mat-card-subtitle>
-          {{ t('alumnos.detalle.matriculaPrefijo', { matricula: alumno.matricula }) }}
-        </mat-card-subtitle>
-      </mat-card-header>
+    <dl class="ficha__datos">
+      <dt>{{ t('alumnos.detalle.nombre') }}</dt>
+      <dd>{{ alumno.nombre }}</dd>
 
-      <mat-card-content>
-        <dl class="ficha__datos">
-          <dt>{{ t('alumnos.detalle.nombre') }}</dt>
-          <dd>{{ alumno.nombre }}</dd>
+      <dt>{{ t('alumnos.detalle.apellido') }}</dt>
+      <dd>{{ alumno.apellido }}</dd>
 
-          <dt>{{ t('alumnos.detalle.apellido') }}</dt>
-          <dd>{{ alumno.apellido }}</dd>
+      <dt>{{ t('alumnos.detalle.matricula') }}</dt>
+      <dd>{{ alumno.matricula }}</dd>
 
-          <dt>{{ t('alumnos.detalle.matricula') }}</dt>
-          <dd>{{ alumno.matricula }}</dd>
+      <dt>{{ t('alumnos.detalle.grupo') }}</dt>
+      <dd>{{ alumno.grupo }}</dd>
 
-          <dt>{{ t('alumnos.detalle.grupo') }}</dt>
-          <dd>{{ alumno.grupo }}</dd>
+      <dt>{{ t('alumnos.detalle.correo') }}</dt>
+      <dd>
+        <a href="mailto:{{ alumno.email }}">{{ alumno.email }}</a>
+      </dd>
+    </dl>
 
-          <dt>{{ t('alumnos.detalle.correo') }}</dt>
-          <dd>
-            <a href="mailto:{{ alumno.email }}">{{ alumno.email }}</a>
-          </dd>
-        </dl>
+    <!-- La consulta de calificaciones toma el alumno de la URL: cierra este
+         diálogo y navega, en vez de abrir una pantalla nueva encima. -->
+    <p class="ficha__enlaces">
+      <a
+        mat-stroked-button
+        [routerLink]="['/calificaciones']"
+        [queryParams]="{ alumnoId: alumno.id }"
+        (click)="cerrar()"
+      >
+        <mat-icon>grade</mat-icon>
+        {{ t('alumnos.detalle.verCalificaciones') }}
+      </a>
+      <a
+        mat-stroked-button
+        [routerLink]="['/asistencia']"
+        [queryParams]="{ alumnoId: alumno.id }"
+        (click)="cerrar()"
+      >
+        <mat-icon>event_available</mat-icon>
+        {{ t('alumnos.detalle.verAsistencia') }}
+      </a>
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="descargandoBoleta()"
+        (click)="descargarBoleta(alumno.id)"
+      >
+        <mat-icon>download</mat-icon>
+        {{ t('alumnos.detalle.descargarBoleta') }}
+      </button>
+    </p>
+  </mat-dialog-content>
 
-        <!-- La consulta de calificaciones toma el alumno de la URL, así que
-             desde aquí es un enlace y no una pantalla nueva. -->
-        <p class="ficha__enlaces">
-          <a
-            mat-stroked-button
-            [routerLink]="['/calificaciones']"
-            [queryParams]="{ alumnoId: alumno.id }"
-          >
-            <mat-icon>grade</mat-icon>
-            {{ t('alumnos.detalle.verCalificaciones') }}
-          </a>
-          <a
-            mat-stroked-button
-            [routerLink]="['/asistencia']"
-            [queryParams]="{ alumnoId: alumno.id }"
-          >
-            <mat-icon>event_available</mat-icon>
-            {{ t('alumnos.detalle.verAsistencia') }}
-          </a>
-          <button
-            mat-stroked-button
-            type="button"
-            [disabled]="descargandoBoleta()"
-            (click)="descargarBoleta(alumno.id)"
-          >
-            <mat-icon>download</mat-icon>
-            {{ t('alumnos.detalle.descargarBoleta') }}
-          </button>
-        </p>
-      </mat-card-content>
-
-      @if (puedeEditar()) {
-        <mat-card-actions align="end">
-          <button
-            mat-button
-            type="button"
-            class="ficha__eliminar"
-            [disabled]="borrando()"
-            (click)="eliminar()"
-          >
-            <mat-icon>delete</mat-icon>
-            {{ t('common.eliminar') }}
-          </button>
-          <a
-            mat-flat-button
-            [routerLink]="['/alumnos', alumno.id, 'editar']"
-            queryParamsHandling="preserve"
-          >
-            <mat-icon>edit</mat-icon>
-            {{ t('common.editar') }}
-          </a>
-        </mat-card-actions>
-      }
-    }
-  </mat-card>
+  @if (puedeEditar()) {
+    <mat-dialog-actions align="end">
+      <button
+        mat-button
+        type="button"
+        class="ficha__eliminar"
+        [disabled]="borrando()"
+        (click)="eliminar()"
+      >
+        <mat-icon>delete</mat-icon>
+        {{ t('common.eliminar') }}
+      </button>
+      <button mat-flat-button type="button" (click)="editar()">
+        <mat-icon>edit</mat-icon>
+        {{ t('common.editar') }}
+      </button>
+    </mat-dialog-actions>
+  }
 }

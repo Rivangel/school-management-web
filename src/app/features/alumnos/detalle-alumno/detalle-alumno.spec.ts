@@ -1,16 +1,14 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { Router, provideRouter } from '@angular/router';
+import { provideRouter } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { RouterTestingHarness } from '@angular/router/testing';
 
 import { environment } from '../../../../environments/environment';
 import { Alumno, Rol } from '../../../core/models';
 import { sembrarSesion } from '../../../core/services/testing/sesion-falsa';
-import { DetalleAlumno } from './detalle-alumno';
+import { DatosDetalleAlumno, DetalleAlumno, ResultadoDetalleAlumno } from './detalle-alumno';
 
 const URL = `${environment.apiUrl}/alumnos`;
 
@@ -23,80 +21,91 @@ const ALUMNO: Alumno = {
   grupo: '1A',
 };
 
-/** Destino de "Volver": aquí sólo interesa la URL a la que se llega. */
-@Component({ template: 'listado' })
-class ListadoFalso {}
-
 describe('DetalleAlumno', () => {
   let http: HttpTestingController;
-  let harness: RouterTestingHarness;
+  let dialogo: MatDialog;
+  let cerrado: Promise<ResultadoDetalleAlumno>;
 
-  async function abrir(url = '/alumnos/7', rol: Rol = 'ADMIN'): Promise<void> {
+  async function abrir(id = 7, rol: Rol = 'ADMIN'): Promise<void> {
     localStorage.clear();
     sembrarSesion(rol);
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
-      providers: [
-        provideHttpClient(),
-        provideHttpClientTesting(),
-        provideRouter([
-          { path: 'alumnos', component: ListadoFalso },
-          { path: 'alumnos/:id', component: DetalleAlumno },
-        ]),
-      ],
+      // `RouterLink` (enlaces a calificaciones/asistencia) necesita el
+      // inyector del router aunque el test no navegue de verdad.
+      providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
     });
     http = TestBed.inject(HttpTestingController);
-    harness = await RouterTestingHarness.create(url);
+    dialogo = TestBed.inject(MatDialog);
+
+    const referencia = dialogo.open<DetalleAlumno, DatosDetalleAlumno, ResultadoDetalleAlumno>(
+      DetalleAlumno,
+      { data: { id } },
+    );
+    cerrado = firstValueFrom(referencia.afterClosed());
+    await asentar();
   }
 
   /** Lo de siempre: abrir la ficha y responder con el alumno. */
-  async function montar(url = '/alumnos/7', rol: Rol = 'ADMIN'): Promise<void> {
-    await abrir(url, rol);
+  async function montar(id = 7, rol: Rol = 'ADMIN'): Promise<void> {
+    await abrir(id, rol);
     http.expectOne(`${URL}/7`).flush(ALUMNO);
-    await harness.fixture.whenStable();
+    await asentar();
   }
 
-  /**
-   * Deja avanzar la navegación y la detección de cambios **sin** esperar a la
-   * respuesta HTTP, que como tarea pendiente colgaría `whenStable()`.
-   */
+  /** Deja avanzar los `Promise` pendientes y fuerza una detección de cambios global. */
   async function asentar(): Promise<void> {
     await new Promise((listo) => setTimeout(listo));
-    harness.detectChanges();
     TestBed.tick();
   }
 
+  /** El diálogo se dibuja en un overlay colgado del `body`, no en ningún fixture. */
+  function contenedor(): HTMLElement {
+    return document.querySelector('mat-dialog-container') as HTMLElement;
+  }
+
   function texto(): string {
-    return harness.fixture.nativeElement.textContent as string;
+    return contenedor().textContent as string;
   }
 
   function pulsar(etiqueta: string): void {
-    const boton = [...harness.fixture.nativeElement.querySelectorAll('button')].find((candidato) =>
+    const boton = [...contenedor().querySelectorAll('button')].find((candidato) =>
       (candidato as HTMLElement).textContent!.includes(etiqueta),
     ) as HTMLButtonElement;
     boton.click();
   }
 
   /**
-   * Pulsa un botón del diálogo, que vive en un overlay fuera del fixture, y
-   * espera a que cierre de verdad.
+   * Pulsa un botón de un diálogo **anidado** (confirmar, o el formulario de
+   * edición), que se abre encima de éste.
    *
-   * La espera no es cosmética: `afterClosed()` emite cuando termina la animación
-   * de salida, así que sin ella el borrado todavía no se ha lanzado cuando el
-   * test va a buscar la petición.
+   * La espera no es cosmética: `afterClosed()` emite cuando termina la
+   * animación de salida, así que sin ella el borrado todavía no se ha lanzado
+   * cuando el test va a buscar la petición.
    */
-  async function pulsarEnElDialogo(etiqueta: string): Promise<void> {
-    const cerrado = firstValueFrom(TestBed.inject(MatDialog).afterAllClosed);
-    const boton = [...document.querySelectorAll('mat-dialog-actions button')].find((candidato) =>
+  async function pulsarEnElDialogoAnidado(etiqueta: string): Promise<void> {
+    const contenedores = [...document.querySelectorAll('mat-dialog-container')];
+    const anidado = contenedores[contenedores.length - 1] as HTMLElement;
+    const cerradoAnidado = firstValueFrom(TestBed.inject(MatDialog).openDialogs.at(-1)!.afterClosed());
+    const boton = [...anidado.querySelectorAll('button')].find((candidato) =>
       candidato.textContent!.includes(etiqueta),
     ) as HTMLButtonElement;
     boton.click();
-    await cerrado;
+    await cerradoAnidado;
     await asentar();
   }
 
-  afterEach(() => {
+  afterEach(async () => {
+    // Espera a que el DOM del diálogo se retire de verdad: sin esto, el
+    // contenedor del test anterior puede seguir siendo el primero que
+    // encuentra `document.querySelector` en el siguiente.
+    const dialogo = TestBed.inject(MatDialog);
+    if (dialogo.openDialogs.length > 0) {
+      const cerradoDelTodo = firstValueFrom(dialogo.afterAllClosed);
+      dialogo.closeAll();
+      await cerradoDelTodo;
+    }
     http.verify();
   });
 
@@ -108,12 +117,6 @@ describe('DetalleAlumno', () => {
     expect(texto()).toContain('ana@escuela.com');
   });
 
-  it('avisa cuando la dirección no apunta a un alumno', async () => {
-    await abrir('/alumnos/abc');
-
-    expect(texto()).toContain('La dirección no apunta a ningún alumno');
-  });
-
   it('explica el fallo de carga y deja reintentar', async () => {
     await abrir();
     http
@@ -122,14 +125,14 @@ describe('DetalleAlumno', () => {
         { message: 'Alumno no encontrado con id: 7' },
         { status: 404, statusText: 'Not Found' },
       );
-    await harness.fixture.whenStable();
+    await asentar();
 
     expect(texto()).toContain('Alumno no encontrado con id: 7');
 
     pulsar('Reintentar');
     await asentar();
     http.expectOne(`${URL}/7`).flush(ALUMNO);
-    await harness.fixture.whenStable();
+    await asentar();
 
     expect(texto()).toContain('Ana López');
   });
@@ -149,65 +152,66 @@ describe('DetalleAlumno', () => {
     pulsar('Eliminar');
     await asentar();
 
-    await pulsarEnElDialogo('Cancelar');
+    await pulsarEnElDialogoAnidado('Cancelar');
 
     http.expectNone(() => true);
-    expect(TestBed.inject(Router).url).toBe('/alumnos/7');
+    expect(await Promise.race([cerrado, Promise.resolve('sigue-abierta')])).toBe('sigue-abierta');
   });
 
-  it('confirmar borra y vuelve al listado, a la misma página', async () => {
-    await montar('/alumnos/7?page=2&sort=grupo,desc');
+  it('confirmar borra y cierra la ficha avisando al listado de que recargue', async () => {
+    await montar();
     pulsar('Eliminar');
     await asentar();
 
-    await pulsarEnElDialogo('Eliminar');
+    await pulsarEnElDialogoAnidado('Eliminar');
 
     const peticion = http.expectOne(`${URL}/7`);
     expect(peticion.request.method).toBe('DELETE');
     peticion.flush(null, { status: 204, statusText: 'No Content' });
     await asentar();
 
-    expect(TestBed.inject(Router).url).toBe('/alumnos?page=2&sort=grupo,desc');
+    expect(await cerrado).toBeUndefined();
   });
 
   it('un borrado fallido deja la ficha donde estaba', async () => {
     // Del mensaje se encarga el interceptor global; aquí lo que importa es que
-    // no se navegue como si hubiera funcionado.
+    // la ficha no se cierre como si hubiera funcionado.
     await montar();
     pulsar('Eliminar');
     await asentar();
-    await pulsarEnElDialogo('Eliminar');
+    await pulsarEnElDialogoAnidado('Eliminar');
 
     http.expectOne(`${URL}/7`).flush(null, { status: 409, statusText: 'Conflict' });
     await asentar();
 
-    expect(TestBed.inject(Router).url).toBe('/alumnos/7');
+    expect(await Promise.race([cerrado, Promise.resolve('sigue-abierta')])).toBe('sigue-abierta');
     expect(texto()).toContain('Ana López');
   });
 
   it('el MAESTRO consulta la ficha pero no puede tocarla', async () => {
-    await montar('/alumnos/7', 'MAESTRO');
+    await montar(7, 'MAESTRO');
 
     expect(texto()).toContain('Ana López');
     expect(texto()).not.toContain('Eliminar');
-    expect(harness.fixture.nativeElement.querySelector('a[href^="/alumnos/7/editar"]')).toBeNull();
-  });
-
-  it('volver conserva la página del listado', async () => {
-    await montar('/alumnos/7?page=3&size=50');
-    pulsar('Volver al listado');
-    await asentar();
-
-    expect(TestBed.inject(Router).url).toBe('/alumnos?page=3&size=50');
+    expect(texto()).not.toContain('Editar');
   });
 
   it('enlaza a las calificaciones del alumno', async () => {
     // La consulta toma el alumno de la URL, así que desde aquí basta un enlace.
     await montar();
 
-    const enlace = harness.fixture.nativeElement.querySelector(
-      'a[href^="/calificaciones"]',
-    ) as HTMLAnchorElement;
+    const enlace = contenedor().querySelector('a[href^="/calificaciones"]') as HTMLAnchorElement;
     expect(enlace.getAttribute('href')).toContain('alumnoId=7');
+  });
+
+  it('editar cierra la ficha pidiendo el formulario, sin abrirlo ella misma', async () => {
+    // Abrir el formulario **encima** de la ficha no tiene ninguna ventaja y
+    // complica quién refresca qué; la ficha se limita a pedirlo al cerrarse,
+    // y es el listado (ver `lista-alumnos.spec.ts`) quien lo abre de verdad.
+    await montar();
+    pulsar('Editar');
+    await asentar();
+
+    expect(await cerrado).toBe('editar');
   });
 });

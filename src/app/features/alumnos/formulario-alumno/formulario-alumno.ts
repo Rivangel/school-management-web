@@ -2,12 +2,11 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { Router } from '@angular/router';
 
 import { t } from '../../../core/i18n/traducir';
 import { AlumnoRequest } from '../../../core/models';
@@ -16,7 +15,11 @@ import { Avisos } from '../../../core/services/avisos';
 import { PistaDeCampo, aplicarErroresDeApi } from '../../../core/services/errores-formulario';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
 import { textoRequerido } from '../../../core/validadores';
-import { idDeRuta } from '../../../shared/id-de-ruta';
+
+/** Lo que trae el diálogo al abrirse: sin `id` es un alta. */
+export interface DatosFormularioAlumno {
+  readonly id?: number;
+}
 
 /**
  * Cómo repartir los 400 de negocio, que llegan sin desglose por campo.
@@ -31,24 +34,19 @@ const DUPLICADOS: readonly PistaDeCampo[] = [
 ];
 
 /**
- * Alta y edición de un alumno.
+ * Alta y edición de un alumno, en un diálogo.
  *
- * Es una **ruta** y no un diálogo: el listado ya guarda su estado en la URL, así
- * que `/alumnos/7/editar` se puede compartir, recargar y cerrar con el botón
- * "atrás" como cualquier otra pantalla. A cambio hay que arrastrar los
- * parámetros del listado (`?page=&sort=`) al navegar, que es lo que permite
- * volver exactamente a la página desde la que se entró sin guardar nada.
- *
- * El mismo componente sirve para los dos modos: sin `id` en la ruta es un alta y
- * el recurso ni se pide. Separarlos duplicaría cinco campos, sus validaciones y
- * sus mensajes para no ahorrar más que un `if` al enviar.
+ * El mismo componente sirve para los dos modos: sin `id` en los datos del
+ * diálogo es un alta y el recurso ni se pide. Cierra con `true` cuando algo
+ * cambió —el listado que lo abrió recarga la página— y con `false` si se
+ * canceló sin guardar nada.
  */
 @Component({
   selector: 'app-formulario-alumno',
   imports: [
     ReactiveFormsModule,
     MatButtonModule,
-    MatCardModule,
+    MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -59,8 +57,9 @@ const DUPLICADOS: readonly PistaDeCampo[] = [
 })
 export class FormularioAlumno {
   private readonly alumnos = inject(AlumnoService);
-  private readonly router = inject(Router);
   private readonly avisos = inject(Avisos);
+  private readonly datos = inject<DatosFormularioAlumno>(MAT_DIALOG_DATA);
+  private readonly dialogo = inject(MatDialogRef<FormularioAlumno, boolean>);
 
   protected readonly t = t;
 
@@ -73,25 +72,13 @@ export class FormularioAlumno {
     grupo: ['', [textoRequerido, Validators.maxLength(10)]],
   });
 
-  private readonly enLaRuta = idDeRuta();
-
   /** El id que se va a actualizar, o `undefined` si esto es un alta. */
-  protected readonly id = this.enLaRuta.id;
-
-  /**
-   * `/alumnos/abc/editar`: hay id en la ruta pero no es un número.
-   *
-   * Se distingue del alta a propósito. Sin esta comprobación el formulario se
-   * abriría vacío y el primer guardado crearía un alumno nuevo, que no es en
-   * absoluto lo que pedía quien entró por ese enlace.
-   */
-  protected readonly idInvalido = this.enLaRuta.invalido;
-
-  protected readonly editando = this.enLaRuta.presente;
+  protected readonly id = this.datos.id;
+  protected readonly editando = this.id !== undefined;
 
   /** Sin `id` los parámetros son `undefined` y el recurso ni llega a pedir nada. */
   private readonly alumno = rxResource({
-    params: () => this.id(),
+    params: () => this.id,
     stream: ({ params }) => this.alumnos.obtenerPorId(params),
   });
 
@@ -127,7 +114,7 @@ export class FormularioAlumno {
       return;
     }
 
-    const id = this.id();
+    const id = this.id;
     const datos = this.valores();
     this.enviando.set(true);
     this.error.set(null);
@@ -146,7 +133,7 @@ export class FormularioAlumno {
                 apellido: alumno.apellido,
               }),
         );
-        this.volver();
+        this.dialogo.close(true);
       },
       error: (fallo: unknown) => {
         this.enviando.set(false);
@@ -166,15 +153,8 @@ export class FormularioAlumno {
     this.alumno.reload();
   }
 
-  /**
-   * Vuelve al listado tal y como estaba.
-   *
-   * `preserve` conserva el `?page=&size=&sort=` que el listado dejó en la URL al
-   * entrar aquí: sin él, guardar devuelve siempre a la primera página, que casi
-   * nunca es la que se estaba mirando.
-   */
-  protected volver(): void {
-    void this.router.navigate(['/alumnos'], { queryParamsHandling: 'preserve' });
+  protected cerrar(): void {
+    this.dialogo.close(false);
   }
 
   /**

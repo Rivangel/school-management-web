@@ -1,11 +1,10 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatDialog } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 
 import { t } from '../../../core/i18n/traducir';
 import { Alumno } from '../../../core/models';
@@ -16,21 +15,35 @@ import { Avisos } from '../../../core/services/avisos';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
 import { ReporteService } from '../../../core/services/reporte-service';
 import { Confirmar, DatosConfirmacion } from '../../../shared/components/confirmar/confirmar';
-import { idDeRuta } from '../../../shared/id-de-ruta';
+
+/** Lo que trae el diálogo al abrirse: el alumno cuya ficha se enseña. */
+export interface DatosDetalleAlumno {
+  readonly id: number;
+}
 
 /**
- * Ficha de un alumno.
+ * Con qué se cierra la ficha.
+ *
+ * `'editar'` es un pedido, no una confirmación: quien abrió esta ficha (el
+ * listado) es quien sabe abrir el formulario de edición, así que la ficha se
+ * limita a cerrarse y pedirlo. Abrir el formulario **desde aquí**, encima de
+ * este diálogo, no tiene ninguna ventaja y complica quién refresca qué.
+ */
+export type ResultadoDetalleAlumno = 'editar' | undefined;
+
+/**
+ * Ficha de un alumno, en un diálogo.
  *
  * Es la pantalla desde la que se borra, y no el listado a secas, porque borrar
  * desde una fila obliga a decidir sobre alguien de quien sólo se ven cinco
  * campos en una tabla. Aquí se está mirando a quien se va a eliminar.
  *
- * Comparte con el formulario el patrón de la ruta: el `?page=&size=&sort=` del
- * listado viaja en la URL, así que volver deja al usuario donde estaba.
+ * El listado que la abre recarga siempre al cerrarse, haya cambiado algo o no:
+ * es un `GET` de más a cambio de no tener que distinguir por qué se cerró.
  */
 @Component({
   selector: 'app-detalle-alumno',
-  imports: [MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule, RouterLink],
+  imports: [MatButtonModule, MatDialogModule, MatIconModule, MatProgressBarModule, RouterLink],
   templateUrl: './detalle-alumno.html',
   styleUrl: './detalle-alumno.scss',
 })
@@ -40,23 +53,16 @@ export class DetalleAlumno {
   private readonly auth = inject(AuthService);
   private readonly avisos = inject(Avisos);
   private readonly dialogo = inject(MatDialog);
-  private readonly router = inject(Router);
+  private readonly datos = inject<DatosDetalleAlumno>(MAT_DIALOG_DATA);
+  protected readonly dialogoRef = inject(MatDialogRef<DetalleAlumno, ResultadoDetalleAlumno>);
 
   protected readonly t = t;
 
-  protected readonly id = idDeRuta().id;
+  protected readonly id = this.datos.id;
   protected readonly descargandoBoleta = signal(false);
 
-  /**
-   * `/alumnos/abc`: la dirección no apunta a ninguna ficha.
-   *
-   * Aquí basta con que no haya id — a diferencia del formulario, esta ruta no
-   * tiene un modo "sin id" que valga la pena distinguir.
-   */
-  protected readonly idInvalido = computed(() => this.id() === undefined);
-
   private readonly recurso = rxResource({
-    params: () => this.id(),
+    params: () => this.id,
     stream: ({ params }) => this.alumnos.obtenerPorId(params),
   });
 
@@ -80,6 +86,15 @@ export class DetalleAlumno {
 
   protected reintentar(): void {
     this.recurso.reload();
+  }
+
+  protected cerrar(): void {
+    this.dialogoRef.close();
+  }
+
+  /** Pide al listado que abra la edición: cierra y se lo deja a quien la abrió. */
+  protected editar(): void {
+    this.dialogoRef.close('editar');
   }
 
   /**
@@ -114,11 +129,6 @@ export class DetalleAlumno {
       });
   }
 
-  /** Vuelve al listado tal y como estaba (`preserve` mantiene página y orden). */
-  protected volver(): void {
-    void this.router.navigate(['/alumnos'], { queryParamsHandling: 'preserve' });
-  }
-
   protected descargarBoleta(alumnoId: number): void {
     if (this.descargandoBoleta()) {
       return;
@@ -141,7 +151,7 @@ export class DetalleAlumno {
     this.alumnos.eliminar(alumno.id).subscribe({
       next: () => {
         this.avisos.exito(t('alumnos.detalle.eliminado', { nombre: nombreCompleto(alumno) }));
-        this.volver();
+        this.dialogoRef.close();
       },
       // El fallo lo cuenta el interceptor global; aquí sólo se reabre el botón.
       error: () => this.borrando.set(false),
