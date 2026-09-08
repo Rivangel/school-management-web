@@ -11,17 +11,41 @@
   </div>
 
   @if (puedeEditar()) {
-    <!-- `preserve` arrastra el `?page=&size=&sort=` para poder volver aquí mismo. -->
-    <a mat-flat-button routerLink="/maestros/nuevo" queryParamsHandling="preserve">
+    <button mat-flat-button type="button" (click)="nuevo()">
       <mat-icon>add</mat-icon>
       {{ t('maestros.lista.nuevo') }}
-    </a>
+    </button>
   }
 </header>
 
+@if (puedeEditar() && seleccion.cantidad() > 0) {
+  <div class="listado__seleccion" role="toolbar" [attr.aria-label]="t('maestros.lista.accionesDeSeleccion')">
+    <span class="listado__seleccion-cuenta">
+      {{
+        seleccion.cantidad() === 1
+          ? t('maestros.lista.unSeleccionado')
+          : t('maestros.lista.seleccionados', { n: seleccion.cantidad() })
+      }}
+    </span>
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="seleccion.cantidad() !== 1"
+      (click)="editarSeleccionado()"
+    >
+      <mat-icon>edit</mat-icon>
+      {{ t('common.editar') }}
+    </button>
+    <button mat-stroked-button type="button" [disabled]="borrando()" (click)="eliminarSeleccionados()">
+      <mat-icon>delete</mat-icon>
+      {{ t('common.eliminar') }}
+    </button>
+  </div>
+}
+
 <!-- Altura fija para que la tabla no salte al aparecer y desaparecer la barra. -->
 <div class="listado__barra">
-  @if (listado.cargando()) {
+  @if (listado.cargando() || borrando()) {
     <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('maestros.lista.cargando')" />
   }
 </div>
@@ -47,6 +71,24 @@
       <caption class="listado__caption">
         {{ t('maestros.lista.caption') }}
       </caption>
+
+      <ng-container matColumnDef="seleccion">
+        <th mat-header-cell *matHeaderCellDef scope="col">
+          <mat-checkbox
+            [checked]="seleccion.todasMarcadas(listado.filas())"
+            [indeterminate]="seleccion.algunaMarcada(listado.filas()) && !seleccion.todasMarcadas(listado.filas())"
+            (change)="seleccion.alternarTodas(listado.filas())"
+            [attr.aria-label]="t('maestros.lista.seleccionarTodo')"
+          />
+        </th>
+        <td mat-cell *matCellDef="let maestro" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+          <mat-checkbox
+            [checked]="seleccion.estaMarcada(maestro)"
+            (change)="seleccion.alternar(maestro)"
+            [attr.aria-label]="t('maestros.lista.seleccionarUno', { nombre: maestro.nombre, apellido: maestro.apellido })"
+          />
+        </td>
+      </ng-container>
 
       <ng-container matColumnDef="apellido">
         <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">
@@ -76,32 +118,17 @@
         <td mat-cell *matCellDef="let maestro" class="maestros__email">{{ maestro.email }}</td>
       </ng-container>
 
-      <ng-container matColumnDef="acciones">
-        <th mat-header-cell *matHeaderCellDef scope="col">{{ t('maestros.lista.colAcciones') }}</th>
-        <td mat-cell *matCellDef="let maestro">
-          <a
-            mat-icon-button
-            [routerLink]="['/maestros', maestro.id]"
-            queryParamsHandling="preserve"
-            [attr.aria-label]="t('maestros.lista.verFichaDe', { nombre: maestro.nombre, apellido: maestro.apellido })"
-          >
-            <mat-icon>visibility</mat-icon>
-          </a>
-          @if (puedeEditar()) {
-            <a
-              mat-icon-button
-              [routerLink]="['/maestros', maestro.id, 'editar']"
-              queryParamsHandling="preserve"
-              [attr.aria-label]="t('maestros.lista.editarA', { nombre: maestro.nombre, apellido: maestro.apellido })"
-            >
-              <mat-icon>edit</mat-icon>
-            </a>
-          }
-        </td>
-      </ng-container>
-
-      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-      <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+      <tr mat-header-row *matHeaderRowDef="columnas()"></tr>
+      <tr
+        mat-row
+        *matRowDef="let fila; columns: columnas()"
+        class="listado__fila"
+        tabindex="0"
+        [attr.aria-label]="t('maestros.lista.verFichaDe', { nombre: fila.nombre, apellido: fila.apellido })"
+        (click)="verDetalle(fila)"
+        (keydown.enter)="verDetalle(fila)"
+        (keydown.space)="$event.preventDefault(); verDetalle(fila)"
+      ></tr>
     </table>
 
     @if (listado.vacio()) {

@@ -1,87 +1,75 @@
-<header class="ficha__cabecera">
-  <h1>{{ t('maestros.detalle.titulo') }}</h1>
-  <button mat-stroked-button type="button" (click)="volver()">
-    <mat-icon>arrow_back</mat-icon>
-    {{ t('common.volverAlListado') }}
+<div class="dialogo__cabecera">
+  <h2 mat-dialog-title>{{ t('maestros.detalle.titulo') }}</h2>
+  <button mat-icon-button type="button" (click)="cerrar()" [attr.aria-label]="t('common.cerrar')">
+    <mat-icon>close</mat-icon>
   </button>
-</header>
+</div>
 
-@if (idInvalido()) {
-  <div class="ficha__aviso" role="alert">
-    <mat-icon>link_off</mat-icon>
-    <p>{{ t('maestros.detalle.direccionInvalida') }}</p>
-  </div>
-} @else if (error(); as mensaje) {
-  <div class="ficha__aviso" role="alert">
-    <mat-icon>error_outline</mat-icon>
-    <p>{{ mensaje }}</p>
-    <button mat-flat-button type="button" (click)="reintentar()">{{ t('common.reintentar') }}</button>
-  </div>
-} @else {
-  <mat-card appearance="outlined" class="ficha__tarjeta">
-    <!-- Altura fija para que la tarjeta no salte al aparecer la barra. -->
-    <div class="ficha__barra">
-      @if (cargando() || borrando()) {
-        <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('maestros.detalle.cargandoFicha')" />
-      }
+<!-- Altura fija para que el diálogo no salte al aparecer la barra. -->
+<div class="ficha__barra">
+  @if (cargando() || borrando()) {
+    <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('maestros.detalle.cargandoFicha')" />
+  }
+</div>
+
+@if (error(); as mensaje) {
+  <mat-dialog-content>
+    <div class="ficha__aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ mensaje }}</p>
     </div>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-flat-button type="button" (click)="reintentar()">{{ t('common.reintentar') }}</button>
+  </mat-dialog-actions>
+} @else if (maestro(); as maestro) {
+  <mat-dialog-content>
+    <h3>{{ maestro.nombre }} {{ maestro.apellido }}</h3>
+    <p>{{ maestro.especialidad }}</p>
 
-    @if (maestro(); as maestro) {
-      <mat-card-header>
-        <mat-card-title>{{ maestro.nombre }} {{ maestro.apellido }}</mat-card-title>
-        <mat-card-subtitle>{{ maestro.especialidad }}</mat-card-subtitle>
-      </mat-card-header>
+    <dl class="ficha__datos">
+      <dt>{{ t('maestros.detalle.nombre') }}</dt>
+      <dd>{{ maestro.nombre }}</dd>
 
-      <mat-card-content>
-        <dl class="ficha__datos">
-          <dt>{{ t('maestros.detalle.nombre') }}</dt>
-          <dd>{{ maestro.nombre }}</dd>
+      <dt>{{ t('maestros.detalle.apellido') }}</dt>
+      <dd>{{ maestro.apellido }}</dd>
 
-          <dt>{{ t('maestros.detalle.apellido') }}</dt>
-          <dd>{{ maestro.apellido }}</dd>
+      <dt>{{ t('maestros.detalle.especialidad') }}</dt>
+      <dd>{{ maestro.especialidad }}</dd>
 
-          <dt>{{ t('maestros.detalle.especialidad') }}</dt>
-          <dd>{{ maestro.especialidad }}</dd>
+      <dt>{{ t('maestros.detalle.correo') }}</dt>
+      <dd>
+        <a href="mailto:{{ maestro.email }}">{{ maestro.email }}</a>
+      </dd>
+    </dl>
 
-          <dt>{{ t('maestros.detalle.correo') }}</dt>
-          <dd>
-            <a href="mailto:{{ maestro.email }}">{{ maestro.email }}</a>
-          </dd>
-        </dl>
-
-        <!-- El borrado de un maestro falla por una razón concreta y frecuente
-             (tiene materias), así que se explica aquí y no en un aviso flotante
-             que desaparece antes de poder hacer nada al respecto. -->
-        @if (errorAlBorrar(); as mensaje) {
-          <p class="ficha__error" role="alert">
-            <mat-icon>error_outline</mat-icon>
-            <span>{{ mensaje }}</span>
-          </p>
-        }
-      </mat-card-content>
-
-      @if (puedeEditar()) {
-        <mat-card-actions align="end">
-          <button
-            mat-button
-            type="button"
-            class="ficha__eliminar"
-            [disabled]="borrando()"
-            (click)="eliminar()"
-          >
-            <mat-icon>delete</mat-icon>
-            {{ t('common.eliminar') }}
-          </button>
-          <a
-            mat-flat-button
-            [routerLink]="['/maestros', maestro.id, 'editar']"
-            queryParamsHandling="preserve"
-          >
-            <mat-icon>edit</mat-icon>
-            {{ t('common.editar') }}
-          </a>
-        </mat-card-actions>
-      }
+    <!-- El borrado de un maestro falla por una razón concreta y frecuente
+         (tiene materias), así que se explica aquí y no en un aviso flotante
+         que desaparece antes de poder hacer nada al respecto. -->
+    @if (errorAlBorrar(); as mensaje) {
+      <p class="ficha__error" role="alert">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ mensaje }}</span>
+      </p>
     }
-  </mat-card>
+  </mat-dialog-content>
+
+  @if (puedeEditar()) {
+    <mat-dialog-actions align="end">
+      <button
+        mat-button
+        type="button"
+        class="ficha__eliminar"
+        [disabled]="borrando()"
+        (click)="eliminar()"
+      >
+        <mat-icon>delete</mat-icon>
+        {{ t('common.eliminar') }}
+      </button>
+      <button mat-flat-button type="button" (click)="editar()">
+        <mat-icon>edit</mat-icon>
+        {{ t('common.editar') }}
+      </button>
+    </mat-dialog-actions>
+  }
 }

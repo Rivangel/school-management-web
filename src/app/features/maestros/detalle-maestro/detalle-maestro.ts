@@ -1,12 +1,10 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { HttpErrorResponse } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatDialog } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { Router, RouterLink } from '@angular/router';
 
 import { t } from '../../../core/i18n/traducir';
 import { Maestro } from '../../../core/models';
@@ -16,20 +14,32 @@ import { Avisos } from '../../../core/services/avisos';
 import { MaestroService } from '../../../core/services/maestro-service';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
 import { Confirmar, DatosConfirmacion } from '../../../shared/components/confirmar/confirmar';
-import { idDeRuta } from '../../../shared/id-de-ruta';
+
+/** Lo que trae el diálogo al abrirse: el maestro cuya ficha se enseña. */
+export interface DatosDetalleMaestro {
+  readonly id: number;
+}
 
 /**
- * Ficha de un maestro.
+ * `'editar'` es un pedido, no una confirmación: quien abrió esta ficha (el
+ * listado) es quien sabe abrir el formulario de edición.
+ */
+export type ResultadoDetalleMaestro = 'editar' | undefined;
+
+/**
+ * Ficha de un maestro, en un diálogo.
  *
- * Misma forma que la de alumnos —se borra desde aquí y no desde una fila, porque
- * decidir sobre alguien de quien sólo se ven cuatro columnas es fácil de hacer
- * mal— con una diferencia que impone la base de datos: **un maestro con materias
- * a su cargo no se puede eliminar**, y ese caso lo explica esta pantalla en vez
- * de dejarlo al aviso global.
+ * Misma forma que la de alumnos —se borra desde aquí y no desde una fila,
+ * porque decidir sobre alguien de quien sólo se ven cuatro columnas es fácil
+ * de hacer mal— con una diferencia que impone la base de datos: **un maestro
+ * con materias a su cargo no se puede eliminar**, y ese caso lo explica esta
+ * pantalla en vez de dejarlo al aviso global.
+ *
+ * El listado que la abre recarga siempre al cerrarse, haya cambiado algo o no.
  */
 @Component({
   selector: 'app-detalle-maestro',
-  imports: [MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule, RouterLink],
+  imports: [MatButtonModule, MatDialogModule, MatIconModule, MatProgressBarModule],
   templateUrl: './detalle-maestro.html',
   styleUrl: './detalle-maestro.scss',
 })
@@ -38,17 +48,15 @@ export class DetalleMaestro {
   private readonly auth = inject(AuthService);
   private readonly avisos = inject(Avisos);
   private readonly dialogo = inject(MatDialog);
-  private readonly router = inject(Router);
+  private readonly datos = inject<DatosDetalleMaestro>(MAT_DIALOG_DATA);
+  protected readonly dialogoRef = inject(MatDialogRef<DetalleMaestro, ResultadoDetalleMaestro>);
 
   protected readonly t = t;
 
-  protected readonly id = idDeRuta().id;
-
-  /** `/maestros/abc`: la dirección no apunta a ninguna ficha. */
-  protected readonly idInvalido = computed(() => this.id() === undefined);
+  protected readonly id = this.datos.id;
 
   private readonly recurso = rxResource({
-    params: () => this.id(),
+    params: () => this.id,
     stream: ({ params }) => this.maestros.obtenerPorId(params),
   });
 
@@ -71,6 +79,15 @@ export class DetalleMaestro {
 
   protected reintentar(): void {
     this.recurso.reload();
+  }
+
+  protected cerrar(): void {
+    this.dialogoRef.close();
+  }
+
+  /** Pide al listado que abra la edición: cierra y se lo deja a quien la abrió. */
+  protected editar(): void {
+    this.dialogoRef.close('editar');
   }
 
   /** Pregunta antes de borrar, nombrando al maestro y su especialidad. */
@@ -100,18 +117,13 @@ export class DetalleMaestro {
       });
   }
 
-  /** Vuelve al listado tal y como estaba (`preserve` mantiene página y orden). */
-  protected volver(): void {
-    void this.router.navigate(['/maestros'], { queryParamsHandling: 'preserve' });
-  }
-
   private borrar(maestro: Maestro): void {
     this.borrando.set(true);
     this.errorAlBorrar.set(null);
     this.maestros.eliminar(maestro.id).subscribe({
       next: () => {
         this.avisos.exito(t('maestros.detalle.eliminado', { nombre: nombreCompleto(maestro) }));
-        this.volver();
+        this.dialogoRef.close();
       },
       error: (fallo: unknown) => {
         this.borrando.set(false);

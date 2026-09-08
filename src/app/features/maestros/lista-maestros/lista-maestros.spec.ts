@@ -5,8 +5,10 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { Maestro, Pagina, Rol } from '../../../core/models';
@@ -66,10 +68,6 @@ describe('ListaMaestros', () => {
     await responder(respuesta);
   }
 
-  /**
-   * Petición pendiente al listado. **Consume** la que encuentra, así que se pide
-   * una sola vez por petición y se responde con esa misma.
-   */
   function peticion(): TestRequest {
     return http.expectOne((solicitud) => solicitud.url === URL);
   }
@@ -82,13 +80,28 @@ describe('ListaMaestros', () => {
     await harness.fixture.whenStable();
   }
 
-  /**
-   * Deja avanzar la navegación y la detección de cambios **sin** esperar a la
-   * respuesta HTTP: con una petición en vuelo, `whenStable()` no vuelve.
-   */
   async function asentar(): Promise<void> {
     await new Promise((listo) => setTimeout(listo));
     harness.detectChanges();
+    TestBed.tick();
+  }
+
+  /**
+   * Espera a que se abra el diálogo pedido, que llega tras un `import()`
+   * dinámico. **Sondea** en vez de esperar un tiempo fijo: cuánto tarda el
+   * `import()` no es constante, varía con la carga de la máquina, y un tiempo
+   * fijo que alcanza en solitario se queda corto corriendo la batería entera.
+   */
+  async function asentarDialogo(): Promise<void> {
+    const limite = Date.now() + 2000;
+    while (document.querySelector('mat-dialog-container') === null) {
+      if (Date.now() > limite) {
+        throw new Error('El diálogo no llegó a abrirse a tiempo.');
+      }
+      await new Promise((listo) => setTimeout(listo, 15));
+      harness.detectChanges();
+      TestBed.tick();
+    }
   }
 
   function texto(): string {
@@ -99,17 +112,35 @@ describe('ListaMaestros', () => {
     return [...harness.fixture.nativeElement.querySelectorAll('tbody tr')];
   }
 
+  function boton(etiqueta: string, raiz: ParentNode = harness.fixture.nativeElement): HTMLButtonElement {
+    return [...raiz.querySelectorAll('button')].find((candidato) =>
+      (candidato as HTMLElement).textContent!.includes(etiqueta),
+    ) as HTMLButtonElement;
+  }
+
+  function casilla(indice: number): HTMLElement {
+    return filas()[indice].querySelectorAll('mat-checkbox input')[0] as HTMLElement;
+  }
+
+  function contenedorDeDialogo(): HTMLElement {
+    return document.querySelector('mat-dialog-container') as HTMLElement;
+  }
+
   beforeEach(() => {
     TestBed.resetTestingModule();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    const dialogo = TestBed.inject(MatDialog);
+    if (dialogo.openDialogs.length > 0) {
+      const cerradoDelTodo = firstValueFrom(dialogo.afterAllClosed);
+      dialogo.closeAll();
+      await cerradoDelTodo;
+    }
     http.verify();
   });
 
   it('pide la primera página sin imponer un orden propio', async () => {
-    // Sin `sort` manda la API: apellido y nombre ascendente. Es el orden que la
-    // tabla marca en el encabezado.
     await abrir('/maestros');
 
     const pendiente = peticion();
@@ -189,10 +220,7 @@ describe('ListaMaestros', () => {
 
     expect(texto()).toContain('La base de datos no responde');
 
-    const reintentar = [...harness.fixture.nativeElement.querySelectorAll('button')].find((boton) =>
-      (boton as HTMLElement).textContent!.includes('Reintentar'),
-    ) as HTMLButtonElement;
-    reintentar.click();
+    boton('Reintentar').click();
     await asentar();
 
     await responder(pagina([maestro(1, 'Ruiz')]));
@@ -201,8 +229,6 @@ describe('ListaMaestros', () => {
 
   it('una página que se quedó fuera de rango cae en la última con datos', async () => {
     await abrir('/maestros?page=9');
-    // Sin `responder`: la corrección encadena otra petición, y esperar la
-    // estabilidad con una en vuelo cuelga el test hasta que expira.
     peticion().flush({ ...pagina([], 40, 9), totalPages: 2 });
     await asentar();
 
@@ -213,54 +239,114 @@ describe('ListaMaestros', () => {
   });
 
   it('ignora un orden por una propiedad que no es columna', async () => {
-    // Las columnas de esta tabla no son las de alumnos: `grupo` existe allá y
-    // aquí no, y mandarlo haría que la API respondiera 400.
-    await abrir('/maestros?sort=grupo,asc');
+    await abrir('/maestros?sort=seleccion,asc');
 
     const pendiente = peticion();
     expect(pendiente.request.params.has('sort')).toBe(false);
     await responder(pagina([maestro(1, 'Ruiz')]), pendiente);
   });
 
-  it('ofrece el alta al ADMIN, arrastrando la página del listado', async () => {
-    await montar('/maestros?page=2&sort=especialidad,desc');
-
-    const alta = harness.fixture.nativeElement.querySelector(
-      'a[href^="/maestros/nuevo"]',
-    ) as HTMLAnchorElement;
-
-    expect(alta.getAttribute('href')).toBe('/maestros/nuevo?page=2&sort=especialidad,desc');
-  });
-
-  it('el MAESTRO no ve las acciones de escritura, pero sí la ficha', async () => {
-    // Ocultar no protege —la API le devuelve 403 igual—, pero un botón que sólo
-    // lleva a "acceso denegado" sobra.
+  it('el MAESTRO no ve las acciones de escritura ni la columna de selección', async () => {
     await montar('/maestros', pagina([maestro(1, 'Ruiz')]), 'MAESTRO');
 
     expect(texto()).not.toContain('Nuevo maestro');
-    expect(harness.fixture.nativeElement.querySelector('a[aria-label^="Editar"]')).toBeNull();
-    expect(
-      harness.fixture.nativeElement.querySelector('a[aria-label^="Ver la ficha"]'),
-    ).not.toBeNull();
+    expect(harness.fixture.nativeElement.querySelector('mat-checkbox')).toBeNull();
   });
 
-  it('cada fila abre su ficha arrastrando la página del listado', async () => {
-    await montar('/maestros?page=2', pagina([maestro(1, 'Ruiz')], 60, 2));
+  it('el ADMIN abre el alta en un diálogo y recarga el listado al guardar', async () => {
+    await montar();
 
-    const ficha = harness.fixture.nativeElement.querySelector(
-      'a[aria-label^="Ver la ficha"]',
-    ) as HTMLAnchorElement;
+    boton('Nuevo maestro').click();
+    await asentarDialogo();
 
-    expect(ficha.getAttribute('href')).toBe('/maestros/1?page=2');
+    const dialogo = contenedorDeDialogo();
+    expect(dialogo.textContent).toContain('Nuevo maestro');
+    const cerrado = firstValueFrom(TestBed.inject(MatDialog).openDialogs.at(-1)!.afterClosed());
+
+    for (const [campo, valor] of Object.entries({
+      nombre: 'Elena',
+      apellido: 'Cabrera',
+      especialidad: 'Física',
+      email: 'elena@escuela.com',
+    })) {
+      const input = dialogo.querySelector(`input[formControlName="${campo}"]`) as HTMLInputElement;
+      input.value = valor;
+      input.dispatchEvent(new Event('input'));
+    }
+
+    dialogo.querySelector('form')!.dispatchEvent(new Event('submit'));
+    await asentar();
+
+    http
+      .expectOne(URL)
+      .flush({ ...maestro(2, 'Cabrera'), nombre: 'Elena' }, { status: 201, statusText: 'Created' });
+    await cerrado;
+    await asentar();
+
+    await responder(pagina([maestro(1, 'Ruiz'), maestro(2, 'Cabrera')]));
+    expect(filas()).toHaveLength(2);
   });
 
-  it('ignora un orden por la columna de acciones', async () => {
-    // La columna existe en la tabla pero no en la entidad: mandarla como `sort`
-    // haría que la API respondiera 400 y la pantalla enseñara un error.
-    await abrir('/maestros?sort=acciones,asc');
+  it('marcar una fila activa "editar" y "eliminar"; marcar otra más desactiva "editar"', async () => {
+    await montar('/maestros', pagina([maestro(1, 'Ruiz'), maestro(2, 'Fuentes')]));
 
-    const pendiente = peticion();
-    expect(pendiente.request.params.has('sort')).toBe(false);
-    await responder(pagina([maestro(1, 'Ruiz')]), pendiente);
+    expect(texto()).not.toContain('1 seleccionado');
+
+    (casilla(0) as HTMLInputElement).click();
+    await asentar();
+
+    expect(texto()).toContain('1 seleccionado');
+    expect(boton('Editar').disabled).toBe(false);
+    expect(boton('Eliminar').disabled).toBe(false);
+
+    (casilla(1) as HTMLInputElement).click();
+    await asentar();
+
+    expect(texto()).toContain('2 seleccionados');
+    expect(boton('Editar').disabled).toBe(true);
+    expect(boton('Eliminar').disabled).toBe(false);
+  });
+
+  it('eliminar una fila marcada pregunta, borra y recarga', async () => {
+    await montar('/maestros', pagina([maestro(1, 'Ruiz')]));
+
+    (casilla(0) as HTMLInputElement).click();
+    await asentar();
+    boton('Eliminar').click();
+    await asentar();
+
+    const confirmarCerrado = firstValueFrom(TestBed.inject(MatDialog).openDialogs.at(-1)!.afterClosed());
+    const confirmar = boton('Eliminar', document.querySelector('mat-dialog-container')!);
+    confirmar.click();
+    await confirmarCerrado;
+    await asentar();
+
+    const borrado = http.expectOne(`${URL}/1`);
+    expect(borrado.request.method).toBe('DELETE');
+    borrado.flush(null, { status: 204, statusText: 'No Content' });
+    await asentar();
+
+    await responder(pagina([]));
+    expect(texto()).not.toContain('seleccionad');
+  });
+
+  it('toda la fila abre la ficha del maestro', async () => {
+    await montar();
+
+    filas()[0].dispatchEvent(new Event('click', { bubbles: true }));
+    await asentarDialogo();
+    http.expectOne(`${URL}/1`).flush(maestro(1, 'Ruiz'));
+    await asentar();
+
+    const dialogo = contenedorDeDialogo();
+    expect(dialogo.textContent).toContain('Ruiz');
+    const fichaCerrada = firstValueFrom(TestBed.inject(MatDialog).openDialogs.at(-1)!.afterClosed());
+
+    const cerrar = dialogo.querySelector('button[aria-label="Cerrar"]') as HTMLButtonElement;
+    cerrar.click();
+    await fichaCerrada;
+    await asentar();
+
+    await responder(pagina([maestro(1, 'Ruiz')]));
   });
 });

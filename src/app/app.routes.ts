@@ -20,12 +20,6 @@ import {
  */
 const tituloDe = (clave: string) => () => `${t(clave)} · ${t('shell.marca')}`;
 
-/** Igual que el de alumnos: el modo lo decide el `id` de la ruta. */
-const formularioDeMaestro = () =>
-  import('./features/maestros/formulario-maestro/formulario-maestro').then(
-    (m) => m.FormularioMaestro,
-  );
-
 /** Igual que los otros dos: el modo lo decide el `id` de la ruta. */
 const formularioDeMateria = () =>
   import('./features/materias/formulario-materia/formulario-materia').then(
@@ -77,32 +71,6 @@ export const routes: Routes = [
         canActivate: [rolGuard(...rolesDe('/maestros'))],
         loadComponent: () =>
           import('./features/maestros/lista-maestros/lista-maestros').then((m) => m.ListaMaestros),
-      },
-      {
-        // Las escrituras son del ADMIN, aunque el listado lo vea también el
-        // MAESTRO: `ROLES_ESCRITURA` es la lista que leen a la vez el botón que
-        // trae aquí y este guard.
-        path: 'maestros/nuevo',
-        title: tituloDe('maestros.formulario.tituloNuevo'),
-        canActivate: [rolGuard(...ROLES_ESCRITURA)],
-        loadComponent: formularioDeMaestro,
-      },
-      {
-        // Después de `maestros/nuevo`: el router prueba en orden y `:id` se
-        // tragaría "nuevo" como si fuera un identificador.
-        path: 'maestros/:id',
-        title: tituloDe('maestros.detalle.titulo'),
-        canActivate: [rolGuard(...rolesDe('/maestros'))],
-        loadComponent: () =>
-          import('./features/maestros/detalle-maestro/detalle-maestro').then(
-            (m) => m.DetalleMaestro,
-          ),
-      },
-      {
-        path: 'maestros/:id/editar',
-        title: tituloDe('maestros.formulario.tituloEditar'),
-        canActivate: [rolGuard(...ROLES_ESCRITURA)],
-        loadComponent: formularioDeMaestro,
       },
       {
         path: 'materias',

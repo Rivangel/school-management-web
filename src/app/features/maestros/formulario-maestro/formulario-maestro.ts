@@ -2,12 +2,11 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { Router } from '@angular/router';
 
 import { t } from '../../../core/i18n/traducir';
 import { MaestroRequest } from '../../../core/models';
@@ -16,7 +15,11 @@ import { PistaDeCampo, aplicarErroresDeApi } from '../../../core/services/errore
 import { MaestroService } from '../../../core/services/maestro-service';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
 import { textoRequerido } from '../../../core/validadores';
-import { idDeRuta } from '../../../shared/id-de-ruta';
+
+/** Lo que trae el diálogo al abrirse: sin `id` es un alta. */
+export interface DatosFormularioMaestro {
+  readonly id?: number;
+}
 
 /**
  * Cómo repartir los 400 de negocio, que llegan sin desglose por campo.
@@ -28,19 +31,18 @@ import { idDeRuta } from '../../../shared/id-de-ruta';
 const DUPLICADOS: readonly PistaDeCampo[] = [{ patron: /email|correo/i, campo: 'email' }];
 
 /**
- * Alta y edición de un maestro.
+ * Alta y edición de un maestro, en un diálogo.
  *
- * Repite el patrón del formulario de alumnos: es una **ruta** (`/maestros/nuevo`
- * y `/maestros/7/editar`) y no un diálogo, el mismo componente sirve para los dos
- * modos, y los enlaces arrastran el `?page=&size=&sort=` del listado para volver
- * a la página desde la que se entró.
+ * Repite el patrón del formulario de alumnos: el mismo componente sirve para
+ * los dos modos, y cierra con `true` si algo cambió, para que el listado que
+ * lo abrió sepa que tiene que recargar.
  */
 @Component({
   selector: 'app-formulario-maestro',
   imports: [
     ReactiveFormsModule,
     MatButtonModule,
-    MatCardModule,
+    MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -51,8 +53,9 @@ const DUPLICADOS: readonly PistaDeCampo[] = [{ patron: /email|correo/i, campo: '
 })
 export class FormularioMaestro {
   private readonly maestros = inject(MaestroService);
-  private readonly router = inject(Router);
   private readonly avisos = inject(Avisos);
+  private readonly datos = inject<DatosFormularioMaestro>(MAT_DIALOG_DATA);
+  private readonly dialogo = inject(MatDialogRef<FormularioMaestro, boolean>);
 
   protected readonly t = t;
 
@@ -64,19 +67,13 @@ export class FormularioMaestro {
     email: ['', [textoRequerido, Validators.email, Validators.maxLength(120)]],
   });
 
-  private readonly enLaRuta = idDeRuta();
-
   /** El id que se va a actualizar, o `undefined` si esto es un alta. */
-  protected readonly id = this.enLaRuta.id;
-
-  /** `/maestros/abc/editar`: hay id en la ruta y no es un número. */
-  protected readonly idInvalido = this.enLaRuta.invalido;
-
-  protected readonly editando = this.enLaRuta.presente;
+  protected readonly id = this.datos.id;
+  protected readonly editando = this.id !== undefined;
 
   /** Sin `id` los parámetros son `undefined` y el recurso ni llega a pedir nada. */
   private readonly maestro = rxResource({
-    params: () => this.id(),
+    params: () => this.id,
     stream: ({ params }) => this.maestros.obtenerPorId(params),
   });
 
@@ -111,7 +108,7 @@ export class FormularioMaestro {
       return;
     }
 
-    const id = this.id();
+    const id = this.id;
     const datos = this.valores();
     this.enviando.set(true);
     this.error.set(null);
@@ -133,7 +130,7 @@ export class FormularioMaestro {
                 apellido: maestro.apellido,
               }),
         );
-        this.volver();
+        this.dialogo.close(true);
       },
       error: (fallo: unknown) => {
         this.enviando.set(false);
@@ -153,9 +150,8 @@ export class FormularioMaestro {
     this.maestro.reload();
   }
 
-  /** `preserve` conserva el `?page=&size=&sort=` con el que se entró al listado. */
-  protected volver(): void {
-    void this.router.navigate(['/maestros'], { queryParamsHandling: 'preserve' });
+  protected cerrar(): void {
+    this.dialogo.close(false);
   }
 
   /** Lo que se envía, recortado: un campo de puros espacios no llega a viajar. */
