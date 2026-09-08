@@ -3,17 +3,17 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { Router, provideRouter } from '@angular/router';
-import { RouterTestingHarness } from '@angular/router/testing';
+import { provideRouter } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { Materia, Rol } from '../../../core/models';
 import { MI_MAESTRO, atenderMiMaestro } from '../../../core/services/testing/mi-maestro-falso';
 import { sembrarSesion } from '../../../core/services/testing/sesion-falsa';
-import { DetalleMateria } from './detalle-materia';
+import { DatosDetalleMateria, DetalleMateria, ResultadoDetalleMateria } from './detalle-materia';
 
 const URL = `${environment.apiUrl}/materias`;
+const URL_MAESTROS = `${environment.apiUrl}/maestros`;
 
 const MATERIA: Materia = {
   id: 7,
@@ -23,87 +23,115 @@ const MATERIA: Materia = {
   maestroNombre: 'Laura Gómez',
 };
 
-/** Destino de "Volver": aquí sólo interesa la URL a la que se llega. */
-@Component({ template: 'listado' })
-class ListadoFalso {}
+/** Destino de los enlaces a calificaciones/asistencia: aquí sólo interesa que se navegue. */
+@Component({ template: 'destino' })
+class DestinoFalso {}
 
 describe('DetalleMateria', () => {
   let http: HttpTestingController;
-  let harness: RouterTestingHarness;
+  let dialogo: MatDialog;
+  let cerrado: Promise<ResultadoDetalleMateria>;
 
-  async function abrir(url = '/materias/7', rol: Rol = 'ADMIN'): Promise<void> {
+  async function abrir(id = 7, rol: Rol = 'ADMIN'): Promise<void> {
     localStorage.clear();
     sembrarSesion(rol);
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
+      // `RouterLink` (enlaces a calificaciones/asistencia) necesita el
+      // inyector del router aunque el test no navegue de verdad.
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
         provideRouter([
-          { path: 'materias', component: ListadoFalso },
-          { path: 'materias/:id', component: DetalleMateria },
+          { path: 'calificaciones/materia', component: DestinoFalso },
+          { path: 'asistencia/registrar', component: DestinoFalso },
         ]),
       ],
     });
     http = TestBed.inject(HttpTestingController);
-    harness = await RouterTestingHarness.create(url);
+    dialogo = TestBed.inject(MatDialog);
+
+    const referencia = dialogo.open<DetalleMateria, DatosDetalleMateria, ResultadoDetalleMateria>(
+      DetalleMateria,
+      { data: { id } },
+    );
+    cerrado = firstValueFrom(referencia.afterClosed());
+    await asentar();
   }
 
   /** Lo de siempre: abrir la ficha y responder con la materia. */
-  async function montar(url = '/materias/7', rol: Rol = 'ADMIN'): Promise<void> {
-    await abrir(url, rol);
-    http.expectOne(`${URL}/7`).flush(MATERIA);
+  async function montar(url_id = 7, rol: Rol = 'ADMIN', materia: Materia = MATERIA): Promise<void> {
+    await abrir(url_id, rol);
+    http.expectOne(`${URL}/${url_id}`).flush(materia);
     // Un MAESTRO además pregunta quién es, para saber si la materia es suya.
     atenderMiMaestro(http);
-    await harness.fixture.whenStable();
+    await asentar();
   }
 
-  /**
-   * Deja avanzar la navegación y la detección de cambios **sin** esperar a la
-   * respuesta HTTP, que como tarea pendiente colgaría `whenStable()`.
-   */
   async function asentar(): Promise<void> {
     await new Promise((listo) => setTimeout(listo));
-    harness.detectChanges();
     TestBed.tick();
   }
 
-  function texto(): string {
-    return harness.fixture.nativeElement.textContent as string;
+  /**
+   * Espera a que se abra un diálogo **anidado**, que llega tras un `import()`
+   * dinámico. Sondea hasta que hay uno más de los que había, en vez de
+   * esperar un tiempo fijo: cuánto tarda el `import()` varía con la carga de
+   * la máquina.
+   */
+  async function asentarDialogoAnidado(): Promise<void> {
+    const habiaAntes = document.querySelectorAll('mat-dialog-container').length;
+    const limite = Date.now() + 2000;
+    while (document.querySelectorAll('mat-dialog-container').length <= habiaAntes) {
+      if (Date.now() > limite) {
+        throw new Error('El diálogo anidado no llegó a abrirse a tiempo.');
+      }
+      await new Promise((listo) => setTimeout(listo, 15));
+      TestBed.tick();
+    }
   }
 
-  function pulsar(etiqueta: string): void {
-    const boton = [...harness.fixture.nativeElement.querySelectorAll('button')].find((candidato) =>
+  function contenedor(): HTMLElement {
+    return document.querySelector('mat-dialog-container') as HTMLElement;
+  }
+
+  function texto(): string {
+    return contenedor().textContent as string;
+  }
+
+  function pulsar(etiqueta: string, raiz: ParentNode = contenedor()): void {
+    const boton = [...raiz.querySelectorAll('button')].find((candidato) =>
       (candidato as HTMLElement).textContent!.includes(etiqueta),
     ) as HTMLButtonElement;
     boton.click();
   }
 
-  /**
-   * Pulsa un botón del diálogo, que vive en un overlay fuera del fixture, y
-   * espera a que cierre de verdad: `afterClosed()` emite cuando termina la
-   * animación de salida, así que sin la espera el borrado todavía no se ha
-   * lanzado cuando el test va a buscar la petición.
-   */
-  async function pulsarEnElDialogo(etiqueta: string): Promise<void> {
-    const cerrado = firstValueFrom(TestBed.inject(MatDialog).afterAllClosed);
-    const boton = [...document.querySelectorAll('mat-dialog-actions button')].find((candidato) =>
+  async function pulsarEnElDialogoAnidado(etiqueta: string): Promise<void> {
+    const cerradoAnidado = firstValueFrom(TestBed.inject(MatDialog).openDialogs.at(-1)!.afterClosed());
+    const contenedores = [...document.querySelectorAll('mat-dialog-container')];
+    const anidado = contenedores[contenedores.length - 1] as HTMLElement;
+    const boton = [...anidado.querySelectorAll('button')].find((candidato) =>
       candidato.textContent!.includes(etiqueta),
     ) as HTMLButtonElement;
     boton.click();
-    await cerrado;
+    await cerradoAnidado;
     await asentar();
   }
 
-  /** Abre la confirmación y confirma, que es el camino al DELETE. */
   async function confirmarBorrado(): Promise<void> {
     pulsar('Eliminar');
     await asentar();
-    await pulsarEnElDialogo('Eliminar');
+    await pulsarEnElDialogoAnidado('Eliminar');
   }
 
-  afterEach(() => {
+  afterEach(async () => {
+    const d = TestBed.inject(MatDialog);
+    if (d.openDialogs.length > 0) {
+      const cerradoDelTodo = firstValueFrom(d.afterAllClosed);
+      d.closeAll();
+      await cerradoDelTodo;
+    }
     http.verify();
   });
 
@@ -115,12 +143,6 @@ describe('DetalleMateria', () => {
     expect(texto()).toContain('Laura Gómez');
   });
 
-  it('avisa cuando la dirección no apunta a una materia', async () => {
-    await abrir('/materias/abc');
-
-    expect(texto()).toContain('La dirección no apunta a ninguna materia');
-  });
-
   it('explica el fallo de carga y deja reintentar', async () => {
     await abrir();
     http
@@ -129,14 +151,14 @@ describe('DetalleMateria', () => {
         { message: 'Materia con id 7 no encontrado' },
         { status: 404, statusText: 'Not Found' },
       );
-    await harness.fixture.whenStable();
+    await asentar();
 
     expect(texto()).toContain('Materia con id 7 no encontrado');
 
     pulsar('Reintentar');
     await asentar();
     http.expectOne(`${URL}/7`).flush(MATERIA);
-    await harness.fixture.whenStable();
+    await asentar();
 
     expect(texto()).toContain('Bases de Datos');
   });
@@ -156,14 +178,14 @@ describe('DetalleMateria', () => {
     pulsar('Eliminar');
     await asentar();
 
-    await pulsarEnElDialogo('Cancelar');
+    await pulsarEnElDialogoAnidado('Cancelar');
 
     http.expectNone(() => true);
-    expect(TestBed.inject(Router).url).toBe('/materias/7');
+    expect(await Promise.race([cerrado, Promise.resolve('sigue-abierta')])).toBe('sigue-abierta');
   });
 
-  it('confirmar borra y vuelve al listado, con el filtro y la página puestos', async () => {
-    await montar('/materias/7?page=2&maestroId=2');
+  it('confirmar borra y cierra la ficha avisando al listado de que recargue', async () => {
+    await montar();
     await confirmarBorrado();
 
     const peticion = http.expectOne(`${URL}/7`);
@@ -171,7 +193,7 @@ describe('DetalleMateria', () => {
     peticion.flush(null, { status: 204, statusText: 'No Content' });
     await asentar();
 
-    expect(TestBed.inject(Router).url).toBe('/materias?page=2&maestroId=2');
+    expect(await cerrado).toBeUndefined();
   });
 
   it('el 409 nombra las dos causas posibles, sin adivinar una', async () => {
@@ -194,7 +216,7 @@ describe('DetalleMateria', () => {
 
     expect(texto()).toContain('tiene calificaciones o asistencias registradas');
     expect(texto()).not.toContain('restricción de datos');
-    expect(TestBed.inject(Router).url).toBe('/materias/7');
+    expect(await Promise.race([cerrado, Promise.resolve('sigue-abierta')])).toBe('sigue-abierta');
   });
 
   it('el fallo se enseña en la ficha, no como aviso flotante', async () => {
@@ -203,7 +225,7 @@ describe('DetalleMateria', () => {
     http.expectOne(`${URL}/7`).flush(null, { status: 409, statusText: 'Conflict' });
     await asentar();
 
-    const enLaFicha = harness.fixture.nativeElement.querySelector('.ficha__error') as HTMLElement;
+    const enLaFicha = contenedor().querySelector('.ficha__error') as HTMLElement;
     expect(enLaFicha.textContent).toContain('tiene calificaciones o asistencias');
     expect(texto()).toContain('Bases de Datos');
   });
@@ -220,85 +242,94 @@ describe('DetalleMateria', () => {
   });
 
   it('el ALUMNO consulta la ficha pero no puede tocarla', async () => {
-    await montar('/materias/7', 'ALUMNO');
+    await montar(7, 'ALUMNO');
 
     expect(texto()).toContain('Bases de Datos');
     expect(texto()).not.toContain('Eliminar');
-    expect(harness.fixture.nativeElement.querySelector('a[href^="/materias/7/editar"]')).toBeNull();
   });
 
-  it('el maestro es enlace para quien puede abrir su sección', async () => {
-    await montar('/materias/7', 'MAESTRO');
+  it('el maestro es un botón que abre su ficha, para quien puede abrir esa sección', async () => {
+    await montar(7, 'MAESTRO');
 
-    const enlace = harness.fixture.nativeElement.querySelector('a[href="/maestros/2"]');
-    expect(enlace).not.toBeNull();
-  });
-
-  it('para el ALUMNO el maestro es texto, no un viaje a "acceso denegado"', async () => {
-    // La API le cierra la sección de maestros, así que el enlace sólo lo
-    // llevaría al rechazo del guard.
-    await montar('/materias/7', 'ALUMNO');
-
-    expect(harness.fixture.nativeElement.querySelector('a[href="/maestros/2"]')).toBeNull();
-    expect(texto()).toContain('Laura Gómez');
-  });
-
-  it('volver conserva la página del listado', async () => {
-    await montar('/materias/7?page=3&size=50');
-    pulsar('Volver al listado');
+    pulsar('Laura Gómez');
+    await asentarDialogoAnidado();
+    http.expectOne(`${URL_MAESTROS}/2`).flush({
+      id: 2,
+      nombre: 'Laura',
+      apellido: 'Gómez',
+      especialidad: 'Bases de Datos',
+      email: 'laura@escuela.com',
+    });
     await asentar();
 
-    expect(TestBed.inject(Router).url).toBe('/materias?page=3&size=50');
+    const contenedores = [...document.querySelectorAll('mat-dialog-container')];
+    expect(contenedores).toHaveLength(2);
+    expect((contenedores[1] as HTMLElement).textContent).toContain('Laura Gómez');
   });
 
-  it('enlaza a las calificaciones de la materia', async () => {
+  it('para el ALUMNO el maestro es texto, no un botón: la sección le está cerrada', async () => {
+    await montar(7, 'ALUMNO');
+
+    expect(texto()).toContain('Laura Gómez');
+    expect(contenedor().querySelector('.ficha__enlace-en-linea')).toBeNull();
+  });
+
+  it('enlaza a las calificaciones de la materia y cierra la ficha al ir', async () => {
     await montar();
 
-    const enlace = harness.fixture.nativeElement.querySelector(
+    const enlace = contenedor().querySelector(
       'a[href^="/calificaciones/materia"]',
     ) as HTMLAnchorElement;
     expect(enlace.getAttribute('href')).toContain('materiaId=7');
+
+    enlace.click();
+    await asentar();
+    expect(await cerrado).toBeUndefined();
   });
 
   it('el ALUMNO no ve ese enlace: son las notas de su grupo', async () => {
-    await montar('/materias/7', 'ALUMNO');
+    await montar(7, 'ALUMNO');
 
-    expect(harness.fixture.nativeElement.querySelector('a[href^="/calificaciones"]')).toBeNull();
+    expect(contenedor().querySelector('a[href^="/calificaciones"]')).toBeNull();
   });
 
   it('enlaza a pasar lista de la materia', async () => {
     await montar();
 
-    const enlace = harness.fixture.nativeElement.querySelector(
+    const enlace = contenedor().querySelector(
       'a[href^="/asistencia/registrar"]',
     ) as HTMLAnchorElement;
     expect(enlace.getAttribute('href')).toContain('materiaId=7');
   });
 
+  it('editar cierra la ficha pidiendo el formulario, sin abrirlo ella misma', async () => {
+    await montar();
+    pulsar('Editar');
+    await asentar();
+
+    expect(await cerrado).toBe('editar');
+  });
+
   describe('la regla de propiedad de la materia', () => {
     /** Como `montar`, pero eligiendo de quién es la materia. */
     async function montarMateriaDe(maestroId: number, rol: Rol = 'MAESTRO'): Promise<void> {
-      await abrir('/materias/7', rol);
+      await abrir(7, rol);
       http.expectOne(`${URL}/7`).flush({ ...MATERIA, maestroId });
       atenderMiMaestro(http);
-      await harness.fixture.whenStable();
+      await asentar();
     }
 
     it('el MAESTRO puede pasar lista en la materia que imparte', async () => {
       await montarMateriaDe(MI_MAESTRO.id);
 
-      expect(
-        harness.fixture.nativeElement.querySelector('a[href^="/asistencia/registrar"]'),
-      ).not.toBeNull();
+      expect(contenedor().querySelector('a[href^="/asistencia/registrar"]')).not.toBeNull();
       expect(texto()).toContain('Impartes esta materia');
     });
 
     it('en la de otro maestro no: la API responde 403 y el botón sería un error', async () => {
       await montarMateriaDe(MI_MAESTRO.id + 1);
 
-      expect(
-        harness.fixture.nativeElement.querySelector('a[href^="/asistencia/registrar"]'),
-      ).toBeNull();
+      expect(contenedor().querySelector('a[href^="/asistencia/registrar"]')).toBeNull();
     });
 
     it('y se dice por qué, para que la ausencia no parezca una avería', async () => {
@@ -310,29 +341,25 @@ describe('DetalleMateria', () => {
     it('sigue pudiendo consultar sus calificaciones: leer sí lo deja la API', async () => {
       await montarMateriaDe(MI_MAESTRO.id + 1);
 
-      expect(
-        harness.fixture.nativeElement.querySelector('a[href^="/calificaciones/materia"]'),
-      ).not.toBeNull();
+      expect(contenedor().querySelector('a[href^="/calificaciones/materia"]')).not.toBeNull();
     });
 
     it('al ADMIN no se le pregunta quién es y pasa lista en cualquiera', async () => {
-      await abrir('/materias/7', 'ADMIN');
+      await abrir(7, 'ADMIN');
       http.expectOne(`${URL}/7`).flush({ ...MATERIA, maestroId: 99 });
       const preguntoQuienEs = atenderMiMaestro(http);
-      await harness.fixture.whenStable();
+      await asentar();
 
       expect(preguntoQuienEs).toBe(false);
-      expect(
-        harness.fixture.nativeElement.querySelector('a[href^="/asistencia/registrar"]'),
-      ).not.toBeNull();
+      expect(contenedor().querySelector('a[href^="/asistencia/registrar"]')).not.toBeNull();
       expect(texto()).not.toContain('la imparte otro maestro');
     });
 
     it('al ALUMNO no se le explica una regla que no es la suya', async () => {
-      await abrir('/materias/7', 'ALUMNO');
+      await abrir(7, 'ALUMNO');
       http.expectOne(`${URL}/7`).flush({ ...MATERIA, maestroId: 99 });
       atenderMiMaestro(http);
-      await harness.fixture.whenStable();
+      await asentar();
 
       expect(texto()).not.toContain('la imparte otro maestro');
       expect(texto()).not.toContain('Impartes esta materia');

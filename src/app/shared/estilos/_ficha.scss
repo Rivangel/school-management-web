@@ -70,6 +70,17 @@
   margin: 1.5rem 0 0;
 }
 
+// El nombre del maestro dentro de la ficha de una materia: se ve como el
+// enlace de siempre, sin la caja ni el relleno de un botón de Material.
+.ficha__enlace-en-linea {
+  min-width: 0;
+  padding: 0;
+  color: var(--mat-sys-primary);
+  font: inherit;
+  text-decoration: underline;
+  vertical-align: baseline;
+}
+
 .ficha__eliminar {
   --mat-button-text-label-text-color: var(--mat-sys-error);
   --mat-icon-color: var(--mat-sys-error);

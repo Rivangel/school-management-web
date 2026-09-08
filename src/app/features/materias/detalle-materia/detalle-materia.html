@@ -1,130 +1,128 @@
-<header class="ficha__cabecera">
-  <h1>{{ t('materias.detalle.titulo') }}</h1>
-  <button mat-stroked-button type="button" (click)="volver()">
-    <mat-icon>arrow_back</mat-icon>
-    {{ t('common.volverAlListado') }}
+<div class="dialogo__cabecera">
+  <h2 mat-dialog-title>{{ t('materias.detalle.titulo') }}</h2>
+  <button mat-icon-button type="button" (click)="cerrar()" [attr.aria-label]="t('common.cerrar')">
+    <mat-icon>close</mat-icon>
   </button>
-</header>
+</div>
 
-@if (idInvalido()) {
-  <div class="ficha__aviso" role="alert">
-    <mat-icon>link_off</mat-icon>
-    <p>{{ t('materias.detalle.direccionInvalida') }}</p>
-  </div>
-} @else if (error(); as mensaje) {
-  <div class="ficha__aviso" role="alert">
-    <mat-icon>error_outline</mat-icon>
-    <p>{{ mensaje }}</p>
-    <button mat-flat-button type="button" (click)="reintentar()">{{ t('common.reintentar') }}</button>
-  </div>
-} @else {
-  <mat-card appearance="outlined" class="ficha__tarjeta">
-    <!-- Altura fija para que la tarjeta no salte al aparecer la barra. -->
-    <div class="ficha__barra">
-      @if (cargando() || borrando()) {
-        <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('materias.detalle.cargandoFicha')" />
-      }
+<!-- Altura fija para que el diálogo no salte al aparecer la barra. -->
+<div class="ficha__barra">
+  @if (cargando() || borrando()) {
+    <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('materias.detalle.cargandoFicha')" />
+  }
+</div>
+
+@if (error(); as mensaje) {
+  <mat-dialog-content>
+    <div class="ficha__aviso" role="alert">
+      <mat-icon>error_outline</mat-icon>
+      <p>{{ mensaje }}</p>
     </div>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-flat-button type="button" (click)="reintentar()">{{ t('common.reintentar') }}</button>
+  </mat-dialog-actions>
+} @else if (materia(); as materia) {
+  <mat-dialog-content>
+    <h3>{{ materia.nombre }}</h3>
+    <p>{{ materia.maestroNombre }}</p>
 
-    @if (materia(); as materia) {
-      <mat-card-header>
-        <mat-card-title>{{ materia.nombre }}</mat-card-title>
-        <mat-card-subtitle>{{ materia.maestroNombre }}</mat-card-subtitle>
-      </mat-card-header>
+    <dl class="ficha__datos">
+      <dt>{{ t('materias.detalle.nombre') }}</dt>
+      <dd>{{ materia.nombre }}</dd>
 
-      <mat-card-content>
-        <dl class="ficha__datos">
-          <dt>{{ t('materias.detalle.nombre') }}</dt>
-          <dd>{{ materia.nombre }}</dd>
+      <dt>{{ t('materias.detalle.creditos') }}</dt>
+      <dd>{{ materia.creditos }}</dd>
 
-          <dt>{{ t('materias.detalle.creditos') }}</dt>
-          <dd>{{ materia.creditos }}</dd>
-
-          <dt>{{ t('materias.detalle.maestro') }}</dt>
-          <dd>
-            <!-- Enlace sólo para quien puede abrir la sección de maestros: al
-                 ALUMNO lo llevaría a "acceso denegado". -->
-            @if (puedeVerAlMaestro()) {
-              <a [routerLink]="['/maestros', materia.maestroId]">{{ materia.maestroNombre }}</a>
-            } @else {
-              {{ materia.maestroNombre }}
-            }
-          </dd>
-        </dl>
-
-        @if (puedeVerCalificaciones()) {
-          <!-- La consulta por materia toma la materia de la URL, así que desde
-               aquí es un enlace y no una pantalla nueva. -->
-          <p class="ficha__enlaces">
-            <a
-              mat-stroked-button
-              [routerLink]="['/calificaciones/materia']"
-              [queryParams]="{ materiaId: materia.id }"
-            >
-              <mat-icon>grade</mat-icon>
-              {{ t('materias.detalle.verCalificaciones') }}
-            </a>
-            @if (puedePasarLista()) {
-              <a
-                mat-stroked-button
-                [routerLink]="['/asistencia/registrar']"
-                [queryParams]="{ materiaId: materia.id }"
-              >
-                <mat-icon>event_available</mat-icon>
-                {{ t('materias.detalle.pasarLista') }}
-              </a>
-            }
-          </p>
-
-          <!-- Por qué el botón de arriba está o no está. Un maestro que ve
-               "Pasar lista" en unas materias y no en otras necesita saber que es
-               la regla y no una avería. -->
-          @if (esMiMateria()) {
-            <p class="ficha__nota ficha__nota--propia">
-              <mat-icon>check_circle</mat-icon>
-              <span>{{ t('materias.detalle.impartesEstaMateria') }}</span>
-            </p>
-          } @else if (esMaestro()) {
-            <p class="ficha__nota">
-              <mat-icon>info_outline</mat-icon>
-              <span>{{ t('materias.detalle.materiaAjena') }}</span>
-            </p>
-          }
-        }
-
-        <!-- El borrado de una materia falla por razones concretas y frecuentes
-             (tiene calificaciones o asistencias), así que se explica aquí y no
-             en un aviso flotante que desaparece antes de poder hacer nada. -->
-        @if (errorAlBorrar(); as mensaje) {
-          <p class="ficha__error" role="alert">
-            <mat-icon>error_outline</mat-icon>
-            <span>{{ mensaje }}</span>
-          </p>
-        }
-      </mat-card-content>
-
-      @if (puedeEditar()) {
-        <mat-card-actions align="end">
+      <dt>{{ t('materias.detalle.maestro') }}</dt>
+      <dd>
+        <!-- Abre la ficha del maestro encima de ésta: sólo para quien puede
+             abrir la sección de maestros, al ALUMNO le llevaría a "acceso
+             denegado". -->
+        @if (puedeVerAlMaestro()) {
           <button
             mat-button
             type="button"
-            class="ficha__eliminar"
-            [disabled]="borrando()"
-            (click)="eliminar()"
+            class="ficha__enlace-en-linea"
+            (click)="verAlMaestro(materia.maestroId)"
           >
-            <mat-icon>delete</mat-icon>
-            {{ t('common.eliminar') }}
+            {{ materia.maestroNombre }}
           </button>
+        } @else {
+          {{ materia.maestroNombre }}
+        }
+      </dd>
+    </dl>
+
+    @if (puedeVerCalificaciones()) {
+      <!-- La consulta por materia toma la materia de la URL, así que cierra
+           este diálogo y navega, en vez de abrir una pantalla nueva encima. -->
+      <p class="ficha__enlaces">
+        <a
+          mat-stroked-button
+          [routerLink]="['/calificaciones/materia']"
+          [queryParams]="{ materiaId: materia.id }"
+          (click)="cerrar()"
+        >
+          <mat-icon>grade</mat-icon>
+          {{ t('materias.detalle.verCalificaciones') }}
+        </a>
+        @if (puedePasarLista()) {
           <a
-            mat-flat-button
-            [routerLink]="['/materias', materia.id, 'editar']"
-            queryParamsHandling="preserve"
+            mat-stroked-button
+            [routerLink]="['/asistencia/registrar']"
+            [queryParams]="{ materiaId: materia.id }"
+            (click)="cerrar()"
           >
-            <mat-icon>edit</mat-icon>
-            {{ t('common.editar') }}
+            <mat-icon>event_available</mat-icon>
+            {{ t('materias.detalle.pasarLista') }}
           </a>
-        </mat-card-actions>
+        }
+      </p>
+
+      <!-- Por qué el botón de arriba está o no está. Un maestro que ve
+           "Pasar lista" en unas materias y no en otras necesita saber que es
+           la regla y no una avería. -->
+      @if (esMiMateria()) {
+        <p class="ficha__nota ficha__nota--propia">
+          <mat-icon>check_circle</mat-icon>
+          <span>{{ t('materias.detalle.impartesEstaMateria') }}</span>
+        </p>
+      } @else if (esMaestro()) {
+        <p class="ficha__nota">
+          <mat-icon>info_outline</mat-icon>
+          <span>{{ t('materias.detalle.materiaAjena') }}</span>
+        </p>
       }
     }
-  </mat-card>
+
+    <!-- El borrado de una materia falla por razones concretas y frecuentes
+         (tiene calificaciones o asistencias), así que se explica aquí y no
+         en un aviso flotante que desaparece antes de poder hacer nada. -->
+    @if (errorAlBorrar(); as mensaje) {
+      <p class="ficha__error" role="alert">
+        <mat-icon>error_outline</mat-icon>
+        <span>{{ mensaje }}</span>
+      </p>
+    }
+  </mat-dialog-content>
+
+  @if (puedeEditar()) {
+    <mat-dialog-actions align="end">
+      <button
+        mat-button
+        type="button"
+        class="ficha__eliminar"
+        [disabled]="borrando()"
+        (click)="eliminar()"
+      >
+        <mat-icon>delete</mat-icon>
+        {{ t('common.eliminar') }}
+      </button>
+      <button mat-flat-button type="button" (click)="editar()">
+        <mat-icon>edit</mat-icon>
+        {{ t('common.editar') }}
+      </button>
+    </mat-dialog-actions>
+  }
 }

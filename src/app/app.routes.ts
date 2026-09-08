@@ -4,12 +4,7 @@ import { authGuard } from './core/guards/auth-guard';
 import { invitadoGuard } from './core/guards/invitado-guard';
 import { rolGuard } from './core/guards/rol-guard';
 import { t } from './core/i18n/traducir';
-import {
-  ROLES_ESCRITURA,
-  ROLES_NOTAS_DE_MATERIA,
-  ROLES_REGISTRO,
-  rolesDe,
-} from './core/navegacion';
+import { ROLES_NOTAS_DE_MATERIA, ROLES_REGISTRO, rolesDe } from './core/navegacion';
 
 /**
  * El título de la pestaña, en el idioma activo **al navegar**.
@@ -19,12 +14,6 @@ import {
  * quedaría fija en el idioma que estuviera activo entonces.
  */
 const tituloDe = (clave: string) => () => `${t(clave)} · ${t('shell.marca')}`;
-
-/** Igual que los otros dos: el modo lo decide el `id` de la ruta. */
-const formularioDeMateria = () =>
-  import('./features/materias/formulario-materia/formulario-materia').then(
-    (m) => m.FormularioMateria,
-  );
 
 export const routes: Routes = [
   {
@@ -78,35 +67,6 @@ export const routes: Routes = [
         canActivate: [rolGuard(...rolesDe('/materias'))],
         loadComponent: () =>
           import('./features/materias/lista-materias/lista-materias').then((m) => m.ListaMaterias),
-      },
-      {
-        // El listado de materias lo ve todo el mundo, incluido el ALUMNO, pero
-        // las escrituras siguen siendo del ADMIN: `ROLES_ESCRITURA` otra vez.
-        //
-        // La ruta es `nueva` y no `nuevo` porque la materia es femenina, y por
-        // lo mismo que en las otras dos secciones va **antes** que `:id`: el
-        // router prueba en orden y se la tragaría como un identificador.
-        path: 'materias/nueva',
-        title: tituloDe('materias.formulario.tituloNuevo'),
-        canActivate: [rolGuard(...ROLES_ESCRITURA)],
-        loadComponent: formularioDeMateria,
-      },
-      {
-        // Después de `materias/nueva`, por lo mismo de siempre: el router prueba
-        // en orden y `:id` se la tragaría como un identificador.
-        path: 'materias/:id',
-        title: tituloDe('materias.detalle.titulo'),
-        canActivate: [rolGuard(...rolesDe('/materias'))],
-        loadComponent: () =>
-          import('./features/materias/detalle-materia/detalle-materia').then(
-            (m) => m.DetalleMateria,
-          ),
-      },
-      {
-        path: 'materias/:id/editar',
-        title: tituloDe('materias.formulario.tituloEditar'),
-        canActivate: [rolGuard(...ROLES_ESCRITURA)],
-        loadComponent: formularioDeMateria,
       },
       {
         path: 'calificaciones',

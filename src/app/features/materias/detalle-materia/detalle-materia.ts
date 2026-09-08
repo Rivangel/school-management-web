@@ -2,11 +2,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
-import { MatDialog } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 
 import { t } from '../../../core/i18n/traducir';
 import { Materia } from '../../../core/models';
@@ -22,23 +21,37 @@ import { MiMaestro } from '../../../core/services/mi-maestro';
 import { MateriaService } from '../../../core/services/materia-service';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
 import { Confirmar, DatosConfirmacion } from '../../../shared/components/confirmar/confirmar';
-import { idDeRuta } from '../../../shared/id-de-ruta';
+import type { DatosDetalleMaestro, DetalleMaestro } from '../../maestros/detalle-maestro/detalle-maestro';
+
+/** Lo que trae el diálogo al abrirse: la materia cuya ficha se enseña. */
+export interface DatosDetalleMateria {
+  readonly id: number;
+}
 
 /**
- * Ficha de una materia.
+ * `'editar'` es un pedido, no una confirmación: quien abrió esta ficha (el
+ * listado) es quien sabe abrir el formulario de edición.
+ */
+export type ResultadoDetalleMateria = 'editar' | undefined;
+
+const abrirDetalleMaestro = () =>
+  import('../../maestros/detalle-maestro/detalle-maestro').then((m) => m.DetalleMaestro);
+
+/**
+ * Ficha de una materia, en un diálogo.
  *
- * Misma forma que las otras dos, con la trampa que ya avisó el Día 17 y que aquí
- * se cumple: **una materia con calificaciones o asistencias no se puede
- * borrar**. Es el segundo dominio que la sufre, y por segunda vez la explicación
- * se queda dentro de la tarjeta en vez de salir como aviso flotante.
+ * Misma forma que las otras dos, con la trampa que ya avisó el listado:
+ * **una materia con calificaciones o asistencias no se puede borrar**. La
+ * consulta la puede todo el mundo —el ALUMNO incluido—, así que las acciones
+ * de escritura y hasta el enlace al maestro se deciden por rol.
  *
- * La consulta la puede todo el mundo —el ALUMNO incluido, que aquí ve qué
- * materias hay y quién las imparte—, así que las acciones de escritura y hasta
- * el enlace al maestro se deciden por rol.
+ * El enlace al maestro abre su ficha en un diálogo **encima** de éste, en vez
+ * de navegar: cerrar esta ficha para ver la de al lado sería perder de vista
+ * la materia que se estaba mirando.
  */
 @Component({
   selector: 'app-detalle-materia',
-  imports: [MatButtonModule, MatCardModule, MatIconModule, MatProgressBarModule, RouterLink],
+  imports: [MatButtonModule, MatDialogModule, MatIconModule, MatProgressBarModule, RouterLink],
   templateUrl: './detalle-materia.html',
   styleUrl: './detalle-materia.scss',
 })
@@ -48,17 +61,15 @@ export class DetalleMateria {
   private readonly miMaestro = inject(MiMaestro);
   private readonly avisos = inject(Avisos);
   private readonly dialogo = inject(MatDialog);
-  private readonly router = inject(Router);
+  private readonly datos = inject<DatosDetalleMateria>(MAT_DIALOG_DATA);
+  protected readonly dialogoRef = inject(MatDialogRef<DetalleMateria, ResultadoDetalleMateria>);
 
   protected readonly t = t;
 
-  protected readonly id = idDeRuta().id;
-
-  /** `/materias/abc`: la dirección no apunta a ninguna ficha. */
-  protected readonly idInvalido = computed(() => this.id() === undefined);
+  protected readonly id = this.datos.id;
 
   private readonly recurso = rxResource({
-    params: () => this.id(),
+    params: () => this.id,
     stream: ({ params }) => this.materias.obtenerPorId(params),
   });
 
@@ -74,9 +85,9 @@ export class DetalleMateria {
   /**
    * Si el nombre del maestro puede ser un enlace a su ficha.
    *
-   * El ALUMNO ve esta pantalla pero no la sección de maestros: para él el enlace
-   * sería un viaje a "acceso denegado". Lee los roles de `MENU`, que es donde
-   * los leen también el menú y el `rolGuard` de esa ruta.
+   * El ALUMNO ve esta pantalla pero no la sección de maestros: para él el
+   * enlace sería un viaje a "acceso denegado". Lee los roles de `MENU`, que es
+   * donde los leen también el menú y el guard de esa ruta.
    */
   protected readonly puedeVerAlMaestro = computed(() =>
     this.auth.tieneAlgunRol(...rolesDe('/maestros')),
@@ -120,6 +131,24 @@ export class DetalleMateria {
     this.recurso.reload();
   }
 
+  protected cerrar(): void {
+    this.dialogoRef.close();
+  }
+
+  /** Pide al listado que abra la edición: cierra y se lo deja a quien la abrió. */
+  protected editar(): void {
+    this.dialogoRef.close('editar');
+  }
+
+  /** Abre la ficha del maestro encima de ésta. No hace falta cerrar la de aquí. */
+  protected verAlMaestro(maestroId: number): void {
+    abrirDetalleMaestro().then((Detalle) => {
+      this.dialogo.open<DetalleMaestro, DatosDetalleMaestro, unknown>(Detalle, {
+        data: { id: maestroId },
+      });
+    });
+  }
+
   /** Pregunta antes de borrar, nombrando la materia y a su maestro. */
   protected eliminar(): void {
     const materia = this.materia();
@@ -149,18 +178,13 @@ export class DetalleMateria {
       });
   }
 
-  /** Vuelve al listado tal y como estaba (`preserve` mantiene página y filtro). */
-  protected volver(): void {
-    void this.router.navigate(['/materias'], { queryParamsHandling: 'preserve' });
-  }
-
   private borrar(materia: Materia): void {
     this.borrando.set(true);
     this.errorAlBorrar.set(null);
     this.materias.eliminar(materia.id).subscribe({
       next: () => {
         this.avisos.exito(t('materias.detalle.eliminada', { nombre: materia.nombre }));
-        this.volver();
+        this.dialogoRef.close();
       },
       error: (fallo: unknown) => {
         this.borrando.set(false);

@@ -5,8 +5,10 @@ import {
   provideHttpClientTesting,
 } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { MatDialog } from '@angular/material/dialog';
 import { Router, provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
+import { firstValueFrom } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import { Maestro, Materia, Pagina, Rol } from '../../../core/models';
@@ -98,13 +100,28 @@ describe('ListaMaterias', () => {
     await harness.fixture.whenStable();
   }
 
-  /**
-   * Deja avanzar la navegación y la detección de cambios **sin** esperar a la
-   * respuesta HTTP: con una petición en vuelo, `whenStable()` no vuelve.
-   */
   async function asentar(): Promise<void> {
     await new Promise((listo) => setTimeout(listo));
     harness.detectChanges();
+    TestBed.tick();
+  }
+
+  /**
+   * Espera a que se abra el diálogo pedido, que llega tras un `import()`
+   * dinámico. **Sondea** en vez de esperar un tiempo fijo: cuánto tarda el
+   * `import()` no es constante, varía con la carga de la máquina, y un tiempo
+   * fijo que alcanza en solitario se queda corto corriendo la batería entera.
+   */
+  async function asentarDialogo(): Promise<void> {
+    const limite = Date.now() + 2000;
+    while (document.querySelector('mat-dialog-container') === null) {
+      if (Date.now() > limite) {
+        throw new Error('El diálogo no llegó a abrirse a tiempo.');
+      }
+      await new Promise((listo) => setTimeout(listo, 15));
+      harness.detectChanges();
+      TestBed.tick();
+    }
   }
 
   function texto(): string {
@@ -113,6 +130,20 @@ describe('ListaMaterias', () => {
 
   function filas(): HTMLElement[] {
     return [...harness.fixture.nativeElement.querySelectorAll('tbody tr')];
+  }
+
+  function boton(etiqueta: string, raiz: ParentNode = harness.fixture.nativeElement): HTMLButtonElement {
+    return [...raiz.querySelectorAll('button')].find((candidato) =>
+      (candidato as HTMLElement).textContent!.includes(etiqueta),
+    ) as HTMLButtonElement;
+  }
+
+  function casilla(indice: number): HTMLElement {
+    return filas()[indice].querySelectorAll('mat-checkbox input')[0] as HTMLElement;
+  }
+
+  function contenedorDeDialogo(): HTMLElement {
+    return document.querySelector('mat-dialog-container') as HTMLElement;
   }
 
   /** Abre el desplegable, que se dibuja en un overlay colgado del `body`. */
@@ -129,7 +160,13 @@ describe('ListaMaterias', () => {
     await asentar();
   }
 
-  afterEach(() => {
+  afterEach(async () => {
+    const dialogo = TestBed.inject(MatDialog);
+    if (dialogo.openDialogs.length > 0) {
+      const cerradoDelTodo = firstValueFrom(dialogo.afterAllClosed);
+      dialogo.closeAll();
+      await cerradoDelTodo;
+    }
     http.verify();
   });
 
@@ -254,10 +291,7 @@ describe('ListaMaterias', () => {
 
     expect(texto()).toContain('La base de datos no responde');
 
-    const reintentar = [...harness.fixture.nativeElement.querySelectorAll('button')].find((boton) =>
-      (boton as HTMLElement).textContent!.includes('Reintentar'),
-    ) as HTMLButtonElement;
-    reintentar.click();
+    boton('Reintentar').click();
     await asentar();
 
     await responder(pagina([materia(1, 'Bases de Datos')]));
@@ -291,26 +325,17 @@ describe('ListaMaterias', () => {
     // Sin selector no habría forma de volver al listado completo.
     await montar('/materias?maestroId=2', pagina([materia(1, 'Bases de Datos')]), 'ALUMNO');
 
-    const verTodas = [...harness.fixture.nativeElement.querySelectorAll('button')].find((boton) =>
-      (boton as HTMLElement).textContent!.includes('Ver todas'),
-    ) as HTMLButtonElement;
-    verTodas.click();
+    boton('Ver todas').click();
     await asentar();
 
     expect(TestBed.inject(Router).url).not.toContain('maestroId');
     await responder(pagina([materia(1, 'Bases de Datos'), materia(2, 'Álgebra', 1)]));
   });
 
-  it('la ficha se abre con el filtro y la página puestos', async () => {
-    // `preserve` en el enlace: volver de la ficha tiene que caer en el mismo
-    // sitio del que se salió.
-    await montar('/materias?page=1&maestroId=2', pagina([materia(1, 'Bases de Datos')], 40, 1));
+  it('el ALUMNO no ve la columna de selección, sólo puede consultar', async () => {
+    await montar('/materias', pagina([materia(1, 'Bases de Datos')]), 'ALUMNO');
 
-    const ficha = harness.fixture.nativeElement.querySelector(
-      'a[href^="/materias/1?"]',
-    ) as HTMLAnchorElement;
-    expect(ficha.getAttribute('href')).toContain('maestroId=2');
-    expect(ficha.getAttribute('href')).toContain('page=1');
+    expect(harness.fixture.nativeElement.querySelector('mat-checkbox')).toBeNull();
   });
 
   it('el ADMIN tiene alta y edición; el MAESTRO sólo consulta', async () => {
@@ -318,24 +343,126 @@ describe('ListaMaterias', () => {
     // ADMIN: un botón que lleva a "acceso denegado" es peor que no enseñarlo.
     await montar();
     expect(texto()).toContain('Nueva materia');
-    expect(
-      harness.fixture.nativeElement.querySelector('a[href^="/materias/1/editar"]'),
-    ).not.toBeNull();
+    expect(harness.fixture.nativeElement.querySelector('mat-checkbox')).not.toBeNull();
 
     await montar('/materias', pagina([materia(1, 'Bases de Datos')]), 'MAESTRO');
     expect(texto()).not.toContain('Nueva materia');
-    expect(harness.fixture.nativeElement.querySelector('a[href^="/materias/1/editar"]')).toBeNull();
-    // La ficha sí, que consultarla lo puede cualquiera.
-    expect(harness.fixture.nativeElement.querySelector('a[href^="/materias/1"]')).not.toBeNull();
+    expect(harness.fixture.nativeElement.querySelector('mat-checkbox')).toBeNull();
   });
 
-  it('ignora un orden por la columna de acciones', async () => {
-    // `ORDENABLES` valida también el `sort` de la URL, y `acciones` no es una
+  it('ignora un orden por una columna que no existe', async () => {
+    // `ORDENABLES` valida también el `sort` de la URL, y `seleccion` no es una
     // propiedad de la entidad: la API lo devolvería como un 400.
-    await abrir('/materias?sort=acciones,asc');
+    await abrir('/materias?sort=seleccion,asc');
 
     const pendiente = peticion();
     expect(pendiente.request.params.has('sort')).toBe(false);
     await responder(pagina([materia(1, 'Bases de Datos')]), pendiente);
+  });
+
+  it('el ADMIN abre el alta en un diálogo y recarga el listado al guardar', async () => {
+    await montar();
+
+    boton('Nueva materia').click();
+    await asentarDialogo();
+    // El diálogo pide sus propios maestros, aparte de los del filtro.
+    http.expectOne((solicitud) => solicitud.url === URL_MAESTROS).flush(MAESTROS);
+    await asentar();
+
+    const dialogo = contenedorDeDialogo();
+    expect(dialogo.textContent).toContain('Nueva materia');
+    const cerrado = firstValueFrom(TestBed.inject(MatDialog).openDialogs.at(-1)!.afterClosed());
+
+    const nombre = dialogo.querySelector('input[formControlName="nombre"]') as HTMLInputElement;
+    nombre.value = 'Termodinámica';
+    nombre.dispatchEvent(new Event('input'));
+    const creditos = dialogo.querySelector('input[formControlName="creditos"]') as HTMLInputElement;
+    creditos.value = '6';
+    creditos.dispatchEvent(new Event('input'));
+
+    (dialogo.querySelector('mat-select') as HTMLElement).click();
+    await asentar();
+    const opcion = [...document.querySelectorAll('mat-option')].find((candidata) =>
+      candidata.textContent!.includes('Gómez'),
+    ) as HTMLElement;
+    opcion.click();
+    await asentar();
+
+    dialogo.querySelector('form')!.dispatchEvent(new Event('submit'));
+    await asentar();
+
+    http
+      .expectOne(URL)
+      .flush(materia(2, 'Termodinámica'), { status: 201, statusText: 'Created' });
+    await cerrado;
+    await asentar();
+
+    await responder(pagina([materia(1, 'Bases de Datos'), materia(2, 'Termodinámica')]));
+    expect(filas()).toHaveLength(2);
+  });
+
+  it('marcar una fila activa "editar" y "eliminar"; marcar otra más desactiva "editar"', async () => {
+    await montar('/materias', pagina([materia(1, 'Bases de Datos'), materia(2, 'Álgebra', 1)]));
+
+    expect(texto()).not.toContain('1 seleccionada');
+
+    (casilla(0) as HTMLInputElement).click();
+    await asentar();
+
+    expect(texto()).toContain('1 seleccionada');
+    expect(boton('Editar').disabled).toBe(false);
+    expect(boton('Eliminar').disabled).toBe(false);
+
+    (casilla(1) as HTMLInputElement).click();
+    await asentar();
+
+    expect(texto()).toContain('2 seleccionadas');
+    expect(boton('Editar').disabled).toBe(true);
+    expect(boton('Eliminar').disabled).toBe(false);
+  });
+
+  it('eliminar una fila marcada pregunta, borra y recarga', async () => {
+    await montar('/materias', pagina([materia(1, 'Bases de Datos')]));
+
+    (casilla(0) as HTMLInputElement).click();
+    await asentar();
+    boton('Eliminar').click();
+    await asentar();
+
+    const confirmarCerrado = firstValueFrom(TestBed.inject(MatDialog).openDialogs.at(-1)!.afterClosed());
+    const confirmar = boton('Eliminar', document.querySelector('mat-dialog-container')!);
+    confirmar.click();
+    await confirmarCerrado;
+    await asentar();
+
+    const borrado = http.expectOne(`${URL}/1`);
+    expect(borrado.request.method).toBe('DELETE');
+    borrado.flush(null, { status: 204, statusText: 'No Content' });
+    await asentar();
+
+    await responder(pagina([]));
+    expect(texto()).not.toContain('seleccionad');
+  });
+
+  it('toda la fila abre la ficha de la materia, con el filtro puesto', async () => {
+    await montar('/materias?maestroId=2', pagina([materia(1, 'Bases de Datos')]));
+
+    filas()[0].dispatchEvent(new Event('click', { bubbles: true }));
+    await asentarDialogo();
+    http.expectOne(`${URL}/1`).flush(materia(1, 'Bases de Datos'));
+    await asentar();
+
+    const dialogo = contenedorDeDialogo();
+    expect(dialogo.textContent).toContain('Bases de Datos');
+    const fichaCerrada = firstValueFrom(TestBed.inject(MatDialog).openDialogs.at(-1)!.afterClosed());
+
+    const cerrar = dialogo.querySelector('button[aria-label="Cerrar"]') as HTMLButtonElement;
+    cerrar.click();
+    await fichaCerrada;
+    await asentar();
+
+    // El filtro sigue puesto: recargar con `reintentar()` no toca la URL.
+    expect(TestBed.inject(Router).url).toContain('maestroId=2');
+    await responder(pagina([materia(1, 'Bases de Datos')]));
   });
 });

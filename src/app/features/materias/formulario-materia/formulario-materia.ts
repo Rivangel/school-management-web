@@ -2,13 +2,12 @@ import { Component, computed, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCardModule } from '@angular/material/card';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
-import { Router } from '@angular/router';
 
 import { t } from '../../../core/i18n/traducir';
 import { MateriaRequest } from '../../../core/models';
@@ -22,7 +21,11 @@ import { MaestroService } from '../../../core/services/maestro-service';
 import { MateriaService } from '../../../core/services/materia-service';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
 import { textoRequerido } from '../../../core/validadores';
-import { idDeRuta } from '../../../shared/id-de-ruta';
+
+/** Lo que trae el diálogo al abrirse: sin `id` es un alta. */
+export interface DatosFormularioMateria {
+  readonly id?: number;
+}
 
 /** Cuántos maestros caben en el desplegable; es también el tope de la API. */
 const MAESTROS_EN_EL_SELECTOR = 100;
@@ -34,16 +37,11 @@ const CREDITOS_MAXIMO = 20;
 /**
  * Cómo repartir los errores que la API no desglosa por campo.
  *
- * El nombre de una materia **no es único** —dos grupos pueden llamar igual a
- * Álgebra—, así que aquí no hay ningún duplicado que colocar. Lo que sí hay es
- * un caso que los otros formularios no tienen: elegir a un maestro que ya no
- * existe. La API lo responde con un **404** (busca al maestro antes de guardar),
- * no con un 400, y su frase —"Maestro con id 3 no encontrado"— habla de un id
- * que quien rellena el formulario nunca vio, porque eligió un nombre en una
+ * El nombre de una materia **no es único**, así que aquí no hay ningún
+ * duplicado que colocar. Lo que sí hay es elegir a un maestro que ya no
+ * existe: la API lo responde con un 404 —no con un 400— y su frase habla de un
+ * id que quien rellena el formulario nunca vio, porque eligió un nombre en una
  * lista. Se cuelga del desplegable con palabras propias.
- *
- * Es una función y no una constante para que el mensaje se lea en el idioma
- * activo **al guardar**, no en el que estuviera cuando se cargó el módulo.
  */
 function pistas(): readonly PistaDeCampo[] {
   return [
@@ -62,23 +60,19 @@ interface OpcionDeMaestro {
 }
 
 /**
- * Alta y edición de una materia.
+ * Alta y edición de una materia, en un diálogo.
  *
- * Tercer formulario del patrón: una **ruta** (`/materias/nueva` y
- * `/materias/7/editar`), el mismo componente para los dos modos y los enlaces
- * arrastrando el `?page=&size=&sort=` del listado.
- *
- * Lo que trae de nuevo es un campo que **apunta a otro registro**: la materia no
- * guarda el nombre de su maestro, guarda su id. Eso obliga a pedir dos cosas a
- * la vez y a que el desplegable siga teniendo sentido cuando la lista de
- * maestros no alcanza para explicar lo que la materia ya tiene guardado.
+ * Repite el patrón de los otros dos formularios, con lo que ya avisó el
+ * listado: un campo que **apunta a otro registro**. Eso obliga a pedir dos
+ * cosas a la vez y a que el desplegable siga teniendo sentido cuando la lista
+ * de maestros no alcanza para explicar lo que la materia ya tiene guardado.
  */
 @Component({
   selector: 'app-formulario-materia',
   imports: [
     ReactiveFormsModule,
     MatButtonModule,
-    MatCardModule,
+    MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -91,8 +85,9 @@ interface OpcionDeMaestro {
 export class FormularioMateria {
   private readonly materias = inject(MateriaService);
   private readonly maestros = inject(MaestroService);
-  private readonly router = inject(Router);
   private readonly avisos = inject(Avisos);
+  private readonly datos = inject<DatosFormularioMateria>(MAT_DIALOG_DATA);
+  private readonly dialogo = inject(MatDialogRef<FormularioMateria, boolean>);
 
   protected readonly t = t;
 
@@ -115,19 +110,13 @@ export class FormularioMateria {
     maestroId: [null as number | null, Validators.required],
   });
 
-  private readonly enLaRuta = idDeRuta();
-
   /** El id que se va a actualizar, o `undefined` si esto es un alta. */
-  protected readonly id = this.enLaRuta.id;
-
-  /** `/materias/abc/editar`: hay id en la ruta y no es un número. */
-  protected readonly idInvalido = this.enLaRuta.invalido;
-
-  protected readonly editando = this.enLaRuta.presente;
+  protected readonly id = this.datos.id;
+  protected readonly editando = this.id !== undefined;
 
   /** Sin `id` los parámetros son `undefined` y el recurso ni llega a pedir nada. */
   private readonly materia = rxResource({
-    params: () => this.id(),
+    params: () => this.id,
     stream: ({ params }) => this.materias.obtenerPorId(params),
   });
 
@@ -208,7 +197,7 @@ export class FormularioMateria {
       return;
     }
 
-    const id = this.id();
+    const id = this.id;
     const datos = this.valores();
     this.enviando.set(true);
     this.error.set(null);
@@ -224,7 +213,7 @@ export class FormularioMateria {
             ? t('materias.formulario.registrada', { nombre: materia.nombre })
             : t('materias.formulario.cambiosGuardados', { nombre: materia.nombre }),
         );
-        this.volver();
+        this.dialogo.close(true);
       },
       error: (fallo: unknown) => {
         this.enviando.set(false);
@@ -251,9 +240,8 @@ export class FormularioMateria {
     this.materia.reload();
   }
 
-  /** `preserve` conserva el `?page=&size=&sort=` con el que se entró al listado. */
-  protected volver(): void {
-    void this.router.navigate(['/materias'], { queryParamsHandling: 'preserve' });
+  protected cerrar(): void {
+    this.dialogo.close(false);
   }
 
   /**

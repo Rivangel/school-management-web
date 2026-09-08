@@ -35,18 +35,41 @@
   }
 
   @if (puedeEditar()) {
-    <!-- `preserve` arrastra el `?page=&size=&sort=&maestroId=` para volver aquí
-         mismo, con el filtro puesto incluido. -->
-    <a mat-flat-button routerLink="/materias/nueva" queryParamsHandling="preserve">
+    <button mat-flat-button type="button" (click)="nuevo()">
       <mat-icon>add</mat-icon>
       {{ t('materias.lista.nueva') }}
-    </a>
+    </button>
   }
 </header>
 
+@if (puedeEditar() && seleccion.cantidad() > 0) {
+  <div class="listado__seleccion" role="toolbar" [attr.aria-label]="t('materias.lista.accionesDeSeleccion')">
+    <span class="listado__seleccion-cuenta">
+      {{
+        seleccion.cantidad() === 1
+          ? t('materias.lista.unaSeleccionada')
+          : t('materias.lista.seleccionadas', { n: seleccion.cantidad() })
+      }}
+    </span>
+    <button
+      mat-stroked-button
+      type="button"
+      [disabled]="seleccion.cantidad() !== 1"
+      (click)="editarSeleccionado()"
+    >
+      <mat-icon>edit</mat-icon>
+      {{ t('common.editar') }}
+    </button>
+    <button mat-stroked-button type="button" [disabled]="borrando()" (click)="eliminarSeleccionados()">
+      <mat-icon>delete</mat-icon>
+      {{ t('common.eliminar') }}
+    </button>
+  </div>
+}
+
 <!-- Altura fija para que la tabla no salte al aparecer y desaparecer la barra. -->
 <div class="listado__barra">
-  @if (listado.cargando()) {
+  @if (listado.cargando() || borrando()) {
     <mat-progress-bar mode="indeterminate" [attr.aria-label]="t('materias.lista.cargando')" />
   }
 </div>
@@ -73,6 +96,24 @@
         {{ t('materias.lista.caption') }}
       </caption>
 
+      <ng-container matColumnDef="seleccion">
+        <th mat-header-cell *matHeaderCellDef scope="col">
+          <mat-checkbox
+            [checked]="seleccion.todasMarcadas(listado.filas())"
+            [indeterminate]="seleccion.algunaMarcada(listado.filas()) && !seleccion.todasMarcadas(listado.filas())"
+            (change)="seleccion.alternarTodas(listado.filas())"
+            [attr.aria-label]="t('materias.lista.seleccionarTodo')"
+          />
+        </th>
+        <td mat-cell *matCellDef="let materia" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+          <mat-checkbox
+            [checked]="seleccion.estaMarcada(materia)"
+            (change)="seleccion.alternar(materia)"
+            [attr.aria-label]="t('materias.lista.seleccionarUna', { nombre: materia.nombre })"
+          />
+        </td>
+      </ng-container>
+
       <ng-container matColumnDef="nombre">
         <th mat-header-cell mat-sort-header *matHeaderCellDef scope="col">
           {{ t('materias.lista.colMateria') }}
@@ -97,32 +138,17 @@
         <td mat-cell *matCellDef="let materia">{{ materia.maestroNombre }}</td>
       </ng-container>
 
-      <ng-container matColumnDef="acciones">
-        <th mat-header-cell *matHeaderCellDef scope="col">{{ t('materias.lista.colAcciones') }}</th>
-        <td mat-cell *matCellDef="let materia">
-          <a
-            mat-icon-button
-            [routerLink]="['/materias', materia.id]"
-            queryParamsHandling="preserve"
-            [attr.aria-label]="t('materias.lista.verFichaDe', { nombre: materia.nombre })"
-          >
-            <mat-icon>visibility</mat-icon>
-          </a>
-          @if (puedeEditar()) {
-            <a
-              mat-icon-button
-              [routerLink]="['/materias', materia.id, 'editar']"
-              queryParamsHandling="preserve"
-              [attr.aria-label]="t('materias.lista.editar', { nombre: materia.nombre })"
-            >
-              <mat-icon>edit</mat-icon>
-            </a>
-          }
-        </td>
-      </ng-container>
-
-      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-      <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+      <tr mat-header-row *matHeaderRowDef="columnas()"></tr>
+      <tr
+        mat-row
+        *matRowDef="let fila; columns: columnas()"
+        class="listado__fila"
+        tabindex="0"
+        [attr.aria-label]="t('materias.lista.verFichaDe', { nombre: fila.nombre })"
+        (click)="verDetalle(fila)"
+        (keydown.enter)="verDetalle(fila)"
+        (keydown.space)="$event.preventDefault(); verDetalle(fila)"
+      ></tr>
     </table>
 
     @if (listado.vacio()) {
