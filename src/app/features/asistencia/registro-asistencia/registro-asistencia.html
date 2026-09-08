@@ -100,10 +100,18 @@
             [attr.aria-label]="t('asistencia.registro.asistenciaDe', { nombre: fila.alumno.nombre, apellido: fila.alumno.apellido })"
             hideSingleSelectionIndicator
           >
-            <mat-button-toggle [value]="true" (click)="marcar(fila.alumno.id, true)">
+            <mat-button-toggle
+              [value]="true"
+              [class.toggle--positivo]="fila.presente === true"
+              (click)="marcar(fila.alumno.id, true)"
+            >
               {{ t('asistencia.registro.presente') }}
             </mat-button-toggle>
-            <mat-button-toggle [value]="false" (click)="marcar(fila.alumno.id, false)">
+            <mat-button-toggle
+              [value]="false"
+              [class.toggle--negativo]="fila.presente === false"
+              (click)="marcar(fila.alumno.id, false)"
+            >
               {{ t('asistencia.registro.ausente') }}
             </mat-button-toggle>
           </mat-button-toggle-group>

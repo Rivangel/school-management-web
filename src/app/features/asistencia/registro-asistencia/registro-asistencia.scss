@@ -16,3 +16,15 @@
   flex-wrap: wrap;
   margin-top: 1rem;
 }
+
+// El hundido (ver styles.scss) ya marca "seleccionado"; el color es la señal
+// adicional que no depende de la sombra para distinguir presente de ausente.
+.toggle--positivo {
+  --mat-button-toggle-selected-state-text-color: var(--accent-positive);
+  font-weight: 700;
+}
+
+.toggle--negativo {
+  --mat-button-toggle-selected-state-text-color: var(--accent-negative);
+  font-weight: 700;
+}
