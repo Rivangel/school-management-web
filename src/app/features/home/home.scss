@@ -1,3 +1,5 @@
+@use '../../shared/estilos/neumorphism' as neu;
+
 .portada__saludo {
   margin-bottom: 1.5rem;
 
@@ -44,18 +46,18 @@
 
 .dashboard__tarjeta {
   cursor: pointer;
-  border: 1px solid var(--mat-sys-outline-variant);
-  background: var(--mat-sys-surface-container-low);
-  transition:
-    transform 120ms ease,
-    background-color 120ms ease,
-    box-shadow 120ms ease;
+  transition: var(--neu-transition);
 
   &:hover,
   &:focus-visible {
-    background: var(--mat-sys-surface-container-high);
     transform: translateY(-2px);
-    box-shadow: var(--mat-sys-level1);
+    --mat-card-outlined-container-elevation:
+      var(--shadow-light), 8px 8px 16px rgba(163, 177, 198, 0.7);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
   }
 
   .dashboard__tarjeta-contenido {
@@ -148,24 +150,16 @@
 }
 
 .portada__acceso {
+  @include neu.neu-interactive;
   display: flex;
-  border: 1px solid var(--mat-sys-outline-variant);
-  background: var(--mat-sys-surface-container-low);
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   padding: 1.5rem 1rem;
-  border-radius: var(--mat-sys-corner-medium);
   color: var(--mat-sys-on-surface);
   text-decoration: none;
   font: var(--mat-sys-title-small);
-  transition: background-color 120ms ease;
-
-  &:hover,
-  &:focus-visible {
-    background: var(--mat-sys-surface-container-high);
-  }
 
   mat-icon {
     --mat-icon-color: var(--mat-sys-primary);
@@ -183,14 +177,12 @@
 }
 
 .dashboard__cifra {
+  @include neu.neu-flat;
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
   min-width: 10rem;
   padding: 0.875rem 1.25rem;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: var(--mat-sys-corner-medium);
-  background: var(--mat-sys-surface-container-low);
 }
 
 .dashboard__cifra-titulo {
@@ -219,9 +211,6 @@
 }
 
 .dashboard__grafica {
-  border: 1px solid var(--mat-sys-outline-variant);
-  background: var(--mat-sys-surface-container-low);
-
   mat-card-content {
     padding: 1.25rem !important;
   }
