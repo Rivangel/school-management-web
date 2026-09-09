@@ -16,6 +16,7 @@ import { AlumnoService } from '../../../core/services/alumno-service';
 import { AuthService } from '../../../core/services/auth-service';
 import { CalificacionService } from '../../../core/services/calificacion-service';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
+import { ColumnaCsv, exportarCsv } from '../../../shared/exportar-csv';
 
 /** Cuántos alumnos caben en el selector; es también el tope de la API. */
 const ALUMNOS_EN_EL_SELECTOR = 100;
@@ -220,4 +221,26 @@ export class CalificacionesAlumno {
   /** Para el `track` de la tabla. */
   protected readonly idDe = (_indice: number, calificacion: Calificacion): number =>
     calificacion.id;
+
+  /**
+   * Exporta lo que ya está en pantalla: a diferencia de los listados
+   * paginados, aquí no hace falta pedir nada más porque la API ya entrega el
+   * arreglo completo (ver la nota de la clase).
+   */
+  protected exportar(): void {
+    exportarCsv('calificaciones.csv', this.columnasCsv(), this.filas());
+  }
+
+  /**
+   * Función y no una constante de módulo: leída en el momento de exportar, el
+   * encabezado sale en el idioma activo aunque cambie después de montar la
+   * pantalla (mismo motivo que `mensajeDeFallo` del Día 31).
+   */
+  private columnasCsv(): ColumnaCsv<Calificacion>[] {
+    return [
+      { encabezado: t('calificaciones.alumno.colMateria'), valor: (fila) => fila.materiaNombre },
+      { encabezado: t('calificaciones.alumno.colPeriodo'), valor: (fila) => fila.periodo },
+      { encabezado: t('calificaciones.alumno.colCalificacion'), valor: (fila) => fila.calificacion },
+    ];
+  }
 }

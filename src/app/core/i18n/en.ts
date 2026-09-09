@@ -448,6 +448,7 @@ export const EN: Diccionario = {
       vacioAlumno: 'You have no grades recorded yet.',
       vacioOtro: 'This student has no grades recorded.',
       noSePudieronCargar: 'The grades could not be loaded.',
+      exportar: 'Export CSV',
     },
     materia: {
       titulo: 'Grades by subject',
@@ -470,6 +471,7 @@ export const EN: Diccionario = {
       corregirDe: "Correct {{nombre}}'s grade",
       vacio: 'This subject has no grades recorded yet.',
       noSePudieronCargar: "The subject's grades could not be loaded.",
+      exportar: 'Export CSV',
     },
   },
 

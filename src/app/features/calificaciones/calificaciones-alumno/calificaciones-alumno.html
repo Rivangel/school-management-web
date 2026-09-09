@@ -45,6 +45,13 @@
     </mat-form-field>
   }
 
+  @if (filas().length > 0) {
+    <button mat-stroked-button type="button" (click)="exportar()">
+      <mat-icon>download</mat-icon>
+      {{ t('calificaciones.alumno.exportar') }}
+    </button>
+  }
+
   @if (puedeVerPorMateria()) {
     <a mat-stroked-button routerLink="/calificaciones/materia">
       <mat-icon>menu_book</mat-icon>

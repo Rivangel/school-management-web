@@ -461,6 +461,7 @@ export const ES: Diccionario = {
       vacioAlumno: 'Todavía no tienes calificaciones registradas.',
       vacioOtro: 'Este alumno no tiene calificaciones registradas.',
       noSePudieronCargar: 'No se pudieron cargar las calificaciones.',
+      exportar: 'Exportar CSV',
     },
     materia: {
       titulo: 'Calificaciones por materia',
@@ -483,6 +484,7 @@ export const ES: Diccionario = {
       corregirDe: 'Corregir la calificación de {{nombre}}',
       vacio: 'Esta materia todavía no tiene calificaciones registradas.',
       noSePudieronCargar: 'No se pudieron cargar las calificaciones de la materia.',
+      exportar: 'Exportar CSV',
     },
   },
 
