@@ -338,6 +338,8 @@ export const EN: Diccionario = {
       vacioFiltrado: 'This teacher has no subjects assigned.',
       vacio: 'There are no subjects registered yet.',
       noSePudoCargar: 'Could not load the list of subjects.',
+      exportar: 'Export CSV',
+      noSePudoExportar: 'Could not export the list of subjects.',
     },
     formulario: {
       tituloEditar: 'Edit subject',

@@ -350,6 +350,8 @@ export const ES: Diccionario = {
       vacioFiltrado: 'Este maestro no tiene materias asignadas.',
       vacio: 'Todavía no hay materias registradas.',
       noSePudoCargar: 'No se pudo cargar el listado de materias.',
+      exportar: 'Exportar CSV',
+      noSePudoExportar: 'No se pudo exportar el listado de materias.',
     },
     formulario: {
       tituloEditar: 'Editar materia',

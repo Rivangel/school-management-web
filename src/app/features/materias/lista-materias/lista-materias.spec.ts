@@ -465,4 +465,108 @@ describe('ListaMaterias', () => {
     expect(TestBed.inject(Router).url).toContain('maestroId=2');
     await responder(pagina([materia(1, 'Bases de Datos')]));
   });
+
+  describe('exportar', () => {
+    let crear: ReturnType<typeof vi.spyOn>;
+    let pulsado: HTMLAnchorElement[];
+
+    /** A diferencia de `pagina()`, con el `size` que pide de verdad la exportación. */
+    function paginaDeExportacion(
+      contenido: Materia[],
+      opciones: { page?: number; last: boolean; total?: number },
+    ): Pagina<Materia> {
+      const page = opciones.page ?? 0;
+      return {
+        content: contenido,
+        page,
+        size: 100,
+        totalElements: opciones.total ?? contenido.length,
+        totalPages: 1,
+        first: page === 0,
+        last: opciones.last,
+      };
+    }
+
+    beforeEach(() => {
+      crear = vi.spyOn(globalThis.URL, 'createObjectURL');
+      pulsado = [];
+      vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+        this: HTMLAnchorElement,
+      ) {
+        pulsado.push(this);
+      });
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('pide la página completa (size=100) y descarga un CSV con todas las columnas', async () => {
+      await montar('/materias', pagina([materia(1, 'Bases de Datos')]));
+
+      boton('Exportar CSV').click();
+      await asentar();
+
+      const exportacion = http.expectOne((solicitud) => solicitud.url === URL);
+      expect(exportacion.request.params.get('page')).toBe('0');
+      expect(exportacion.request.params.get('size')).toBe('100');
+      exportacion.flush(
+        paginaDeExportacion([materia(1, 'Bases de Datos'), materia(2, 'Redes')], { last: true }),
+      );
+      await asentar();
+
+      expect(pulsado).toHaveLength(1);
+      expect(pulsado[0].download).toBe('materias.csv');
+      const blob = crear.mock.calls[0][0] as Blob;
+      const texto = await blob.text();
+      expect(texto).toContain('"Materia","Créditos","Maestro"');
+      expect(texto).toContain('Redes');
+      expect(texto).toContain('Laura Gómez');
+    });
+
+    it('conserva el filtro por maestro al pedir cada página', async () => {
+      await montar('/materias?maestroId=2', pagina([materia(1, 'Bases de Datos')]));
+
+      boton('Exportar CSV').click();
+      await asentar();
+
+      const exportacion = http.expectOne((solicitud) => solicitud.url === URL);
+      expect(exportacion.request.params.get('maestroId')).toBe('2');
+      exportacion.flush(paginaDeExportacion([materia(1, 'Bases de Datos')], { last: true }));
+      await asentar();
+
+      expect(pulsado).toHaveLength(1);
+    });
+
+    it('recorre todas las páginas del servidor antes de exportar', async () => {
+      await montar('/materias', pagina([materia(1, 'Bases de Datos')]));
+
+      boton('Exportar CSV').click();
+      await asentar();
+
+      http
+        .expectOne((s) => s.url === URL)
+        .flush(paginaDeExportacion([materia(1, 'Bases de Datos')], { page: 0, last: false, total: 2 }));
+      await asentar();
+
+      const segunda = http.expectOne((s) => s.url === URL);
+      expect(segunda.request.params.get('page')).toBe('1');
+      segunda.flush(paginaDeExportacion([materia(2, 'Redes')], { page: 1, last: true, total: 2 }));
+      await asentar();
+
+      expect(pulsado).toHaveLength(1);
+    });
+
+    it('si la petición falla, no descarga nada', async () => {
+      await montar('/materias', pagina([materia(1, 'Bases de Datos')]));
+
+      boton('Exportar CSV').click();
+      await asentar();
+
+      http.expectOne((s) => s.url === URL).flush(null, { status: 500, statusText: 'Error' });
+      await asentar();
+
+      expect(pulsado).toHaveLength(0);
+    });
+  });
 });

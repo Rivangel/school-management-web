@@ -21,7 +21,9 @@ import { AuthService } from '../../../core/services/auth-service';
 import { Avisos } from '../../../core/services/avisos';
 import { MaestroService } from '../../../core/services/maestro-service';
 import { MateriaService } from '../../../core/services/materia-service';
+import { ColumnaCsv, exportarCsv } from '../../../shared/exportar-csv';
 import { listadoPaginado } from '../../../shared/listado-paginado';
+import { paginaCompleta } from '../../../shared/pagina-completa';
 import { PaginadorIntl } from '../../../shared/paginador-intl';
 import { Confirmar, DatosConfirmacion } from '../../../shared/components/confirmar/confirmar';
 import { seleccionDeFilas } from '../../../shared/seleccion';
@@ -170,6 +172,7 @@ export class ListaMaterias {
 
   protected readonly seleccion = seleccionDeFilas<Materia>();
   protected readonly borrando = signal(false);
+  protected readonly exportando = signal(false);
 
   constructor() {
     // Cambiar de página, orden o filtro deja atrás filas que ya no se ven: sin
@@ -284,6 +287,36 @@ export class ListaMaterias {
         },
       });
     }
+  }
+
+  /**
+   * Exporta el listado entero (ver `ListaAlumnos.exportar`), con el filtro por
+   * maestro aplicado si lo hay: `listado.consulta()` ya lo lleva puesto.
+   */
+  protected exportar(): void {
+    if (this.exportando()) {
+      return;
+    }
+    this.exportando.set(true);
+    paginaCompleta((consulta) => this.materias.listar(consulta), this.listado.consulta()).subscribe({
+      next: (filas) => {
+        this.exportando.set(false);
+        exportarCsv('materias.csv', this.columnasCsv(), filas);
+      },
+      error: () => {
+        this.exportando.set(false);
+        this.avisos.error(t('materias.lista.noSePudoExportar'));
+      },
+    });
+  }
+
+  /** Función y no una constante de módulo: ver `ListaAlumnos.columnasCsv`. */
+  private columnasCsv(): ColumnaCsv<Materia>[] {
+    return [
+      { encabezado: t('materias.lista.colMateria'), valor: (materia) => materia.nombre },
+      { encabezado: t('materias.lista.colCreditos'), valor: (materia) => materia.creditos },
+      { encabezado: t('materias.lista.colMaestro'), valor: (materia) => materia.maestroNombre },
+    ];
   }
 
   private abrirYRefrescar(referencia: MatDialogRef<unknown, boolean>): void {
