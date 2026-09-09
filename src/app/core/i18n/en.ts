@@ -169,6 +169,8 @@ export const EN: Diccionario = {
       noSePudieronEliminarTodos: 'Could not delete all the selected students.',
       vacio: 'There are no students registered yet.',
       noSePudoCargar: 'Could not load the list of students.',
+      exportar: 'Export CSV',
+      noSePudoExportar: 'Could not export the list of students.',
     },
     formulario: {
       tituloEditar: 'Edit student',

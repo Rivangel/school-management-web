@@ -10,6 +10,11 @@
     </p>
   </div>
 
+  <button mat-stroked-button type="button" [disabled]="exportando()" (click)="exportar()">
+    <mat-icon>download</mat-icon>
+    {{ t('alumnos.lista.exportar') }}
+  </button>
+
   @if (puedeEditar()) {
     <button mat-flat-button type="button" (click)="nuevo()">
       <mat-icon>add</mat-icon>

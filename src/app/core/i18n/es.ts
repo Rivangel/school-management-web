@@ -177,6 +177,8 @@ export const ES: Diccionario = {
       noSePudieronEliminarTodos: 'No se pudieron eliminar todos los alumnos seleccionados.',
       vacio: 'Todavía no hay alumnos registrados.',
       noSePudoCargar: 'No se pudo cargar el listado de alumnos.',
+      exportar: 'Exportar CSV',
+      noSePudoExportar: 'No se pudo exportar el listado de alumnos.',
     },
     formulario: {
       tituloEditar: 'Editar alumno',

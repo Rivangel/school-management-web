@@ -424,4 +424,98 @@ describe('ListaAlumnos', () => {
 
     await responder(pagina([alumno(1, 'López')]));
   });
+
+  describe('exportar', () => {
+    let crear: ReturnType<typeof vi.spyOn>;
+    let pulsado: HTMLAnchorElement[];
+
+    /** A diferencia de `pagina()`, con el `size` que pide de verdad la exportación. */
+    function paginaDeExportacion(
+      contenido: Alumno[],
+      opciones: { page?: number; last: boolean; total?: number },
+    ): Pagina<Alumno> {
+      const page = opciones.page ?? 0;
+      return {
+        content: contenido,
+        page,
+        size: 100,
+        totalElements: opciones.total ?? contenido.length,
+        totalPages: 1,
+        first: page === 0,
+        last: opciones.last,
+      };
+    }
+
+    beforeEach(() => {
+      // `URL` de jsdom es de verdad: se espía en vez de sustituirla.
+      crear = vi.spyOn(globalThis.URL, 'createObjectURL');
+      pulsado = [];
+      vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+        this: HTMLAnchorElement,
+      ) {
+        pulsado.push(this);
+      });
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('pide la página completa (size=100, no la de pantalla) y descarga un CSV con todas las columnas', async () => {
+      await montar('/alumnos', pagina([alumno(1, 'López')]));
+
+      boton('Exportar CSV').click();
+      await asentar();
+
+      const exportacion = http.expectOne((solicitud) => solicitud.url === URL);
+      expect(exportacion.request.params.get('page')).toBe('0');
+      expect(exportacion.request.params.get('size')).toBe('100');
+      exportacion.flush(
+        paginaDeExportacion([alumno(1, 'López'), alumno(2, 'García')], { last: true }),
+      );
+      await asentar();
+
+      expect(pulsado).toHaveLength(1);
+      expect(pulsado[0].download).toBe('alumnos.csv');
+      const blob = crear.mock.calls[0][0] as Blob;
+      const texto = await blob.text();
+      expect(texto).toContain('"Matrícula","Apellido","Nombre","Grupo","Correo"');
+      expect(texto).toContain('García');
+    });
+
+    it('recorre todas las páginas del servidor antes de exportar', async () => {
+      await montar('/alumnos', pagina([alumno(1, 'López')]));
+
+      boton('Exportar CSV').click();
+      await asentar();
+
+      http
+        .expectOne((s) => s.url === URL)
+        .flush(paginaDeExportacion([alumno(1, 'López')], { page: 0, last: false, total: 2 }));
+      await asentar();
+
+      const segunda = http.expectOne((s) => s.url === URL);
+      expect(segunda.request.params.get('page')).toBe('1');
+      segunda.flush(paginaDeExportacion([alumno(2, 'García')], { page: 1, last: true, total: 2 }));
+      await asentar();
+
+      expect(pulsado).toHaveLength(1);
+      const blob = crear.mock.calls[0][0] as Blob;
+      const texto = await blob.text();
+      expect(texto).toContain('López');
+      expect(texto).toContain('García');
+    });
+
+    it('si la petición falla, no descarga nada', async () => {
+      await montar('/alumnos', pagina([alumno(1, 'López')]));
+
+      boton('Exportar CSV').click();
+      await asentar();
+
+      http.expectOne((s) => s.url === URL).flush(null, { status: 500, statusText: 'Error' });
+      await asentar();
+
+      expect(pulsado).toHaveLength(0);
+    });
+  });
 });

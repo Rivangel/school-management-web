@@ -15,7 +15,9 @@ import { TAMANOS_PAGINA } from '../../../core/paginacion';
 import { AlumnoService } from '../../../core/services/alumno-service';
 import { AuthService } from '../../../core/services/auth-service';
 import { Avisos } from '../../../core/services/avisos';
+import { ColumnaCsv, exportarCsv } from '../../../shared/exportar-csv';
 import { listadoPaginado } from '../../../shared/listado-paginado';
+import { paginaCompleta } from '../../../shared/pagina-completa';
 import { PaginadorIntl } from '../../../shared/paginador-intl';
 import { Confirmar, DatosConfirmacion } from '../../../shared/components/confirmar/confirmar';
 import { seleccionDeFilas } from '../../../shared/seleccion';
@@ -106,6 +108,7 @@ export class ListaAlumnos {
 
   protected readonly seleccion = seleccionDeFilas<Alumno>();
   protected readonly borrando = signal(false);
+  protected readonly exportando = signal(false);
 
   constructor() {
     // Cambiar de página, orden o filtro deja atrás filas que ya no se ven: sin
@@ -224,6 +227,45 @@ export class ListaAlumnos {
         },
       });
     }
+  }
+
+  /**
+   * Exporta **el listado entero**, no la página que se está viendo: sin esto un
+   * CSV de "alumnos" con veinte filas de trescientos sería un listado a medias
+   * disfrazado de completo. Respeta el orden y, si algún día esta pantalla
+   * filtra, también el filtro — ambos vienen de `listado.consulta()`.
+   */
+  protected exportar(): void {
+    if (this.exportando()) {
+      return;
+    }
+    this.exportando.set(true);
+    paginaCompleta((consulta) => this.alumnos.listar(consulta), this.listado.consulta()).subscribe({
+      next: (filas) => {
+        this.exportando.set(false);
+        exportarCsv('alumnos.csv', this.columnasCsv(), filas);
+      },
+      error: () => {
+        this.exportando.set(false);
+        this.avisos.error(t('alumnos.lista.noSePudoExportar'));
+      },
+    });
+  }
+
+  /**
+   * Función y no una constante de módulo: si fuera una constante quedaría
+   * evaluada con el idioma que estuviera activo al cargar la pantalla, y
+   * cambiarlo después no tocaría un encabezado ya congelado (mismo error que el
+   * Día 31 con `mensajeDeFallo`).
+   */
+  private columnasCsv(): ColumnaCsv<Alumno>[] {
+    return [
+      { encabezado: t('alumnos.lista.colMatricula'), valor: (alumno) => alumno.matricula },
+      { encabezado: t('alumnos.lista.colApellido'), valor: (alumno) => alumno.apellido },
+      { encabezado: t('alumnos.lista.colNombre'), valor: (alumno) => alumno.nombre },
+      { encabezado: t('alumnos.lista.colGrupo'), valor: (alumno) => alumno.grupo },
+      { encabezado: t('alumnos.lista.colCorreo'), valor: (alumno) => alumno.email },
+    ];
   }
 
   private abrirYRefrescar(referencia: MatDialogRef<unknown, boolean>): void {
