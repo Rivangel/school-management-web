@@ -15,7 +15,9 @@ import { TAMANOS_PAGINA } from '../../../core/paginacion';
 import { AuthService } from '../../../core/services/auth-service';
 import { Avisos } from '../../../core/services/avisos';
 import { MaestroService } from '../../../core/services/maestro-service';
+import { ColumnaCsv, exportarCsv } from '../../../shared/exportar-csv';
 import { listadoPaginado } from '../../../shared/listado-paginado';
+import { paginaCompleta } from '../../../shared/pagina-completa';
 import { PaginadorIntl } from '../../../shared/paginador-intl';
 import { Confirmar, DatosConfirmacion } from '../../../shared/components/confirmar/confirmar';
 import { seleccionDeFilas } from '../../../shared/seleccion';
@@ -89,6 +91,7 @@ export class ListaMaestros {
 
   protected readonly seleccion = seleccionDeFilas<Maestro>();
   protected readonly borrando = signal(false);
+  protected readonly exportando = signal(false);
 
   constructor() {
     // Cambiar de página, orden o filtro deja atrás filas que ya no se ven: sin
@@ -203,6 +206,34 @@ export class ListaMaestros {
         },
       });
     }
+  }
+
+  /** Exporta el listado entero (ver `ListaAlumnos.exportar`), no la página en pantalla. */
+  protected exportar(): void {
+    if (this.exportando()) {
+      return;
+    }
+    this.exportando.set(true);
+    paginaCompleta((consulta) => this.maestros.listar(consulta), this.listado.consulta()).subscribe({
+      next: (filas) => {
+        this.exportando.set(false);
+        exportarCsv('maestros.csv', this.columnasCsv(), filas);
+      },
+      error: () => {
+        this.exportando.set(false);
+        this.avisos.error(t('maestros.lista.noSePudoExportar'));
+      },
+    });
+  }
+
+  /** Función y no una constante de módulo: ver `ListaAlumnos.columnasCsv`. */
+  private columnasCsv(): ColumnaCsv<Maestro>[] {
+    return [
+      { encabezado: t('maestros.lista.colApellido'), valor: (maestro) => maestro.apellido },
+      { encabezado: t('maestros.lista.colNombre'), valor: (maestro) => maestro.nombre },
+      { encabezado: t('maestros.lista.colEspecialidad'), valor: (maestro) => maestro.especialidad },
+      { encabezado: t('maestros.lista.colCorreo'), valor: (maestro) => maestro.email },
+    ];
   }
 
   private abrirYRefrescar(referencia: MatDialogRef<unknown, boolean>): void {

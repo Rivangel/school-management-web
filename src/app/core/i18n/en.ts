@@ -255,6 +255,8 @@ export const EN: Diccionario = {
       noSePudieronEliminarTodos: 'Could not delete all the selected teachers.',
       vacio: 'There are no teachers registered yet.',
       noSePudoCargar: 'Could not load the list of teachers.',
+      exportar: 'Export CSV',
+      noSePudoExportar: 'Could not export the list of teachers.',
     },
     formulario: {
       tituloEditar: 'Edit teacher',
