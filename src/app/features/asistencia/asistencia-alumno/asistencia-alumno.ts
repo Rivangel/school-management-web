@@ -16,6 +16,7 @@ import { AlumnoService } from '../../../core/services/alumno-service';
 import { AsistenciaService } from '../../../core/services/asistencia-service';
 import { AuthService } from '../../../core/services/auth-service';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
+import { ColumnaCsv, exportarCsv } from '../../../shared/exportar-csv';
 
 /** Cuantos alumnos caben en el selector; es tambien el tope de la API. */
 const ALUMNOS_EN_EL_SELECTOR = 100;
@@ -208,4 +209,21 @@ export class AsistenciaAlumno {
 
   /** Para el track de la tabla. */
   protected readonly idDe = (_indice: number, asistencia: Asistencia): number => asistencia.id;
+
+  /** Exporta lo que ya está en pantalla (ver `CalificacionesAlumno.exportar`). */
+  protected exportar(): void {
+    exportarCsv('asistencia.csv', this.columnasCsv(), this.filas());
+  }
+
+  /** Función y no una constante de módulo: ver `CalificacionesAlumno.columnasCsv`. */
+  private columnasCsv(): ColumnaCsv<Asistencia>[] {
+    return [
+      { encabezado: t('asistencia.alumno.colMateria'), valor: (fila) => fila.materiaNombre },
+      { encabezado: t('asistencia.alumno.colFecha'), valor: (fila) => fila.fecha },
+      {
+        encabezado: t('asistencia.alumno.colAsistencia'),
+        valor: (fila) => (fila.presente ? t('asistencia.alumno.presente') : t('asistencia.alumno.ausente')),
+      },
+    ];
+  }
 }

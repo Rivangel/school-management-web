@@ -255,4 +255,54 @@ describe('AsistenciaAlumno', () => {
     await asentar();
     expect(filas()).toHaveLength(1);
   });
+
+  describe('exportar', () => {
+    let crear: ReturnType<typeof vi.spyOn>;
+    let pulsado: HTMLAnchorElement[];
+
+    function boton(etiqueta: string): HTMLButtonElement | undefined {
+      return [...harness.fixture.nativeElement.querySelectorAll('button')].find((candidato) =>
+        (candidato as HTMLElement).textContent!.includes(etiqueta),
+      ) as HTMLButtonElement | undefined;
+    }
+
+    beforeEach(() => {
+      crear = vi.spyOn(globalThis.URL, 'createObjectURL');
+      pulsado = [];
+      vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+        this: HTMLAnchorElement,
+      ) {
+        pulsado.push(this);
+      });
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('no aparece sin nada que exportar', async () => {
+      await abrir();
+
+      expect(boton('Exportar CSV')).toBeUndefined();
+    });
+
+    it('exporta lo que ya está en pantalla, sin pedir nada más al servidor', async () => {
+      await abrir('/asistencia?alumnoId=1');
+      http
+        .expectOne(`${URL}/alumno/1`)
+        .flush([registro(1, 'Bases de Datos', true), registro(2, 'Álgebra', false)]);
+      await asentar();
+
+      boton('Exportar CSV')!.click();
+      await asentar();
+
+      expect(pulsado).toHaveLength(1);
+      expect(pulsado[0].download).toBe('asistencia.csv');
+      const blob = crear.mock.calls[0][0] as Blob;
+      const texto = await blob.text();
+      expect(texto).toContain('"Materia","Fecha","Asistencia"');
+      expect(texto).toContain('"Presente"');
+      expect(texto).toContain('"Ausente"');
+    });
+  });
 });

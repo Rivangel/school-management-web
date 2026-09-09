@@ -46,6 +46,13 @@
     </mat-form-field>
   }
 
+  @if (filas().length > 0) {
+    <button mat-stroked-button type="button" (click)="exportar()">
+      <mat-icon>download</mat-icon>
+      {{ t('asistencia.alumno.exportar') }}
+    </button>
+  }
+
   @if (puedePasarLista()) {
     <a mat-flat-button routerLink="/asistencia/registrar">
       <mat-icon>edit_calendar</mat-icon>

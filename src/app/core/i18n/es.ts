@@ -542,6 +542,7 @@ export const ES: Diccionario = {
       vacioAlumno: 'Todavía no tienes asistencia registrada.',
       vacioOtro: 'Este alumno no tiene asistencia registrada.',
       noSePudoCargar: 'No se pudo cargar la asistencia.',
+      exportar: 'Exportar CSV',
     },
   },
 };

@@ -529,6 +529,7 @@ export const EN: Diccionario = {
       vacioAlumno: 'You have no attendance recorded yet.',
       vacioOtro: 'This student has no attendance recorded.',
       noSePudoCargar: 'Attendance could not be loaded.',
+      exportar: 'Export CSV',
     },
   },
 };
