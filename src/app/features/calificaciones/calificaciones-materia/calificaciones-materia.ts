@@ -17,6 +17,7 @@ import { CalificacionService } from '../../../core/services/calificacion-service
 import { MateriaService } from '../../../core/services/materia-service';
 import { MiMaestro } from '../../../core/services/mi-maestro';
 import { mensajeDeError } from '../../../core/services/mensaje-error';
+import { ColumnaCsv, exportarCsv } from '../../../shared/exportar-csv';
 
 /** Cuántas materias caben en el selector; es también el tope de la API. */
 const MATERIAS_EN_EL_SELECTOR = 100;
@@ -200,4 +201,18 @@ export class CalificacionesMateria {
   }
 
   protected readonly idDe = (_indice: number, fila: Calificacion): number => fila.id;
+
+  /** Exporta lo que ya está en pantalla (ver `CalificacionesAlumno.exportar`). */
+  protected exportar(): void {
+    exportarCsv('calificaciones-materia.csv', this.columnasCsv(), this.filas());
+  }
+
+  /** Función y no una constante de módulo: ver `CalificacionesAlumno.columnasCsv`. */
+  private columnasCsv(): ColumnaCsv<Calificacion>[] {
+    return [
+      { encabezado: t('calificaciones.materia.colAlumno'), valor: (fila) => fila.alumnoNombre },
+      { encabezado: t('calificaciones.materia.colPeriodo'), valor: (fila) => fila.periodo },
+      { encabezado: t('calificaciones.materia.colCalificacion'), valor: (fila) => fila.calificacion },
+    ];
+  }
 }

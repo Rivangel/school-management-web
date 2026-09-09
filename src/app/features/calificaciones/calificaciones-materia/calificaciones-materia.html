@@ -32,6 +32,13 @@
     </mat-select>
   </mat-form-field>
 
+  @if (filas().length > 0) {
+    <button mat-stroked-button type="button" (click)="exportar()">
+      <mat-icon>download</mat-icon>
+      {{ t('calificaciones.materia.exportar') }}
+    </button>
+  }
+
   @if (puedeRegistrar()) {
     <a mat-flat-button routerLink="/calificaciones/registrar">
       <mat-icon>add</mat-icon>

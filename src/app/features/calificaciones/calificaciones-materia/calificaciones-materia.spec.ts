@@ -251,4 +251,62 @@ describe('CalificacionesMateria', () => {
       expect(texto()).not.toContain('la imparte otro maestro');
     });
   });
+
+  describe('exportar', () => {
+    let crear: ReturnType<typeof vi.spyOn>;
+    let pulsado: HTMLAnchorElement[];
+
+    function boton(etiqueta: string): HTMLButtonElement | undefined {
+      return [...harness.fixture.nativeElement.querySelectorAll('button')].find((candidato) =>
+        (candidato as HTMLElement).textContent!.includes(etiqueta),
+      ) as HTMLButtonElement | undefined;
+    }
+
+    async function elegirMateria(): Promise<void> {
+      (harness.fixture.nativeElement.querySelector('mat-select') as HTMLElement).click();
+      await asentar();
+      const opcion = [...document.querySelectorAll('mat-option')].find((candidata) =>
+        candidata.textContent!.includes('Bases de Datos'),
+      ) as HTMLElement;
+      opcion.click();
+      await asentar();
+    }
+
+    beforeEach(() => {
+      crear = vi.spyOn(globalThis.URL, 'createObjectURL');
+      pulsado = [];
+      vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
+        this: HTMLAnchorElement,
+      ) {
+        pulsado.push(this);
+      });
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('no aparece sin nada que exportar', async () => {
+      await abrir();
+
+      expect(boton('Exportar CSV')).toBeUndefined();
+    });
+
+    it('exporta lo que ya está en pantalla, sin pedir nada más al servidor', async () => {
+      await abrir();
+      await elegirMateria();
+      http.expectOne(`${URL}/materia/3`).flush([nota(1, 'Ana López', 9.5)]);
+      await asentar();
+
+      boton('Exportar CSV')!.click();
+      await asentar();
+
+      expect(pulsado).toHaveLength(1);
+      expect(pulsado[0].download).toBe('calificaciones-materia.csv');
+      const blob = crear.mock.calls[0][0] as Blob;
+      const texto = await blob.text();
+      expect(texto).toContain('"Alumno","Periodo","Calificación"');
+      expect(texto).toContain('Ana López');
+    });
+  });
 });
