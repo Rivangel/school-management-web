@@ -36,6 +36,8 @@ export const EN: Diccionario = {
     cerrarSesion: 'Log out',
     cambiarAIngles: 'Switch to English',
     cambiarAEspanol: 'Switch to Spanish',
+    cambiarATemaOscuro: 'Switch to dark theme',
+    cambiarATemaClaro: 'Switch to light theme',
     menu: {
       Inicio: 'Home',
       Alumnos: 'Students',

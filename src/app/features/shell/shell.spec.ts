@@ -7,6 +7,7 @@ import { cambiarIdioma } from '../../core/i18n/estado';
 import { Rol } from '../../core/models';
 import { AuthService } from '../../core/services/auth-service';
 import { CLAVE_SESION, sembrarSesion } from '../../core/services/testing/sesion-falsa';
+import { cambiarTema } from '../../core/tema/estado';
 import { Shell } from './shell';
 
 describe('Shell', () => {
@@ -38,6 +39,7 @@ describe('Shell', () => {
   afterEach(() => {
     localStorage.clear();
     cambiarIdioma('es');
+    cambiarTema('claro');
     vi.restoreAllMocks();
   });
 
@@ -122,5 +124,18 @@ describe('Shell', () => {
     await fixture.whenStable();
 
     expect(boton().getAttribute('aria-label')).toBe('Switch to Spanish');
+  });
+
+  it('alterna el tema oscuro y marca data-tema en <html>', async () => {
+    await montar('ADMIN');
+    const boton = () => fixture.nativeElement.querySelector('.shell__tema') as HTMLButtonElement;
+
+    expect(boton().getAttribute('aria-label')).toBe('Cambiar a tema oscuro');
+
+    boton().click();
+    await fixture.whenStable();
+
+    expect(document.documentElement.getAttribute('data-tema')).toBe('oscuro');
+    expect(boton().getAttribute('aria-label')).toBe('Cambiar a tema claro');
   });
 });

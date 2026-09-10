@@ -15,6 +15,7 @@ import { alternarIdioma, idiomaActual } from '../../core/i18n/estado';
 import { t } from '../../core/i18n/traducir';
 import { menuPara } from '../../core/navegacion';
 import { AuthService } from '../../core/services/auth-service';
+import { alternarTema, temaActual } from '../../core/tema/estado';
 
 /**
  * Ancho a partir del cual el menú cabe fijo al lado del contenido.
@@ -56,6 +57,7 @@ export class Shell {
 
   protected readonly t = t;
   protected readonly idioma = idiomaActual;
+  protected readonly tema = temaActual;
 
   protected readonly nombre = this.auth.nombre;
   protected readonly rol = this.auth.rol;
@@ -70,6 +72,15 @@ export class Shell {
 
   protected alternarIdioma(): void {
     alternarIdioma();
+  }
+
+  /** Etiqueta del botón: dice a qué tema cambia, no en cuál está. */
+  protected readonly etiquetaCambiarTema = computed(() =>
+    this.tema() === 'claro' ? t('shell.cambiarATemaOscuro') : t('shell.cambiarATemaClaro'),
+  );
+
+  protected alternarTema(): void {
+    alternarTema();
   }
 
   private readonly esAngosta = toSignal(

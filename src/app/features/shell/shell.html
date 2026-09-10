@@ -44,6 +44,16 @@
       <span class="shell__separador"></span>
 
       <button
+        mat-icon-button
+        type="button"
+        class="shell__tema"
+        (click)="alternarTema()"
+        [attr.aria-label]="etiquetaCambiarTema()"
+      >
+        <mat-icon>{{ tema() === 'oscuro' ? 'dark_mode' : 'light_mode' }}</mat-icon>
+      </button>
+
+      <button
         mat-stroked-button
         type="button"
         class="shell__idioma"

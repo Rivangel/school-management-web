@@ -40,6 +40,8 @@ export const ES: Diccionario = {
     cerrarSesion: 'Cerrar sesión',
     cambiarAIngles: 'Cambiar a inglés',
     cambiarAEspanol: 'Cambiar a español',
+    cambiarATemaOscuro: 'Cambiar a tema oscuro',
+    cambiarATemaClaro: 'Cambiar a tema claro',
     menu: {
       Inicio: 'Inicio',
       Alumnos: 'Alumnos',
