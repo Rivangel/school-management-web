@@ -31,12 +31,19 @@ html {
   --radius-md: 16px;
   --radius-lg: 24px;
 
+  // Canales RGB (sin alfa) del tinte de sombra, para componerlo con distintas
+  // opacidades vía `rgb(var(--shadow-tint) / alfa)` en varios sitios del app
+  // (fila de tabla al pasar el ratón, separación del menú lateral…) sin
+  // repetir el color a mano en cada uno — y para que el tema oscuro sólo
+  // tenga que redefinirlo una vez.
+  --shadow-tint: 163 177 198;
+
   --shadow-light: -6px -6px 12px rgba(255, 255, 255, 0.8);
-  --shadow-dark: 6px 6px 12px rgba(163, 177, 198, 0.6);
+  --shadow-dark: 6px 6px 12px rgb(var(--shadow-tint) / 0.6);
   --shadow-raised: var(--shadow-light), var(--shadow-dark);
 
   --shadow-light-inset: inset -4px -4px 8px rgba(255, 255, 255, 0.7);
-  --shadow-dark-inset: inset 4px 4px 8px rgba(163, 177, 198, 0.5);
+  --shadow-dark-inset: inset 4px 4px 8px rgb(var(--shadow-tint) / 0.5);
   --shadow-inset: var(--shadow-light-inset), var(--shadow-dark-inset);
 
   // Sombra de las superficies "flotantes" (menús, diálogos, snackbar): estas
@@ -68,14 +75,50 @@ html {
   --mat-sys-corner-medium: var(--radius-md);
   --mat-sys-corner-large: var(--radius-lg);
   --mat-sys-corner-extra-large: var(--radius-lg);
+
+  // `color-scheme` es heredable: fijarlo aquí (y no en `body`) hace que el
+  // atributo `data-tema` de más abajo, puesto en el propio `<html>`, pueda
+  // pisarlo sin pelear con una declaración más específica en `body`.
+  //
+  // El resto de tokens de Material (`mat.theme()` usa `theme-type:
+  // color-scheme` por defecto) ya vienen como `light-dark(...)`, así que
+  // heredan el tema correcto sin tocar nada más aquí.
+  color-scheme: light;
+}
+
+// --- Tema oscuro ---------------------------------------------------------
+//
+// `core/tema/estado.ts` pone y quita este atributo en `<html>`. Sólo hace
+// falta redefinir los tokens propios del diseño neumórfico: el `color-scheme:
+// dark` de aquí abajo ya hace que los tokens `--mat-sys-*` generados por
+// `mat.theme()` (primary, tertiary, error…) cambien solos a su variante
+// oscura, porque usan la función CSS `light-dark()` por debajo.
+html[data-tema='oscuro'] {
+  color-scheme: dark;
+
+  --surface: #1e2229;
+  --on-surface-strong: #e4e8ee; // ~13:1 sobre --surface
+  --on-surface-muted: #a2adbd; // ~6.9:1 sobre --surface
+
+  // Sobre una superficie oscura el tinte azulado pensado para el tema claro
+  // se lee como una mancha, no como una sombra: aquí el contraste lo da el
+  // negro puro.
+  --shadow-tint: 0 0 0;
+
+  // Superficie oscura: el "relieve" ya no viene de blanco vs. gris, sino de
+  // un brillo tenue (como si la luz rozara el borde) vs. una sombra real más
+  // profunda. Con luces potentes aquí el efecto se ve sucio, no elegante.
+  --shadow-light: -6px -6px 12px rgba(255, 255, 255, 0.04);
+  --shadow-dark: 6px 6px 12px rgb(var(--shadow-tint) / 0.6);
+  --shadow-light-inset: inset -4px -4px 8px rgba(255, 255, 255, 0.03);
+  --shadow-dark-inset: inset 4px 4px 8px rgb(var(--shadow-tint) / 0.55);
+  --shadow-overlay: 0 12px 28px rgb(var(--shadow-tint) / 0.55);
+
+  --accent-positive: #4cbf82; // reajustado para AA sobre --surface oscuro
+  --accent-negative: #e5837e;
 }
 
 body {
-  // Default the application to a light color theme. This can be changed to
-  // `dark` to enable the dark color theme, or to `light dark` to defer to the
-  // user's system settings.
-  color-scheme: light;
-
   // Set a default background, font and text colors for the application using
   // Angular Material's system-level CSS variables. Learn more about these
   // variables at https://material.angular.dev/guide/system-variables
@@ -211,7 +254,7 @@ body {
 }
 
 .mat-mdc-row:hover {
-  background: rgba(163, 177, 198, 0.15);
+  background: rgb(var(--shadow-tint) / 0.15);
 }
 
 // Superficies flotantes: mismo tono de fondo, pero sombra real (no dual) para

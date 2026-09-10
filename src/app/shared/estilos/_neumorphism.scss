@@ -29,7 +29,7 @@
   transition: var(--neu-transition);
 
   &:hover {
-    box-shadow: var(--shadow-light), 8px 8px 16px rgba(163, 177, 198, 0.7);
+    box-shadow: var(--shadow-light), 8px 8px 16px rgb(var(--shadow-tint) / 0.7);
     transform: translateY(-2px);
   }
 

@@ -52,7 +52,7 @@
   &:focus-visible {
     transform: translateY(-2px);
     --mat-card-outlined-container-elevation:
-      var(--shadow-light), 8px 8px 16px rgba(163, 177, 198, 0.7);
+      var(--shadow-light), 8px 8px 16px rgb(var(--shadow-tint) / 0.7);
   }
 
   &:focus-visible {
